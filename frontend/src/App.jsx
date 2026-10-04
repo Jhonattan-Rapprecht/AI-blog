@@ -1,26 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import ArticleEditor from './ArticleEditor';
+﻿import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import AppShell from '@/components/layout/AppShell'
+import EditorPage from '@/pages/EditorPage'
+import ArticlesPage from '@/pages/ArticlesPage'
 
-function App() {
-  const [theme, setTheme] = useState('dark'); // Set Dark Mode as default
-
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.colorScheme = theme;
-    // Remove forced background color here to let the Editor handle it
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
-
+export default function App() {
   return (
-    <div className={`app-container ${theme}`} style={{ minHeight: '100vh' }}>
-      {/* The toggle button is now inside ArticleEditor's sidebar,
-          so we remove the fixed button from here to avoid duplicates */}
-      <ArticleEditor theme={theme} toggleTheme={toggleTheme} />
-    </div>
-  );
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route index element={<EditorPage />} />
+          <Route path="articles/:id" element={<EditorPage />} />
+          <Route path="articles" element={<ArticlesPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  )
 }
-
-export default App;

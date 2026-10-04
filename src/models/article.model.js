@@ -80,7 +80,11 @@ class ArticleModel {
         const fields = [];
         const params = [];
 
+        const allowed = ['title', 'slug', 'excerpt', 'content', 'featured_image', 'status', 'category_id',
+            'seo_title', 'seo_description', 'seo_keywords', 'published_at', 'scheduled_at'];
+
         for (const [key, value] of Object.entries(data)) {
+            if (!allowed.includes(key)) continue;
             fields.push(`${key} = ?`);
             params.push(value ?? null);
         }
