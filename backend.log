@@ -1,7 +1,5 @@
 ◇ injected env (9) from .env
 ◇ injected env (0) from .env
 Scheduler started: Checking for articles to publish every minute...
-Server running on port 3000
-Client connected: fyS6TNFqFlSJIIDcAAAA
-[AI Service] Requesting generation for topic: Bloodborne 2 Rumors
-[AI Service] Requesting generation for topic: Playstation 6
+Server running on port 3000 (Listening on 0.0.0.0)
+Client connected: YKt8IL4Myt8p0fpPAAAA

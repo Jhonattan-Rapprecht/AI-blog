@@ -13,19 +13,22 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
-// 1. Use CORS middleware BEFORE any routes
-// This is critical: it must be the first middleware
+// 1. Strong CORS configuration for REST
 app.use(cors({
-    origin: 'http://localhost:5173', // Explicitly allow the Vite frontend
+    origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// 2. Socket.IO configuration with explicit CORS and transports
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:5173', // Explicitly allow the Vite frontend
-        methods: ['GET', 'POST']
-    }
+        origin: 'http://localhost:5173',
+        methods: ['GET', 'POST'],
+        credentials: true
+    },
+    allowEIO3: true // Support older client versions if necessary
 });
 
 app.use(express.json());
@@ -43,16 +46,16 @@ app.use('/api/automation', AutomationRoutes);
 
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
-    socket.on('disconnect', () => {
-        console.log(`Client disconnected: ${socket.id}`);
+    socket.on('disconnect', (reason) => {
+        console.log(`Client disconnected: ${socket.id} Reason: ${reason}`);
     });
 });
 
 SchedulerService.start();
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT} (Listening on 0.0.0.0)`);
 });
 
 module.exports = { app, io };
