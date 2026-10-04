@@ -1,5 +1,5 @@
-﻿import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { FileText, Moon, PenLine, Sparkles, Sun } from 'lucide-react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Blocks, FileText, Moon, PenLine, Sparkles, Sun } from 'lucide-react'
 import { Toaster } from 'sonner'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -16,7 +16,14 @@ const nav = [
   { to: '/articles', label: 'Articles', icon: FileText },
 ]
 
-const titles = { '/': 'Editor', '/articles': 'Articles' }
+const devNav = import.meta.env.DEV ? [{ to: '/dev/components', label: 'Components', icon: Blocks }] : []
+
+const groups = [
+  { label: 'Content', items: nav },
+  { label: 'Developer', items: devNav },
+].filter((g) => g.items.length)
+
+const titles = { '/': 'Editor', '/articles': 'Articles', '/dev/components': 'Components' }
 
 export default function AppShell() {
   const { theme, toggle } = useTheme()
@@ -36,24 +43,26 @@ export default function AppShell() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Content</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {nav.map(({ to, label, icon: Icon, end }) => (
-                  <SidebarMenuItem key={to}>
-                    <NavLink to={to} end={end}>
-                      {({ isActive }) => (
-                        <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
-                          <span><Icon /><span>{label}</span></span>
-                        </SidebarMenuButton>
-                      )}
-                    </NavLink>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          {groups.map((group) => (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.items.map(({ to, label, icon: Icon, end }) => (
+                    <SidebarMenuItem key={to}>
+                      <NavLink to={to} end={end}>
+                        {({ isActive }) => (
+                          <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
+                            <span><Icon /><span>{label}</span></span>
+                          </SidebarMenuButton>
+                        )}
+                      </NavLink>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
         </SidebarContent>
         <SidebarFooter>
           <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:justify-center">

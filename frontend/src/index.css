@@ -1,5 +1,8 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @import "tw-animate-css";
+
+/* Raw HTML/CSS pasted for /dev/components must not generate app utilities. */
+@source not "./component-previews";
 
 @custom-variant dark (&:is(.dark *));
 
