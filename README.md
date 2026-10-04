@@ -1,6 +1,6 @@
 # 🚀 AI-Powered High-Performance Blog
 
-A professional blogging platform that leverages local LLMs (via Ollama) to generate, edit, store, and automatically publish high-quality SEO-optimized articles.
+A professional blogging platform that leverages local LLMs (via Ollama) to generate, edit, store, and automatically publish high-quality SEO-optimized articles. With a particularly strong focus on Privacy and Cost-efficiency. Also with a simple implementation flow and application management features that are modular and service oriented.
 
 ## 🌟 Key Features
 
