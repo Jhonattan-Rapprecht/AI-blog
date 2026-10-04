@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, Send, RefreshCcw, FileText, Globe, Tag as TagIcon, Settings, Sparkles, LayoutDashboard, Plus, X, Moon, Sun, ChevronRight, ChevronLeft, Activity } from 'lucide-react';
+import { Save, FileText, Globe, Tag as TagIcon, Settings, Sparkles, LayoutDashboard, Plus, X, Moon, Sun, ChevronRight, ChevronLeft, Activity } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 const API_BASE = 'http://localhost:3000/api';
@@ -34,13 +34,31 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
     const [newAudience, setNewAudience] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    const fetchAIStatus = async () => {
+        try {
+            const res = await axios.get(`${API_BASE}/ai/status`);
+            setAIStatus(`${res.data.provider} (${res.data.model}) - ${res.data.status}`);
+        } catch {
+            setAIStatus('Disconnected');
+        }
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const res = await axios.get(`${API_BASE}/categories`);
+            setCategories(res.data);
+        } catch (e) {
+            console.error('Error fetching categories', e);
+        }
+    };
+
     useEffect(() => {
         socket.on('connect', () => {
             fetchAIStatus();
             fetchCategories();
         });
 
-        socket.on('connect_error', (err) => {
+        socket.on('connect_error', () => {
             setAIStatus('Disconnected (Socket Error)');
         });
 
@@ -56,8 +74,10 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
             setMessage(`AI Generation failed: ${data.error}`);
         });
 
-        fetchAIStatus();
-        fetchCategories();
+        const loadInitialData = async () => {
+            await Promise.all([fetchAIStatus(), fetchCategories()]);
+        };
+        loadInitialData();
 
         return () => {
             socket.off('connect');
@@ -67,24 +87,6 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
             socket.off('ai:generation:failed');
         };
     }, []);
-
-    const fetchAIStatus = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}/ai/status`);
-            setAIStatus(`${res.data.provider} (${res.data.model}) - ${res.data.status}`);
-        } catch (e) {
-            setAIStatus('Disconnected');
-        }
-    };
-
-    const fetchCategories = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}/categories`);
-            setCategories(res.data);
-        } catch (e) {
-            console.error('Error fetching categories', e);
-        }
-    };
 
     const handleAddCategory = async () => {
         if (!newCatName) return;
