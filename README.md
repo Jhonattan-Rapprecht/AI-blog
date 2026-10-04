@@ -20,6 +20,8 @@ A professional blogging platform that leverages local LLMs (via Ollama) to gener
 - **Light & Dark Themes**: Full theme support, toggled from the collapsible Settings sidebar.
 - **Collapsible Control Center**: A sidebar for live AI connection monitoring and workspace settings.
 - **Provider Factory**: Switch between Ollama (local) and online AI providers without touching application logic.
+- **Public Blog Site**: A fast, server-rendered Astro website for readers with search, categories, related articles and full SEO meta tags, in the same black-and-white style as the admin.
+- **Component Library & Preview (Developers)**: A typed, reusable UI component library plus a `/dev/components` workspace to preview, inspect and convert HTML/CSS components to React. This is the foundation for customizing the layout and elements of the blog system later on.
 
 ## 🧠 How the AI Works
 
@@ -42,12 +44,53 @@ The platform implements a sophisticated **Provider Abstraction Layer** to decoup
 - `settings-sidebar.png` - The collapsible Settings sidebar with live AI connection status and the theme toggle.
   ![Settings sidebar](screenshots/settings-sidebar.png)
 - `admin-dashboard.png` - Real-time AI status and article management.
+  ![Article management dashboard](docs/user/screenshots/admin-articles.png)
 - `public-blog.png` - The high-performance public reading experience.
+  ![Public blog home page](docs/user/screenshots/site-home.png)
+- `dev-components.png` - The developer component preview workspace.
+  ![Component preview workspace](screenshots/dev-components.png)
+
+More screenshots of every page are available in the [Pages Guide](docs/user/pages-guide.md).
+
+## 🧩 Component Library & Preview System (Developers)
+
+The admin app includes an internal component library and a preview workspace so the UI stays consistent as the project grows.
+
+### Component library
+Located in `frontend/src/components/`, written in TypeScript + Tailwind and built on shadcn-ui:
+
+| Folder | Purpose |
+|--------|---------|
+| `ui/` | shadcn-ui primitives (Button, Badge, Card, ...) |
+| `core/` | Custom reusable components such as `PrimaryButton` |
+| `data/` | Admin-style data components (tables, badges, list rows) |
+| `layout/` | Containers, wrappers and page sections (e.g. `AppShell`) |
+
+All components follow the existing design system: the monochrome palette, spacing, typography, radius and table style of the admin pages.
+
+```tsx
+import { PrimaryButton } from '@/components/core'
+
+<PrimaryButton icon={Save} loading={saving} onClick={save}>Save draft</PrimaryButton>
+```
+
+### Component preview workspace
+Open **http://localhost:5173/dev/components** (or **Developer → Components** in the sidebar).
+
+1. Paste an HTML file (and optionally a CSS file with the same name) into `frontend/src/component-previews/`, e.g. `pricing-card.html` + `pricing-card.css`.
+2. It appears in the list instantly and is rendered in an isolated preview using the app's theme colors (light and dark).
+3. Inspect the raw **HTML** and **CSS**, **Copy** the code, or click **Convert to React** to get a JSX component.
+
+The workspace only exists in development and is left out of production builds, so it never affects the blog or CMS.
+
+### Roadmap
+The component library and preview workspace are the first step toward making the AI blog system customizable: choosing and adjusting layouts, article formatting styles and page elements, without editing application code.
 
 ## 🛠️ Tech Stack
 
 - **Backend**: Node.js, Express
-- **Frontend**: React, Vite, Axios, Socket.IO Client, Lucide-React, React-Quill-New
+- **Admin Frontend**: React, Vite, TypeScript, Tailwind CSS, shadcn-ui, Axios, Socket.IO Client, Lucide-React, React-Quill-New
+- **Public Site**: Astro (server-rendered), Tailwind CSS
 - **Database**: MySQL 8.0+
 - **AI**: Ollama (Primary), Provider Abstraction Layer
 - **Real-time**: Socket.IO
@@ -71,6 +114,7 @@ The platform implements a sophisticated **Provider Abstraction Layer** to decoup
    ```bash
    npm install
    cd frontend && npm install && cd ..
+   cd site && npm install && cd ..
    ```
 
 3. **Configure Environment**:
@@ -89,17 +133,32 @@ The platform implements a sophisticated **Provider Abstraction Layer** to decoup
 
 6. **Run the App**:
    ```bash
-   # Start Backend
-   npm start 
-   
-   # Start Frontend (in another terminal)
-   cd frontend && npm run dev
+   # Start the API, admin and public site together
+   npm run dev
    ```
+
+   | App | URL |
+   |-----|-----|
+   | API | http://localhost:3000 |
+   | Admin (AI Blog Studio) | http://localhost:5173 |
+   | Public blog | http://localhost:4321 |
+   | Component preview (dev only) | http://localhost:5173/dev/components |
+
+## 📚 Documentation
+
+- [Pages Guide](docs/user/pages-guide.md): every page with screenshots and how to publish an article.
+- [Pages & Routes Reference](docs/development/pages-and-routes.md): all routes, source files and API endpoints.
+- [Development changelogs](docs/development/): history of each project milestone.
 
 ## 📐 Architecture
 
 The system follows a modular service-oriented architecture:
 `Browser` $\to$ `API/Sockets` $\to$ `Controllers` $\to$ `Services` $\to$ `Models` $\to$ `MySQL/Ollama`
+
+The repository contains three apps that share one API:
+- `src/`: Express API (admin and public endpoints, AI services, scheduler)
+- `frontend/`: React admin for writing, generating and managing articles
+- `site/`: Astro public blog for readers
 
 ## 📝 License
 MIT

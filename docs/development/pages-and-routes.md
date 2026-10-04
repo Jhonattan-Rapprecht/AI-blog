@@ -19,6 +19,7 @@ For a user-facing walkthrough with screenshots, see [Pages Guide](../user/pages-
 | `/` | `pages/EditorPage.jsx` | New article: editor, AI generation, publishing, SEO metadata |
 | `/articles` | `pages/ArticlesPage.jsx` | Table of all articles (any status) with open/delete actions |
 | `/articles/:id` | `pages/EditorPage.jsx` | Edit an existing article (`PUT` on save instead of `POST`) |
+| `/dev/components` | `pages/dev/ComponentsPage.tsx` | **Dev only.** Preview HTML/CSS files from `src/component-previews/`, view source, copy, convert to JSX. Left out of production builds. |
 
 All routes are wrapped in `components/layout/AppShell.jsx` (sidebar, header, theme toggle, AI status).
 
@@ -27,6 +28,7 @@ All routes are wrapped in `components/layout/AppShell.jsx` (sidebar, header, the
 | `/` | ![](../user/screenshots/admin-editor.png) |
 | `/articles` | ![](../user/screenshots/admin-articles.png) |
 | `/articles/:id` | ![](../user/screenshots/admin-edit-article.png) |
+| `/dev/components` | ![](../../screenshots/dev-components.png) |
 
 ---
 
