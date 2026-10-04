@@ -4,6 +4,11 @@
   "description": "AI-powered high-performance blogging platform.",
   "main": "index.js",
   "scripts": {
+    "start": "node src/index.js",
+    "server": "node src/index.js",
+    "dev": "concurrently -k -n api,web -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "node --watch src/index.js",
+    "dev:client": "npm --prefix frontend run dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,7 +23,6 @@
   },
   "homepage": "https://github.com/Jhonattan-Rapprecht/AI-blog#readme",
   "dependencies": {
-    "concurrently": "^10.0.5",
     "cors": "^2.8.6",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
@@ -28,6 +32,7 @@
     "uuid": "^14.0.2"
   },
   "devDependencies": {
+    "concurrently": "^10.0.5",
     "nodemon": "^3.1.14"
   }
 }

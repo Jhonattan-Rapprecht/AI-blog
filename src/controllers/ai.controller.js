@@ -2,6 +2,18 @@ const AIService = require('../services/ai.service');
 const ArticleModel = require('../models/article.model');
 const AIGenerationModel = require('../models/ai.generation.model');
 
+const toText = (item) => {
+    if (typeof item === 'string') return item.trim();
+    if (item && typeof item === 'object') {
+        const value = item.title ?? item.topic ?? item.name ?? item.slug ?? Object.values(item).find(v => typeof v === 'string');
+        return typeof value === 'string' ? value.trim() : '';
+    }
+    return '';
+};
+
+const toTextList = (items, limit = 3) =>
+    (Array.isArray(items) ? items : []).map(toText).filter(Boolean).slice(0, limit);
+
 class AIController {
     async generateArticle(req, res) {
         try {
@@ -80,7 +92,7 @@ class AIController {
             const slugs = JSON.parse(content);
             const slugArray = Array.isArray(slugs) ? slugs : (slugs.slugs || []);
 
-            res.json({ suggestions: slugArray.slice(0, 3) });
+            res.json({ suggestions: toTextList(slugArray) });
         } catch (error) {
             const { title } = req.body;
             const fallback = (title || '').toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
@@ -111,7 +123,7 @@ class AIController {
             const topics = JSON.parse(content);
             const topicArray = Array.isArray(topics) ? topics : (topics.topics || []);
 
-            res.json({ suggestions: topicArray.slice(0, 3) });
+            res.json({ suggestions: toTextList(topicArray) });
         } catch (error) {
             res.json({ suggestions: ['The Future of AI in Software Engineering', 'Mastering LLMs for Productivity', 'AI Agents: The Next Frontier of Automation'] });
         }

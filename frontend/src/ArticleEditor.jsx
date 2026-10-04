@@ -123,7 +123,8 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
         if (!article.title) return setMessage('Please enter a title first');
         try {
             const res = await axios.post(`${API_BASE}/ai/suggest-slug`, { title: article.title });
-            setSlugSuggestions(res.data.suggestions);
+            const list = Array.isArray(res.data.suggestions) ? res.data.suggestions : [];
+            setSlugSuggestions(list.filter(s => typeof s === 'string' && s));
         } catch (e) {
             setMessage('Slug suggestion failed: ' + e.message);
         }
@@ -132,7 +133,8 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
     const handleSuggestTopic = async () => {
         try {
             const res = await axios.post(`${API_BASE}/ai/suggest-topic`);
-            setTopicSuggestions(res.data.suggestions);
+            const list = Array.isArray(res.data.suggestions) ? res.data.suggestions : [];
+            setTopicSuggestions(list.filter(t => typeof t === 'string' && t));
         } catch (e) {
             setMessage('Topic suggestion failed: ' + e.message);
         }
@@ -320,6 +322,12 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
                             <style>{`
                                 .editor-quill .ql-toolbar, .editor-quill .ql-container { border-color: ${themeColors.border}; }
                                 .editor-quill .ql-container { height: 450px; background: ${themeColors.inputBg}; color: ${themeColors.inputText}; }
+                                .editor-quill .ql-editor { line-height: 1.7; font-size: 15px; }
+                                .editor-quill .ql-editor p { margin: 0 0 1em; }
+                                .editor-quill .ql-editor h1, .editor-quill .ql-editor h2, .editor-quill .ql-editor h3 { margin: 1.4em 0 0.6em; line-height: 1.3; }
+                                .editor-quill .ql-editor > :first-child { margin-top: 0; }
+                                .editor-quill .ql-editor ul, .editor-quill .ql-editor ol { margin: 0 0 1em; padding-left: 1.5em; }
+                                .editor-quill .ql-editor li { margin-bottom: 0.4em; }
                                 .editor-quill .ql-editor.ql-blank::before { color: ${themeColors.subtext}; }
                                 .editor-quill .ql-stroke { stroke: ${themeColors.inputText}; }
                                 .editor-quill .ql-fill { fill: ${themeColors.inputText}; }

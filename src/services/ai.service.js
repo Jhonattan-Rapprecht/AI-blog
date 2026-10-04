@@ -1,4 +1,5 @@
 const { ProviderFactory } = require('../providers/ai.provider');
+const { formatArticleContent } = require('../utils/articleFormatter');
 const fs = require('fs');
 const path = require('path');
 
@@ -15,7 +16,7 @@ Required JSON structure:
     "title": "Engaging title",
     "slug": "url-friendly-slug",
     "excerpt": "Short summary",
-    "content": "FULL detailed article with HTML tags (h2, p, ul, li) for structure. Ensure the article is extensive and complete.",
+    "content": "FULL detailed article as clean HTML. Open with a short introductory <p>, then use <h2> for sections (and <h3> for subsections), each followed by one or more <p> paragraphs. Use <ul>/<ol> with <li> for lists and finish with a conclusion section. Do NOT use <h1> and do NOT repeat the title inside the content. Every piece of text must be inside a tag. Keep paragraphs to 2-4 sentences.",
     "seo_title": "SEO optimized title",
     "seo_description": "SEO description",
     "seo_keywords": ["key1", "key2"],
@@ -50,6 +51,7 @@ Details: ${config.additionalInstructions}`;
 
             const parsed = JSON.parse(content);
             this._validateResponse(parsed);
+            parsed.content = formatArticleContent(parsed.content, parsed.title);
             return {
                 data: parsed,
                 meta: { provider: result.provider, model: result.model }
