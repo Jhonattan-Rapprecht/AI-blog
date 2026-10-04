@@ -22,3 +22,14 @@
 4. **Core Pipeline Completion**
    - Integrated the full workflow: Topic $\to$ AI Generation $\to$ DB Persistence $\to$ UI Display.
    - Verified end-to-end stability and pushed the milestone to GitHub.
+
+5. **UI/UX Overhaul & Feature Expansion**
+   - **Theme System**: Implemented a global Light/Dark mode toggle with CSS variable-based styling.
+   - **Professional Workspace**: Redesigned the Article Editor with a collapsible sidebar and refined typography (Inter).
+   - **Dynamic Metadata**: 
+     - Added AI-powered URL slug suggestions.
+     - Implemented AI-powered topic randomization.
+     - Added dynamic category management (Fetch/Create/Delete) with DB integration.
+     - Integrated customizable target audience selection.
+   - **Performance & Stability**: Fixed Vite build errors and resolved MySQL `undefined` parameter crashes for categories.
+   - **Documentation**: Comprehensive update of the README with technical architecture and quick-start guides.
