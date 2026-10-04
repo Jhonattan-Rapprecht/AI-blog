@@ -25,6 +25,7 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
     const [categories, setCategories] = useState([]);
     const [audiences, setAudiences] = useState(['General', 'Technical', 'Business', 'Beginners', 'Experts']);
     const [slugSuggestions, setSlugSuggestions] = useState([]);
+    const [topicSuggestions, setTopicSuggestions] = useState([]);
 
     const [loading, setLoading] = useState(false);
     const [genLoading, setGenLoading] = useState(false);
@@ -125,6 +126,15 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
             setSlugSuggestions(res.data.suggestions);
         } catch (e) {
             setMessage('Slug suggestion failed: ' + e.message);
+        }
+    };
+
+    const handleSuggestTopic = async () => {
+        try {
+            const res = await axios.post(`${API_BASE}/ai/suggest-topic`);
+            setTopicSuggestions(res.data.suggestions);
+        } catch (e) {
+            setMessage('Topic suggestion failed: ' + e.message);
         }
     };
 
@@ -330,7 +340,19 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
                             <h3 style={{ marginTop: 0, color: themeColors.text }}><LayoutDashboard size={18} /> AI Configuration</h3>
                             <div style={styles.field}>
                                 <label style={{ ...styles.label, color: themeColors.subtext }}>Topic</label>
-                                <input name="topic" value={aiConfig.topic || ''} onChange={handleAIChange} style={{ ...styles.input, backgroundColor: themeColors.inputBg, color: themeColors.inputText, borderColor: themeColors.border }} placeholder="e.g. Future of AI in Dev" />
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <input name="topic" value={aiConfig.topic || ''} onChange={handleAIChange} style={{ ...styles.input, flex: 1, backgroundColor: themeColors.inputBg, color: themeColors.inputText, borderColor: themeColors.border }} placeholder="e.g. Future of AI in Dev" />
+                                    <button onClick={handleSuggestTopic} style={styles.iconButton} title="AI Suggest Topic"><Sparkles size={18} /></button>
+                                </div>
+                                {topicSuggestions.length > 0 && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+                                        {topicSuggestions.map(t => (
+                                            <span key={t} onClick={() => setAIConfig(prev => ({ ...prev, topic: t }))} style={styles.slugChip}>
+                                                {t}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div style={styles.field}>
                                 <label style={{ ...styles.label, color: themeColors.subtext }}>Audience</label>

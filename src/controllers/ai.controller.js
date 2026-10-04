@@ -88,6 +88,35 @@ class AIController {
         }
     }
 
+    async suggestTopic(req, res) {
+        try {
+            const provider = require('../providers/ai.provider').ProviderFactory.getProvider();
+
+            const systemPrompt = 'You are a creative content strategist. Return ONLY a JSON array of 3 high-performing, trending, and engaging article topics. No other text.';
+            const userPrompt = 'Suggest 3 trending topics for a high-performance AI-powered blog.';
+
+            const result = await provider.generate({
+                systemPrompt,
+                userPrompt,
+                responseFormat: 'json'
+            });
+
+            let content = result.content.trim();
+            if (content.startsWith('```json')) {
+                content = content.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+            } else if (content.startsWith('```')) {
+                content = content.replace(/^```\n?/, '').replace(/\n?```$/, '');
+            }
+
+            const topics = JSON.parse(content);
+            const topicArray = Array.isArray(topics) ? topics : (topics.topics || []);
+
+            res.json({ suggestions: topicArray.slice(0, 3) });
+        } catch (error) {
+            res.json({ suggestions: ['The Future of AI in Software Engineering', 'Mastering LLMs for Productivity', 'AI Agents: The Next Frontier of Automation'] });
+        }
+    }
+
     async getStatus(req, res) {
         res.json({
             available: true,

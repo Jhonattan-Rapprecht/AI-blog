@@ -13,6 +13,13 @@ A professional blogging platform that leverages local LLMs (via Ollama) to gener
 - **Real-time UX**: Socket.IO integration for live AI generation status and publication alerts.
 - **Automated Workflow**: Server-side scheduler for automatic publication and autonomous AI article generation.
 - **SEO Optimized**: Built-in fields for SEO metadata and slug management.
+- **AI Topic Ideation**: One-click, AI-suggested article topics to overcome writer's block.
+- **Smart Slug Generation**: AI-suggested, SEO-friendly URL slugs based on your article title.
+- **Rich Text Editor**: Professional writing experience powered by `react-quill-new`.
+- **Category & Audience Management**: Add and delete categories and audiences straight from the editor.
+- **Light & Dark Themes**: Full theme support, toggled from the collapsible Settings sidebar.
+- **Collapsible Control Center**: A sidebar for live AI connection monitoring and workspace settings.
+- **Provider Factory**: Switch between Ollama (local) and online AI providers without touching application logic.
 
 ## 🧠 How the AI Works
 
@@ -30,13 +37,17 @@ The platform implements a sophisticated **Provider Abstraction Layer** to decoup
 *(Screenshots will be added here as the project grows)*
 - `frontend-editor.png` - The AI-powered article editor.
   ![AI-powered article editor](screenshots/frontend-editor.png)
+- `editor-light.png` - The editor in light mode.
+  ![Article editor in light mode](screenshots/editor-light.png)
+- `settings-sidebar.png` - The collapsible Settings sidebar with live AI connection status and the theme toggle.
+  ![Settings sidebar](screenshots/settings-sidebar.png)
 - `admin-dashboard.png` - Real-time AI status and article management.
 - `public-blog.png` - The high-performance public reading experience.
 
 ## 🛠️ Tech Stack
 
 - **Backend**: Node.js, Express
-- **Frontend**: React, Vite, Lucide-React
+- **Frontend**: React, Vite, Axios, Socket.IO Client, Lucide-React, React-Quill-New
 - **Database**: MySQL 8.0+
 - **AI**: Ollama (Primary), Provider Abstraction Layer
 - **Real-time**: Socket.IO
