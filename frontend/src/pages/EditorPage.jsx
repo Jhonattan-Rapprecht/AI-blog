@@ -22,7 +22,8 @@ const STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived']
 const TONES = ['Professional', 'Conversational', 'Technical', 'Opinionated']
 const DEFAULT_AUDIENCES = ['General', 'Technical', 'Business', 'Beginners', 'Experts']
 
-const payload = (a) => ({ ...a, category_id: a.category_id || null })
+// Quill 2 serializes spaces as &nbsp;, which breaks line wrapping on the public site.
+const payload = (a) => ({ ...a, content: (a.content || '').replace(/&nbsp;/g, ' '), category_id: a.category_id || null })
 const pick = (src) => Object.fromEntries(FIELDS.map((k) => [k, src?.[k] ?? EMPTY[k]]))
 
 function Field({ label, children, hint }) {

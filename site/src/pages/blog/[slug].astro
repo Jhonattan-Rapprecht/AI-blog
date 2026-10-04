@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleCard from '../../components/ArticleCard.astro';
-import { getArticle, formatDate, readingTime } from '../../lib/api.js';
+import { getArticle, formatDate, readingTime, normalizeHtml } from '../../lib/api.js';
 
 const article = await getArticle(Astro.params.slug);
 if (!article) return Astro.rewrite('/404');
@@ -28,7 +28,7 @@ if (!article) return Astro.rewrite('/404');
 
     {article.featured_image && <img src={article.featured_image} alt="" class="mt-8 w-full rounded-lg border" />}
 
-    <div class="prose prose-article mt-8 max-w-none" set:html={article.content} />
+    <div class="prose prose-article mt-8 max-w-none" set:html={normalizeHtml(article.content)} />
   </article>
 
   {article.related?.length > 0 && (

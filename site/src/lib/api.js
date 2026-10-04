@@ -20,7 +20,10 @@ export const listCategories = () => get('/categories');
 export const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
 
+// Quill 2 serializes every space as &nbsp;, which prevents normal line wrapping.
+export const normalizeHtml = (html = '') => html.replace(/&nbsp;|\u00A0/g, ' ');
+
 export const readingTime = (html = '') => {
-  const words = html.replace(/<[^>]+>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+  const words = normalizeHtml(html).replace(/<[^>]+>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 220));
 };
