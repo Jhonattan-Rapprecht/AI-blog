@@ -6,31 +6,33 @@ class AIService {
     async generateArticle(config) {
         const provider = ProviderFactory.getProvider();
 
-        const systemPrompt = `You are an expert high-performance blog writer.
-        Your goal is to create a comprehensive, SEO-optimized article.
-        You MUST respond ONLY with a valid JSON object. Do not include markdown formatting like \`\`\`json.
+        const systemPrompt = `You are a world-class SEO blog writer.
+Your goal is to produce a comprehensive, high-quality article.
+MUST return ONLY a valid JSON object. No markdown, no preamble.
 
-        Expected JSON structure:
-        {
-            "title": "...",
-            "slug": "...",
-            "excerpt": "...",
-            "content": "...",
-            "seo_title": "...",
-            "seo_description": "...",
-            "seo_keywords": ["key1", "key2"],
-            "tags": ["tag1", "tag2"],
-            "category": "..."
-        }`;
+Required JSON structure:
+{
+    "title": "Engaging title",
+    "slug": "url-friendly-slug",
+    "excerpt": "Short summary",
+    "content": "FULL detailed article with HTML tags (h2, p, ul, li) for structure. Ensure the article is extensive and complete.",
+    "seo_title": "SEO optimized title",
+    "seo_description": "SEO description",
+    "seo_keywords": ["key1", "key2"],
+    "tags": ["tag1", "tag2"],
+    "category": "Category Name"
+}`;
 
-        const userPrompt = `Topic: ${config.topic}
+        const userPrompt = `Write a full-length, professional article.
+Topic: ${config.topic}
 Target Audience: ${config.targetAudience}
 Language: ${config.language}
 Tone: ${config.tone}
-Article Length: ${config.articleLength}
 Keywords: ${config.keywords}
 Category: ${config.category}
-Additional Instructions: ${config.additionalInstructions}`;
+Details: ${config.additionalInstructions}`;
+
+        console.log(`[AI Service] Requesting generation for topic: ${config.topic}`);
 
         const result = await provider.generate({
             systemPrompt,
@@ -53,7 +55,8 @@ Additional Instructions: ${config.additionalInstructions}`;
                 meta: { provider: result.provider, model: result.model }
             };
         } catch (e) {
-            throw new Error(`AI Response Validation Failed: ${e.message}. Raw response: ${result.content.substring(0, 100)}...`);
+            console.error('[AI Service] JSON Parsing Error. Raw content:', result.content);
+            throw new Error(`AI Response Validation Failed: ${e.message}`);
         }
     }
 
