@@ -4,9 +4,19 @@ const { v4: uuidv4 } = require('uuid');
 class ArticleModel {
     async create(data) {
         const {
-            title, slug, excerpt, content, featured_image,
-            status, category_id, author_id, seo_title,
-            seo_description, seo_keywords, published_at, scheduled_at
+            title = null,
+            slug = null,
+            excerpt = null,
+            content = null,
+            featured_image = null,
+            status = 'draft',
+            category_id = null,
+            author_id = null,
+            seo_title = null,
+            seo_description = null,
+            seo_keywords = null,
+            published_at = null,
+            scheduled_at = null
         } = data;
 
         const id = uuidv4();
@@ -17,9 +27,20 @@ class ArticleModel {
         `;
 
         await db.query(sql, [
-            id, title, slug, excerpt, content, featured_image,
-            status || 'draft', category_id, author_id, seo_title,
-            seo_description, seo_keywords, published_at, scheduled_at
+            id,
+            title ?? null,
+            slug ?? null,
+            excerpt ?? null,
+            content ?? null,
+            featured_image ?? null,
+            status ?? 'draft',
+            category_id ?? null,
+            author_id ?? null,
+            seo_title ?? null,
+            seo_description ?? null,
+            seo_keywords ?? null,
+            published_at ?? null,
+            scheduled_at ?? null
         ]);
 
         return id;
@@ -61,7 +82,7 @@ class ArticleModel {
 
         for (const [key, value] of Object.entries(data)) {
             fields.push(`${key} = ?`);
-            params.push(value);
+            params.push(value ?? null);
         }
 
         if (fields.length === 0) return null;

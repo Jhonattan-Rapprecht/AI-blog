@@ -1,5 +1,6 @@
-const { ProviderFactory } = require('./providers/ai.provider');
-const ArticleModel = require('../models/article.model');
+const { ProviderFactory } = require('../providers/ai.provider');
+const fs = require('fs');
+const path = require('path');
 
 class AIService {
     async generateArticle(config) {
@@ -38,7 +39,6 @@ Additional Instructions: ${config.additionalInstructions}`;
         });
 
         try {
-            // Remove possible markdown wrapping if the model ignored the prompt
             let content = result.content.trim();
             if (content.startsWith('```json')) {
                 content = content.replace(/^```json\n?/, '').replace(/\n?```$/, '');

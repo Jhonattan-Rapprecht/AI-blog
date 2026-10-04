@@ -3,14 +3,36 @@ const { v4: uuidv4 } = require('uuid');
 
 class AIGenerationModel {
     async create(data) {
-        const { article_id, provider, model, prompt, response, status, error_message } = data;
+        const {
+            article_id = null,
+            provider = null,
+            model = null,
+            prompt = null,
+            response = null,
+            status = null,
+            error_message = null
+        } = data;
+
         const id = uuidv4();
         const sql = `
             INSERT INTO ai_generations
             (id, article_id, provider, model, prompt, response, status, error_message)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        await db.query(sql, [id, article_id, provider, model, prompt, JSON.stringify(response), status, error_message]);
+
+        // Ensure response is stringified if it's an object
+        const responseValue = typeof response === 'object' ? JSON.stringify(response) : response;
+
+        await db.query(sql, [
+            id,
+            article_id ?? null,
+            provider ?? null,
+            model ?? null,
+            prompt ?? null,
+            responseValue ?? null,
+            status ?? null,
+            error_message ?? null
+        ]);
         return id;
     }
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const cors = require('cors');
 const ArticleRoutes = require('./routes/article.routes');
 const AIRoutes = require('./routes/ai.routes');
 const PublicRoutes = require('./routes/public.routes');
@@ -11,9 +12,18 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+
+// 1. Use CORS middleware BEFORE any routes
+// This is critical: it must be the first middleware
+app.use(cors({
+    origin: 'http://localhost:5173', // Explicitly allow the Vite frontend
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 const io = new Server(server, {
     cors: {
-        origin: '*',
+        origin: 'http://localhost:5173', // Explicitly allow the Vite frontend
         methods: ['GET', 'POST']
     }
 });
@@ -38,7 +48,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// Start Scheduler
 SchedulerService.start();
 
 const PORT = process.env.PORT || 3000;

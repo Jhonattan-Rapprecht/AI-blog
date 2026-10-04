@@ -4,7 +4,10 @@ import { Save, Send, RefreshCcw, FileText, Globe, Tag as TagIcon, Settings, Spar
 import { io } from 'socket.io-client';
 
 const API_BASE = 'http://localhost:3000/api';
-const socket = io('http://localhost:3000');
+// Added transports: ['websocket'] to avoid polling issues on some Windows systems
+const socket = io('http://localhost:3000', {
+    transports: ['websocket', 'polling']
+});
 
 const ArticleEditor = () => {
     const [article, setArticle] = useState({
@@ -23,6 +26,16 @@ const ArticleEditor = () => {
     const [aiStatus, setAIStatus] = useState('Checking...');
 
     useEffect(() => {
+        socket.on('connect', () => {
+            console.log('Connected to Socket.IO server');
+            fetchAIStatus();
+        });
+
+        socket.on('connect_error', (err) => {
+            console.error('Socket.IO Connection Error:', err);
+            setAIStatus('Disconnected (Socket Error)');
+        });
+
         socket.on('ai:generation:started', (data) => {
             setMessage(`AI is generating article about: ${data.topic}...`);
         });
@@ -37,6 +50,8 @@ const ArticleEditor = () => {
 
         fetchAIStatus();
         return () => {
+            socket.off('connect');
+            socket.off('connect_error');
             socket.off('ai:generation:started');
             socket.off('ai:generation:completed');
             socket.off('ai:generation:failed');
@@ -48,6 +63,7 @@ const ArticleEditor = () => {
             const res = await axios.get(`${API_BASE}/ai/status`);
             setAIStatus(`${res.data.provider} (${res.data.model}) - ${res.data.status}`);
         } catch (e) {
+            console.error('AI Status Fetch Error:', e);
             setAIStatus('Disconnected');
         }
     };
@@ -91,7 +107,7 @@ const ArticleEditor = () => {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
                     <h1 style={{ margin: 0 }}>AI Article Editor</h1>
-                    <p style={{ color: '#666', fontSize: '14px' }}>AI Status: <strong>{aiStatus}</strong></p>
+                    <p style={{ color: '#666', fontSize: '14px' }}>AI Status: <strong style={{ color: aiStatus === 'Disconnected' ? 'red' : 'green' }}>{aiStatus}</strong></p>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={handleGenerate} disabled={genLoading} style={{ ...styles.button, backgroundColor: '#8a2be2' }}>

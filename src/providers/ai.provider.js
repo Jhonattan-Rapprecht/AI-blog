@@ -1,8 +1,8 @@
-const AIProvider = {
+class AIProvider {
     async generate(request) {
         throw new Error('Method generate() must be implemented');
     }
-};
+}
 
 class OllamaProvider extends AIProvider {
     async generate({ systemPrompt, userPrompt, temperature = 0.7, maxTokens = 2048, responseFormat = 'json' }) {
@@ -31,7 +31,6 @@ class OllamaProvider extends AIProvider {
 
 class OnlineProvider extends AIProvider {
     async generate(request) {
-        // Implementation for online provider (e.g., OpenAI/Anthropic)
         throw new Error('Online provider not configured');
     }
 }
