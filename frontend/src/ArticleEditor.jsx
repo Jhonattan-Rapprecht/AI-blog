@@ -4,7 +4,6 @@ import { Save, Send, RefreshCcw, FileText, Globe, Tag as TagIcon, Settings, Spar
 import { io } from 'socket.io-client';
 
 const API_BASE = 'http://localhost:3000/api';
-// Added transports: ['websocket'] to avoid polling issues on some Windows systems
 const socket = io('http://localhost:3000', {
     transports: ['websocket', 'polling']
 });
@@ -94,7 +93,22 @@ const ArticleEditor = () => {
         setGenLoading(true);
         try {
             const res = await axios.post(`${API_BASE}/ai/generate-article`, aiConfig);
-            setArticle(res.data.article);
+
+            // Fix: Ensure every field has at least an empty string to prevent "uncontrolled" warnings
+            const normalizedArticle = {
+                title: res.data.article.title || '',
+                slug: res.data.article.slug || '',
+                excerpt: res.data.article.excerpt || '',
+                content: res.data.article.content || '',
+                featured_image: res.data.article.featured_image || '',
+                status: res.data.article.status || 'draft',
+                category_id: res.data.article.category_id || '',
+                seo_title: res.data.article.seo_title || '',
+                seo_description: res.data.article.seo_description || '',
+                seo_keywords: res.data.article.seo_keywords || '',
+            };
+
+            setArticle(normalizedArticle);
             setMessage('AI generated the article and saved it as draft!');
         } catch (err) {
             setMessage('AI Error: ' + err.message);
@@ -123,11 +137,11 @@ const ArticleEditor = () => {
                 <div style={styles.mainForm}>
                     <div style={styles.field}>
                         <label style={styles.label}><FileText size={16} /> Title</label>
-                        <input name="title" value={article.title} onChange={handleChange} style={styles.input} placeholder="Enter article title..." />
+                        <input name="title" value={article.title || ''} onChange={handleChange} style={styles.input} placeholder="Enter article title..." />
                     </div>
                     <div style={styles.field}>
                         <label style={styles.label}>Content</label>
-                        <textarea name="content" value={article.content} onChange={handleChange} style={{ ...styles.input, height: '500px', resize: 'vertical' }} placeholder="Start writing or use AI to generate..." />
+                        <textarea name="content" value={article.content || ''} onChange={handleChange} style={{ ...styles.input, height: '500px', resize: 'vertical' }} placeholder="Start writing or use AI to generate..." />
                     </div>
                 </div>
 
@@ -136,11 +150,11 @@ const ArticleEditor = () => {
                         <h3 style={{ marginTop: 0 }}><LayoutDashboard size={18} /> AI Configuration</h3>
                         <div style={styles.field}>
                             <label style={styles.label}>Topic</label>
-                            <input name="topic" value={aiConfig.topic} onChange={handleAIChange} style={styles.input} placeholder="e.g. Future of AI in Dev" />
+                            <input name="topic" value={aiConfig.topic || ''} onChange={handleAIChange} style={styles.input} placeholder="e.g. Future of AI in Dev" />
                         </div>
                         <div style={styles.field}>
                             <label style={styles.label}>Tone</label>
-                            <select name="tone" value={aiConfig.tone} onChange={handleAIChange} style={styles.input}>
+                            <select name="tone" value={aiConfig.tone || ''} onChange={handleAIChange} style={styles.input}>
                                 <option>Professional</option>
                                 <option>Conversational</option>
                                 <option>Technical</option>
@@ -149,7 +163,7 @@ const ArticleEditor = () => {
                         </div>
                         <div style={styles.field}>
                             <label style={styles.label}>Audience</label>
-                            <input name="targetAudience" value={aiConfig.targetAudience} onChange={handleAIChange} style={styles.input} />
+                            <input name="targetAudience" value={aiConfig.targetAudience || ''} onChange={handleAIChange} style={styles.input} />
                         </div>
                     </div>
 
@@ -157,15 +171,15 @@ const ArticleEditor = () => {
                         <h3 style={{ marginTop: 0 }}><Settings size={18} /> SEO & Metadata</h3>
                         <div style={styles.field}>
                             <label style={styles.label}><Globe size={16} /> Slug</label>
-                            <input name="slug" value={article.slug} onChange={handleChange} style={styles.input} />
+                            <input name="slug" value={article.slug || ''} onChange={handleChange} style={styles.input} />
                         </div>
                         <div style={styles.field}>
                             <label style={styles.label}><TagIcon size={16} /> Category ID</label>
-                            <input name="category_id" value={article.category_id} onChange={handleChange} style={styles.input} />
+                            <input name="category_id" value={article.category_id || ''} onChange={handleChange} style={styles.input} />
                         </div>
                         <div style={styles.field}>
                             <label style={styles.label}>SEO Title</label>
-                            <input name="seo_title" value={article.seo_title} onChange={handleChange} style={styles.input} />
+                            <input name="seo_title" value={article.seo_title || ''} onChange={handleChange} style={styles.input} />
                         </div>
                     </div>
                 </div>

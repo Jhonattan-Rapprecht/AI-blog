@@ -19,18 +19,24 @@ class AIController {
             });
 
             // 2. Persist the generation details for history/debugging
-            await AIGenerationModel.create({
-                article_id: articleId,
-                provider: result.meta.provider,
-                model: result.meta.model,
-                prompt: JSON.stringify(config),
-                response: result.data,
-                status: 'completed'
-            });
+            // Wrapped in try-catch so if history logging fails, the user still gets their article
+            try {
+                await AIGenerationModel.create({
+                    article_id: articleId,
+                    provider: result.meta.provider,
+                    model: result.meta.model,
+                    prompt: JSON.stringify(config),
+                    response: result.data,
+                    status: 'completed'
+                });
+            } catch (historyError) {
+                console.error('Non-critical error logging AI history:', historyError);
+            }
 
             io.emit('ai:generation:completed', { articleId });
 
-            res.json({
+            // Return 200 OK with the data
+            return res.json({
                 articleId,
                 article: result.data
             });
@@ -49,7 +55,7 @@ class AIController {
                 console.error('Failed to log AI error:', logError);
             }
 
-            res.status(500).json({ error: error.message });
+            return res.status(500).json({ error: error.message });
         }
     }
 
