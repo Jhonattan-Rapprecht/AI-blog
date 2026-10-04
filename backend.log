@@ -3,3 +3,16 @@
 Scheduler started: Checking for articles to publish every minute...
 Server running on port 3000 (Listening on 0.0.0.0)
 Client connected: 4lXOz6zRGBuc5R5zAAAA
+Client connected: _T_1OKCuBOl6n-RuAAAB
+Client disconnected: 4lXOz6zRGBuc5R5zAAAA Reason: transport close
+Client connected: 5hpBxnmDatKluTQBAAAC
+Client disconnected: 5hpBxnmDatKluTQBAAAC Reason: transport close
+Client disconnected: _T_1OKCuBOl6n-RuAAAB Reason: transport close
+Client connected: HvYmH2-hHKDMaCB2AAAD
+Client connected: _KKqqSlk5GUrT2aWAAAE
+Client disconnected: _KKqqSlk5GUrT2aWAAAE Reason: transport close
+Client connected: -qCp6ySL6Oojs2SbAAAF
+Client disconnected: -qCp6ySL6Oojs2SbAAAF Reason: transport close
+Client connected: cS-ue2ARk9tV8Q8MAAAG
+Client connected: yKpBUGr1ohC9WGyLAAAH
+Client connected: y9RaSVeqAHQFE5XJAAAI
