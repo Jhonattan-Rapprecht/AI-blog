@@ -29,7 +29,7 @@ The platform implements a sophisticated **Provider Abstraction Layer** to decoup
 ## 🖼️ Gallery
 *(Screenshots will be added here as the project grows)*
 - `frontend-editor.png` - The AI-powered article editor.
-![AI-powered article editor](screenshots/frontend-editor.png)
+  ![AI-powered article editor](screenshots/frontend-editor.png)
 - `admin-dashboard.png` - Real-time AI status and article management.
 - `public-blog.png` - The high-performance public reading experience.
 
