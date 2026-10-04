@@ -1,0 +1,80 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import { listArticles, listCategories, formatDate } from '../lib/api.js';
+
+let articles = [];
+let categories = [];
+try {
+  [{ articles }, categories] = await Promise.all([listArticles({ limit: 7 }), listCategories()]);
+} catch (e) {
+  console.error(e);
+}
+const [featured, ...latest] = articles;
+const topics = categories.filter((c) => c.article_count > 0);
+---
+
+<BaseLayout>
+  <section class="border-b">
+    <div class="mx-auto max-w-5xl px-6 py-20 sm:py-28">
+      <p class="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">AI-assisted publishing</p>
+      <h1 class="max-w-3xl text-4xl font-semibold tracking-tight sm:text-6xl">Ideas worth reading, written at the speed of thought.</h1>
+      <p class="mt-6 max-w-2xl text-lg text-muted-foreground">Articles on technology, business and the world, drafted with AI and refined by people.</p>
+      <div class="mt-8 flex gap-3">
+        <a href="/blog" class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">Read the blog</a>
+        {topics.length > 0 && <a href="#topics" class="rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent">Browse topics</a>}
+      </div>
+    </div>
+  </section>
+
+  {featured ? (
+    <section class="mx-auto max-w-5xl px-6 py-16">
+      <h2 class="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Featured</h2>
+      <a href={`/blog/${featured.slug}`} class="group grid gap-6 rounded-lg border bg-card p-6 transition-colors hover:border-foreground/30 md:grid-cols-2">
+        {featured.featured_image
+          ? <img src={featured.featured_image} alt="" class="aspect-[16/10] w-full rounded-md object-cover" />
+          : <div class="aspect-[16/10] w-full rounded-md bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]" />}
+        <div class="flex flex-col justify-center gap-3">
+          <div class="flex items-center gap-2 text-xs text-muted-foreground">
+            {featured.category_name && <span class="rounded-full border px-2 py-0.5">{featured.category_name}</span>}
+            <time datetime={featured.published_at}>{formatDate(featured.published_at)}</time>
+          </div>
+          <h3 class="text-2xl font-semibold leading-tight group-hover:underline">{featured.title}</h3>
+          {featured.excerpt && <p class="text-muted-foreground">{featured.excerpt}</p>}
+          <span class="text-sm font-medium">Read article →</span>
+        </div>
+      </a>
+
+      {latest.length > 0 && (
+        <>
+          <div class="mb-6 mt-16 flex items-baseline justify-between">
+            <h2 class="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Latest</h2>
+            <a href="/blog" class="text-sm text-muted-foreground hover:text-foreground">View all →</a>
+          </div>
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {latest.map((a) => <ArticleCard article={a} />)}
+          </div>
+        </>
+      )}
+    </section>
+  ) : (
+    <section class="mx-auto max-w-5xl px-6 py-16 text-center text-muted-foreground">
+      No articles have been published yet. Check back soon.
+    </section>
+  )}
+
+  {topics.length > 0 && (
+    <section id="topics" class="border-t">
+      <div class="mx-auto max-w-5xl px-6 py-16">
+        <h2 class="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Topics</h2>
+        <div class="flex flex-wrap gap-2">
+          {topics.map((c) => (
+            <a href={`/category/${c.slug}`} class="rounded-full border px-4 py-1.5 text-sm hover:bg-accent">
+              {c.name} <span class="text-muted-foreground">{c.article_count}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>

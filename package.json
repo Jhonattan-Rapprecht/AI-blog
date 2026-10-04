@@ -6,9 +6,10 @@
   "scripts": {
     "start": "node src/index.js",
     "server": "node src/index.js",
-    "dev": "concurrently -k -n api,web -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev": "concurrently -k -n api,admin,site -c blue,green,magenta \"npm:dev:server\" \"npm:dev:client\" \"npm:dev:site\"",
     "dev:server": "node --watch src/index.js",
     "dev:client": "npm --prefix frontend run dev",
+    "dev:site": "npm --prefix site run dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

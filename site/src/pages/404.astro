@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+Astro.response.status = 404;
+---
+
+<BaseLayout title="Not found">
+  <div class="mx-auto max-w-5xl px-6 py-32 text-center">
+    <p class="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">404</p>
+    <h1 class="mt-4 text-3xl font-semibold tracking-tight">This page doesn't exist.</h1>
+    <a href="/blog" class="mt-8 inline-block rounded-md border px-4 py-2 text-sm hover:bg-accent">Back to the blog</a>
+  </div>
+</BaseLayout>

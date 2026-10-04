@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
@@ -12,10 +12,12 @@ const SchedulerService = require('./services/scheduler.service');
 require('dotenv').config();
 
 const app = express();
+// Admin (Vite) and public site (Astro)
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4321').split(',');
 const server = http.createServer(app);
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -23,7 +25,7 @@ app.use(cors({
 
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:5173',
+        origin: ALLOWED_ORIGINS,
         methods: ['GET', 'POST'],
         credentials: true
     },
@@ -40,6 +42,7 @@ app.use((req, res, next) => {
 app.use('/api/articles', ArticleRoutes);
 app.use('/api/ai', AIRoutes);
 app.use('/blog', PublicRoutes);
+app.use('/api/public', PublicRoutes);
 app.use('/api/articles', PublishingRoutes);
 app.use('/api/automation', AutomationRoutes);
 app.use('/api/categories', CategoryRoutes);

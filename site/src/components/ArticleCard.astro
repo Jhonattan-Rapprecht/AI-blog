@@ -1,0 +1,19 @@
+---
+import { formatDate } from '../lib/api.js';
+
+const { article } = Astro.props;
+---
+
+<a href={`/blog/${article.slug}`} class="group flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-foreground/30">
+  {article.featured_image
+    ? <img src={article.featured_image} alt="" loading="lazy" class="aspect-[16/9] w-full object-cover" />
+    : <div class="aspect-[16/9] w-full bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]" />}
+  <div class="flex flex-1 flex-col gap-2 p-5">
+    <div class="flex items-center gap-2 text-xs text-muted-foreground">
+      {article.category_name && <span class="rounded-full border px-2 py-0.5">{article.category_name}</span>}
+      <time datetime={article.published_at}>{formatDate(article.published_at)}</time>
+    </div>
+    <h3 class="font-semibold leading-snug group-hover:underline">{article.title}</h3>
+    {article.excerpt && <p class="line-clamp-3 text-sm text-muted-foreground">{article.excerpt}</p>}
+  </div>
+</a>

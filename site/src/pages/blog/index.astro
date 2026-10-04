@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import Pagination from '../../components/Pagination.astro';
+import { listArticles, listCategories } from '../../lib/api.js';
+
+const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10) || 1);
+const q = (Astro.url.searchParams.get('q') || '').trim();
+
+let result = { articles: [], total: 0, pages: 1 };
+let categories = [];
+let failed = false;
+try {
+  [result, categories] = await Promise.all([listArticles({ page, q }), listCategories()]);
+} catch (e) {
+  console.error(e);
+  failed = true;
+}
+const topics = categories.filter((c) => c.article_count > 0);
+---
+
+<BaseLayout title="Blog" description="All published articles.">
+  <div class="mx-auto grid max-w-5xl gap-8 px-6 py-12">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-semibold tracking-tight">Blog</h1>
+        <p class="mt-1 text-sm text-muted-foreground">{result.total} {result.total === 1 ? 'article' : 'articles'}{q && <> matching “{q}”</>}</p>
+      </div>
+      <form method="get" action="/blog" role="search">
+        <input name="q" value={q} placeholder="Search articles..." class="h-9 w-64 rounded-md border bg-transparent px-3 text-sm outline-none focus:border-foreground/40" />
+      </form>
+    </div>
+
+    {topics.length > 0 && (
+      <div class="flex flex-wrap gap-2">
+        <a href="/blog" class="rounded-full border bg-primary px-3 py-1 text-xs text-primary-foreground">All</a>
+        {topics.map((c) => <a href={`/category/${c.slug}`} class="rounded-full border px-3 py-1 text-xs hover:bg-accent">{c.name}</a>)}
+      </div>
+    )}
+
+    {failed && <p class="rounded-md border p-6 text-sm text-muted-foreground">The blog is temporarily unavailable.</p>}
+    {!failed && result.articles.length === 0 && <p class="rounded-md border p-6 text-sm text-muted-foreground">No articles found.</p>}
+
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {result.articles.map((a) => <ArticleCard article={a} />)}
+    </div>
+
+    <Pagination page={page} pages={result.pages} base="/blog" query={q ? `q=${encodeURIComponent(q)}` : ''} />
+  </div>
+</BaseLayout>

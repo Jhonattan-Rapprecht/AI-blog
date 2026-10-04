@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { getArticle, formatDate, readingTime } from '../../lib/api.js';
+
+const article = await getArticle(Astro.params.slug);
+if (!article) return Astro.rewrite('/404');
+---
+
+<BaseLayout
+  title={article.seo_title || article.title}
+  description={article.seo_description || article.excerpt || undefined}
+  image={article.featured_image || undefined}
+  type="article"
+>
+  <article class="mx-auto max-w-3xl px-6 py-12">
+    <a href="/blog" class="text-sm text-muted-foreground hover:text-foreground">← All articles</a>
+    <header class="mt-8 border-b pb-8">
+      <div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        {article.category_slug && <a href={`/category/${article.category_slug}`} class="rounded-full border px-2 py-0.5 hover:text-foreground">{article.category_name}</a>}
+        <time datetime={article.published_at}>{formatDate(article.published_at)}</time>
+        <span>·</span>
+        <span>{readingTime(article.content)} min read</span>
+      </div>
+      <h1 class="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">{article.title}</h1>
+      {article.excerpt && <p class="mt-4 text-lg text-muted-foreground">{article.excerpt}</p>}
+    </header>
+
+    {article.featured_image && <img src={article.featured_image} alt="" class="mt-8 w-full rounded-lg border" />}
+
+    <div class="prose prose-article mt-8 max-w-none" set:html={article.content} />
+  </article>
+
+  {article.related?.length > 0 && (
+    <section class="border-t">
+      <div class="mx-auto max-w-5xl px-6 py-12">
+        <h2 class="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Keep reading</h2>
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {article.related.map((a) => <ArticleCard article={a} />)}
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>

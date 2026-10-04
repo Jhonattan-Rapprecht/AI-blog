@@ -39,7 +39,7 @@ class ArticleModel {
             seo_title ?? null,
             seo_description ?? null,
             seo_keywords ?? null,
-            published_at ?? null,
+            published_at ?? (status === 'published' ? new Date() : null),
             scheduled_at ?? null
         ]);
 
@@ -90,6 +90,11 @@ class ArticleModel {
         }
 
         if (fields.length === 0) return null;
+
+        // Publishing from the editor stamps the publish date once, so the article appears on the public site
+        if (data.status === 'published' && !data.published_at) {
+            fields.push('published_at = COALESCE(published_at, CURRENT_TIMESTAMP)');
+        }
 
         params.push(id);
         const sql = `UPDATE articles SET ${fields.join(', ')} WHERE id = ?`;

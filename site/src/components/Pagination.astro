@@ -1,0 +1,12 @@
+---
+const { page, pages, base, query = '' } = Astro.props;
+const href = (p) => `${base}${p > 1 ? `?page=${p}` : ''}${query ? `${p > 1 ? '&' : '?'}${query}` : ''}`;
+---
+
+{pages > 1 && (
+  <nav class="flex items-center justify-between border-t pt-6 text-sm" aria-label="Pagination">
+    {page > 1 ? <a href={href(page - 1)} class="rounded-md border px-3 py-1.5 hover:bg-accent">← Newer</a> : <span />}
+    <span class="text-muted-foreground">Page {page} of {pages}</span>
+    {page < pages ? <a href={href(page + 1)} class="rounded-md border px-3 py-1.5 hover:bg-accent">Older →</a> : <span />}
+  </nav>
+)}
