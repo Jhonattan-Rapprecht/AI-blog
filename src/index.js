@@ -7,13 +7,13 @@ const AIRoutes = require('./routes/ai.routes');
 const PublicRoutes = require('./routes/public.routes');
 const PublishingRoutes = require('./routes/publishing.routes');
 const AutomationRoutes = require('./routes/automation.routes');
+const CategoryRoutes = require('./routes/category.routes');
 const SchedulerService = require('./services/scheduler.service');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
 
-// 1. Strong CORS configuration for REST
 app.use(cors({
     origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -21,14 +21,13 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// 2. Socket.IO configuration with explicit CORS and transports
 const io = new Server(server, {
     cors: {
         origin: 'http://localhost:5173',
         methods: ['GET', 'POST'],
         credentials: true
     },
-    allowEIO3: true // Support older client versions if necessary
+    allowEIO3: true
 });
 
 app.use(express.json());
@@ -43,6 +42,7 @@ app.use('/api/ai', AIRoutes);
 app.use('/blog', PublicRoutes);
 app.use('/api/articles', PublishingRoutes);
 app.use('/api/automation', AutomationRoutes);
+app.use('/api/categories', CategoryRoutes);
 
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);

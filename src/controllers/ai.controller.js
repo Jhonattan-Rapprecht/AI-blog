@@ -12,14 +12,11 @@ class AIController {
 
             const result = await AIService.generateArticle(config);
 
-            // 1. Create the article in review status
             const articleId = await ArticleModel.create({
                 ...result.data,
                 status: 'review'
             });
 
-            // 2. Persist the generation details for history/debugging
-            // Wrapped in try-catch so if history logging fails, the user still gets their article
             try {
                 await AIGenerationModel.create({
                     article_id: articleId,
@@ -35,13 +32,11 @@ class AIController {
 
             io.emit('ai:generation:completed', { articleId });
 
-            // Return 200 OK with the data
             return res.json({
                 articleId,
                 article: result.data
             });
         } catch (error) {
-            // Log failure in history
             try {
                 await AIGenerationModel.create({
                     provider: process.env.AI_PROVIDER,
@@ -56,6 +51,40 @@ class AIController {
             }
 
             return res.status(500).json({ error: error.message });
+        }
+    }
+
+    async suggestSlug(req, res) {
+        try {
+            const { title } = req.body;
+            if (!title) return res.status(400).json({ error: 'Title is required' });
+
+            const provider = require('../providers/ai.provider').ProviderFactory.getProvider();
+
+            const systemPrompt = 'You are a URL slug generator. Return ONLY a JSON array of 3 short, SEO-friendly, lowercase, hyphenated slugs based on the title provided. No other text.';
+            const userPrompt = `Title: ${title}`;
+
+            const result = await provider.generate({
+                systemPrompt,
+                userPrompt,
+                responseFormat: 'json'
+            });
+
+            let content = result.content.trim();
+            if (content.startsWith('```json')) {
+                content = content.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+            } else if (content.startsWith('```')) {
+                content = content.replace(/^```\n?/, '').replace(/\n?```$/, '');
+            }
+
+            const slugs = JSON.parse(content);
+            const slugArray = Array.isArray(slugs) ? slugs : (slugs.slugs || []);
+
+            res.json({ suggestions: slugArray.slice(0, 3) });
+        } catch (error) {
+            const { title } = req.body;
+            const fallback = (title || '').toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+            res.json({ suggestions: [fallback, `${fallback}-guide`, `${fallback}-tips`] });
         }
     }
 
