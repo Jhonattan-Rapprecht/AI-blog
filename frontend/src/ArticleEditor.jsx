@@ -135,6 +135,7 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
             const res = await axios.post(`${API_BASE}/ai/suggest-topic`);
             const list = Array.isArray(res.data.suggestions) ? res.data.suggestions : [];
             setTopicSuggestions(list.filter(t => typeof t === 'string' && t));
+            if (list.length === 0) setMessage('No new topics found. Try again later.');
         } catch (e) {
             setMessage('Topic suggestion failed: ' + e.message);
         }

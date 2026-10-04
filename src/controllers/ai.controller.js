@@ -1,6 +1,7 @@
 const AIService = require('../services/ai.service');
 const ArticleModel = require('../models/article.model');
 const AIGenerationModel = require('../models/ai.generation.model');
+const TopicHistoryModel = require('../models/topic.history.model');
 
 const toText = (item) => {
     if (typeof item === 'string') return item.trim();
@@ -21,6 +22,7 @@ class AIController {
             const { io } = req;
 
             io.emit('ai:generation:started', { topic: config.topic });
+            TopicHistoryModel.record(config.topic, 'generated').catch((e) => console.error('[Topic History]', e.message));
 
             const result = await AIService.generateArticle(config);
 
@@ -101,31 +103,62 @@ class AIController {
     }
 
     async suggestTopic(req, res) {
+        const WANTED = 3;
+        const MAX_ATTEMPTS = 4;
+        const PROMPT_HISTORY = 40;
         try {
             const provider = require('../providers/ai.provider').ProviderFactory.getProvider();
+            const used = await TopicHistoryModel.findAllUsed();
+            const fresh = [];
+            const angles = ['practical how-to guides', 'industry trends', 'beginner-friendly explainers', 'case studies', 'opinion and analysis', 'tools and productivity'];
 
-            const systemPrompt = 'You are a creative content strategist. Return ONLY a JSON array of 3 high-performing, trending, and engaging article topics. No other text.';
-            const userPrompt = 'Suggest 3 trending topics for a high-performance AI-powered blog.';
+            for (let attempt = 0; attempt < MAX_ATTEMPTS && fresh.length < WANTED; attempt++) {
+                const avoid = [...fresh, ...used].slice(0, PROMPT_HISTORY);
+                const systemPrompt = `You are a creative content strategist. Return ONLY a JSON array of ${WANTED} high-performing, trending, and engaging article topics, each a plain string. No other text.`;
+                const userPrompt = `Suggest ${WANTED} trending topics for a high-performance AI-powered blog. Focus on ${angles[(attempt + used.length) % angles.length]}.` +
+                    (avoid.length
+                        ? `\nDo NOT repeat or closely paraphrase any of these previously used topics:\n${avoid.map((t) => `- ${t}`).join('\n')}`
+                        : '');
 
-            const result = await provider.generate({
-                systemPrompt,
-                userPrompt,
-                responseFormat: 'json'
-            });
+                let result;
+                try {
+                    result = await provider.generate({
+                        systemPrompt,
+                        userPrompt,
+                        temperature: Math.min(0.7 + attempt * 0.15, 1.1),
+                        responseFormat: 'json'
+                    });
+                } catch (err) {
+                    if (attempt === MAX_ATTEMPTS - 1) throw err;
+                    continue;
+                }
 
-            let content = result.content.trim();
-            if (content.startsWith('```json')) {
-                content = content.replace(/^```json\n?/, '').replace(/\n?```$/, '');
-            } else if (content.startsWith('```')) {
-                content = content.replace(/^```\n?/, '').replace(/\n?```$/, '');
+                let content = result.content.trim();
+                if (content.startsWith('```json')) {
+                    content = content.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+                } else if (content.startsWith('```')) {
+                    content = content.replace(/^```\n?/, '').replace(/\n?```$/, '');
+                }
+
+                let candidates = [];
+                try {
+                    const topics = JSON.parse(content);
+                    candidates = toTextList(Array.isArray(topics) ? topics : (topics.topics || topics.suggestions || []), 10);
+                } catch {
+                    continue;
+                }
+
+                for (const topic of candidates) {
+                    if (fresh.length >= WANTED) break;
+                    if (!TopicHistoryModel.isDuplicate(topic, [...used, ...fresh])) fresh.push(topic);
+                }
             }
 
-            const topics = JSON.parse(content);
-            const topicArray = Array.isArray(topics) ? topics : (topics.topics || []);
-
-            res.json({ suggestions: toTextList(topicArray) });
+            await TopicHistoryModel.recordMany(fresh, 'suggested');
+            res.json({ suggestions: fresh });
         } catch (error) {
-            res.json({ suggestions: ['The Future of AI in Software Engineering', 'Mastering LLMs for Productivity', 'AI Agents: The Next Frontier of Automation'] });
+            console.error('[AI Controller] suggestTopic failed:', error.message);
+            res.status(502).json({ error: 'Could not generate topic suggestions' });
         }
     }
 

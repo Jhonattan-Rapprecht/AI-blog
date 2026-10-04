@@ -59,6 +59,17 @@ CREATE TABLE IF NOT EXISTS ai_generations (
     FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE SET NULL
 );
 
+-- Topic History Table (also created lazily by topic.history.model.js)
+CREATE TABLE IF NOT EXISTS topic_history (
+    id CHAR(36) PRIMARY KEY,
+    topic VARCHAR(500) NOT NULL,
+    normalized VARCHAR(500) NOT NULL,
+    source ENUM('suggested', 'generated') NOT NULL DEFAULT 'suggested',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_topic_normalized (normalized(191)),
+    INDEX idx_topic_created (created_at)
+);
+
 -- Performance Indexes
 CREATE INDEX idx_articles_slug ON articles(slug);
 CREATE INDEX idx_articles_status ON articles(status);
