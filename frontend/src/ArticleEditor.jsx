@@ -267,11 +267,10 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
             </div>
 
             {/* MAIN CONTENT AREA */}
-            <div style={{ marginLeft: isSidebarOpen ? '320px' : '60px', transition: 'margin 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+            <div style={{ marginLeft: '60px' }}>
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                     <div style={{ color: themeColors.text }}>
-                        <h1 style={{ margin: 0 }}>AI Article Editor</h1>
-                        <p style={{ color: themeColors.subtext, fontSize: '14px' }}>Drafting your next masterpiece...</p>
+                        <h1 style={{ margin: 0, color: themeColors.text }}>AI Article Editor</h1>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={handleGenerate} disabled={genLoading} style={{ ...styles.button, backgroundColor: '#8a2be2', color: 'white' }}>
