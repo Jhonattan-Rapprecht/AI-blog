@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import { Save, Send, RefreshCcw, FileText, Globe, Tag as TagIcon, Settings, Sparkles, LayoutDashboard, Plus, X, ChevronRight, ChevronLeft, Activity, Moon, Sun } from 'lucide-react';
+import { Save, FileText, Globe, Tag as TagIcon, Settings, Sparkles, LayoutDashboard, Plus, X, ChevronRight, ChevronLeft, Activity, Moon, Sun, Trash2 } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 const API_BASE = 'http://localhost:3000/api';
@@ -36,41 +36,11 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
     const [newAudience, setNewAudience] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-    useEffect(() => {
-        socket.on('connect', () => {
-            fetchAIStatus();
-            fetchCategories();
-        });
-        socket.on('connect_error', (err) => {
-            setAIStatus('Disconnected (Socket Error)');
-        });
-        socket.on('ai:generation:started', (data) => {
-            setMessage(`AI is generating article about: ${data.topic}...`);
-        });
-        socket.on('ai:generation:completed', (data) => {
-            setGenLoading(false);
-            setMessage(`AI Generation complete! Article ID: ${data.articleId}`);
-        });
-        socket.on('ai:generation:failed', (data) => {
-            setGenLoading(false);
-            setMessage(`AI Generation failed: ${data.error}`);
-        });
-        fetchAIStatus();
-        fetchCategories();
-        return () => {
-            socket.off('connect');
-            socket.off('connect_error');
-            socket.off('ai:generation:started');
-            socket.off('ai:generation:completed');
-            socket.off('ai:generation:failed');
-        };
-    }, []);
-
     const fetchAIStatus = async () => {
         try {
             const res = await axios.get(`${API_BASE}/ai/status`);
             setAIStatus(`${res.data.provider} (${res.data.model}) - ${res.data.status}`);
-        } catch (e) {
+        } catch {
             setAIStatus('Disconnected');
         }
     };
@@ -84,6 +54,39 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
         }
     };
 
+    useEffect(() => {
+        socket.on('connect', () => {
+            fetchAIStatus();
+            fetchCategories();
+        });
+        socket.on('connect_error', () => {
+            setAIStatus('Disconnected (Socket Error)');
+        });
+        socket.on('ai:generation:started', (data) => {
+            setMessage(`AI is generating article about: ${data.topic}...`);
+        });
+        socket.on('ai:generation:completed', (data) => {
+            setGenLoading(false);
+            setMessage(`AI Generation complete! Article ID: ${data.articleId}`);
+        });
+        socket.on('ai:generation:failed', (data) => {
+            setGenLoading(false);
+            setMessage(`AI Generation failed: ${data.error}`);
+        });
+        const loadInitialData = async () => {
+            await fetchAIStatus();
+            await fetchCategories();
+        };
+        loadInitialData();
+        return () => {
+            socket.off('connect');
+            socket.off('connect_error');
+            socket.off('ai:generation:started');
+            socket.off('ai:generation:completed');
+            socket.off('ai:generation:failed');
+        };
+    }, []);
+
     const handleAddCategory = async () => {
         if (!newCatName) return;
         try {
@@ -93,6 +96,18 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
             setIsAddingCategory(false);
         } catch (e) {
             setMessage('Error adding category: ' + e.message);
+        }
+    };
+
+    const handleDeleteCategory = async () => {
+        const cat = categories.find(c => String(c.id) === String(article.category_id));
+        if (!cat || !window.confirm(`Delete category "${cat.name}"?`)) return;
+        try {
+            await axios.delete(`${API_BASE}/categories/${cat.id}`);
+            setArticle(prev => ({ ...prev, category_id: '' }));
+            await fetchCategories();
+        } catch (e) {
+            setMessage('Error deleting category: ' + e.message);
         }
     };
 
@@ -269,11 +284,10 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
             </div>
 
             {/* MAIN CONTENT AREA */}
-            <div style={{ marginLeft: isSidebarOpen ? '320px' : '60px', transition: 'margin 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+            <div style={{ marginLeft: '60px' }}>
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                     <div style={{ color: themeColors.text }}>
-                        <h1 style={{ margin: 0 }}>AI Article Editor</h1>
-                        <p style={{ color: themeColors.subtext, fontSize: '14px' }}>Drafting your next masterpiece...</p>
+                        <h1 style={{ margin: 0, color: themeColors.text }}>AI Article Editor</h1>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={handleGenerate} disabled={genLoading} style={{ ...styles.button, backgroundColor: '#8a2be2', color: 'white' }}>
@@ -293,12 +307,19 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
                         </div>
                         <div style={styles.field}>
                             <label style={{ ...styles.label, color: themeColors.subtext }}>Content</label>
-                            <div style={{ ...styles.input, backgroundColor: themeColors.inputBg, color: themeColors.inputText, borderColor: themeColors.border }}>
+                            <style>{`
+                                .editor-quill .ql-toolbar, .editor-quill .ql-container { border-color: ${themeColors.border}; }
+                                .editor-quill .ql-container { height: 450px; background: ${themeColors.inputBg}; color: ${themeColors.inputText}; }
+                                .editor-quill .ql-editor.ql-blank::before { color: ${themeColors.subtext}; }
+                                .editor-quill .ql-stroke { stroke: ${themeColors.inputText}; }
+                                .editor-quill .ql-fill { fill: ${themeColors.inputText}; }
+                                .editor-quill .ql-picker { color: ${themeColors.inputText}; }
+                            `}</style>
+                            <div className="editor-quill">
                                 <ReactQuill
                                     theme="snow"
                                     value={article.content || ''}
                                     onChange={handleContentChange}
-                                    style={{ height: '500px', color: themeColors.inputText }}
                                 />
                             </div>
                         </div>
@@ -363,7 +384,8 @@ const ArticleEditor = ({ theme, toggleTheme }) => {
                                         <option value="">Select Category</option>
                                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
-                                    <button onClick={() => setIsAddingCategory(true)} style={styles.iconButton}><Plus size={18} /></button>
+                                    <button onClick={() => setIsAddingCategory(true)} style={styles.iconButton} title="Add category"><Plus size={18} /></button>
+                                    <button onClick={handleDeleteCategory} disabled={!article.category_id} style={{ ...styles.iconButton, opacity: article.category_id ? 1 : 0.4 }} title="Delete selected category"><Trash2 size={18} /></button>
                                 </div>
                                 {isAddingCategory && (
                                     <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>

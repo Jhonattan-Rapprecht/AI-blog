@@ -11,8 +11,13 @@ class CategoryModel {
         const { name, slug, description } = data;
         const id = uuidv4();
         const sql = 'INSERT INTO categories (id, name, slug, description) VALUES (?, ?, ?, ?)';
-        await db.query(sql, [id, name, slug, description]);
+        await db.query(sql, [id, name, slug, description ?? null]);
         return id;
+    }
+
+    async delete(id) {
+        const result = await db.query('DELETE FROM categories WHERE id = ?', [id]);
+        return result.affectedRows > 0;
     }
 }
 

@@ -24,6 +24,16 @@ class CategoryController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    async delete(req, res) {
+        try {
+            const deleted = await CategoryModel.delete(req.params.id);
+            if (!deleted) return res.status(404).json({ error: 'Category not found' });
+            res.status(204).end();
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new CategoryController();
