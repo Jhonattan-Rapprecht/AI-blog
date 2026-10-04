@@ -3,3 +3,6 @@
 Scheduler started: Checking for articles to publish every minute...
 Server running on port 3000 (Listening on 0.0.0.0)
 Client connected: YKt8IL4Myt8p0fpPAAAA
+Client disconnected: YKt8IL4Myt8p0fpPAAAA Reason: transport close
+Client connected: 0UacIAXA-yPGeCJgAAAB
+[AI Service] Requesting generation for topic: Mathematic's Origins - mini-course - part 1
