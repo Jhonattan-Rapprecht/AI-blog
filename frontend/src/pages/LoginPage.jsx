@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from './components/ui/button';
-import { Input } from './components/ui/input';
-import { Label } from './components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { api } from '@/api/client';
 
 const LoginPage = () => {
     const [username, setUsername] = useState('');
@@ -18,23 +19,13 @@ const LoginPage = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:3000/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                localStorage.setItem('adminToken', data.token);
-                localStorage.setItem('adminUser', data.username);
-                navigate('/admin');
-            } else {
-                setError(data.message || 'Invalid credentials');
-            }
+            const data = await api.login(username, password);
+            localStorage.setItem('adminToken', data.token);
+            localStorage.setItem('adminUser', data.username);
+            navigate('/', { replace: true });
         } catch (err) {
-            setError('Could not connect to server. Is the backend running?');
+            if (err.response) setError(err.response.data?.message || 'Invalid credentials');
+            else setError('Could not connect to server. Is the backend running?');
         } finally {
             setIsLoading(false);
         }

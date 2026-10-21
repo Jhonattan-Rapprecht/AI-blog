@@ -19,9 +19,10 @@ For a user-facing walkthrough with screenshots, see [Pages Guide](../user/pages-
 | `/` | `pages/EditorPage.jsx` | New article: editor, AI generation, publishing, SEO metadata |
 | `/articles` | `pages/ArticlesPage.jsx` | Table of all articles (any status) with open/delete actions |
 | `/articles/:id` | `pages/EditorPage.jsx` | Edit an existing article (`PUT` on save instead of `POST`) |
-| `/dev/components` | `pages/dev/ComponentsPage.tsx` | **Dev only.** Preview HTML/CSS files from `src/component-previews/`, view source, copy, convert to JSX. Left out of production builds. |
+| `/dev/components` | `pages/dev/ComponentsPage.tsx` | **Dev only.** Preview HTML/CSS files from `src/component-previews/`, view source, copy, convert to JSX. **New component** pastes a snippet and saves it to that folder. Left out of production builds. |
+| `/login` | `pages/LoginPage.jsx` | Admin login (`ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`); public route |
 
-All routes are wrapped in `components/layout/AppShell.jsx` (sidebar, header, theme toggle, AI status).
+All other routes require a login (`components/ProtectedRoute.jsx`) and are wrapped in `components/layout/AppShell.jsx` (sidebar, header, theme toggle, AI status).
 
 | Screen | Screenshot |
 |--------|------------|
@@ -59,7 +60,15 @@ Category slugs: `business`, `entertainment`, `finance`, `geopolitics`, `health`,
 
 ## API — `http://localhost:3000`
 
+### Auth
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/auth/login` | Body `{ username, password }`; returns `{ token, username }` (JWT, 24h) |
+
 ### Admin endpoints
+
+All admin endpoints (including article publish/schedule and `/api/automation`) require an `Authorization: Bearer <token>` header and return 401 otherwise.
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|

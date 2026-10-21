@@ -1,8 +1,10 @@
-import { useMemo, useState, useSyncExternalStore } from 'react'
+import { useMemo, useState, useSyncExternalStore, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
-import { Code2, Copy } from 'lucide-react'
+import { Code2, Copy, Plus } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { PrimaryButton } from '@/components/core'
 import { previews, type ComponentPreview } from '@/lib/component-previews'
@@ -47,8 +49,53 @@ function PreviewFrame({ preview, theme }: { preview: ComponentPreview; theme: st
   return <iframe title={preview.name} sandbox="" srcDoc={srcDoc} className="block h-[480px] w-full resize-y bg-card" />
 }
 
+const toSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+
+function NewComponentForm({ onSaved, onCancel }: { onSaved: (slug: string) => void; onCancel: () => void }) {
+  const [name, setName] = useState('')
+  const [html, setHtml] = useState('')
+  const [css, setCss] = useState('')
+  const [saving, setSaving] = useState(false)
+  const slug = toSlug(name)
+
+  const save = async () => {
+    if (!slug) return toast.error('Enter a name')
+    if (!html.trim()) return toast.error('Paste some HTML')
+    setSaving(true)
+    try {
+      const res = await fetch('/__component-previews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, html, css }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || `Save failed (${res.status})`)
+      toast.success(`Saved ${data.slug}`)
+      onSaved(data.slug)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card className="gap-3 p-4">
+      <Input type="text" className="" value={name} onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)} placeholder="Component name, e.g. Pricing card" autoFocus />
+      {name && <p className="-mt-1 text-xs text-muted-foreground">Saved as <code>{slug || 'â€¦'}.html</code></p>}
+      <Textarea value={html} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setHtml(e.target.value)} placeholder="Paste HTML" rows={8} className="font-mono text-xs" />
+      <Textarea value={css} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setCss(e.target.value)} placeholder="Paste CSS (optional)" rows={5} className="font-mono text-xs" />
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button onClick={save} disabled={saving}>{saving ? 'Savingâ€¦' : 'Save component'}</Button>
+      </div>
+    </Card>
+  )
+}
+
 export default function ComponentsPage() {
   const theme = useDocumentTheme()
+  const [adding, setAdding] = useState(false)
   const [selected, setSlug] = useState(previews[0]?.slug)
   const [activeTab, setTab] = useState<Tab>('preview')
   // Fall back gracefully when a preview file is removed while selected (HMR).
@@ -73,12 +120,21 @@ export default function ComponentsPage() {
       <div className="grid content-start gap-4">
         <div className="flex h-9 items-center justify-between">
           <h2 className="text-lg font-semibold">Components</h2>
-          <span className="text-xs text-muted-foreground">{previews.length} {previews.length === 1 ? 'file' : 'files'}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">{previews.length} {previews.length === 1 ? 'file' : 'files'}</span>
+            <Button size="sm" onClick={() => setAdding((v) => !v)}><Plus /> New component</Button>
+          </div>
         </div>
+        {adding && (
+          <NewComponentForm
+            onCancel={() => setAdding(false)}
+            onSaved={(s) => { setSlug(s); setTab('preview'); setAdding(false) }}
+          />
+        )}
         <Card className="gap-0 overflow-hidden py-0">
           {previews.length === 0 ? (
             <p className="p-8 text-center text-sm text-muted-foreground">
-              Add an <code>.html</code> file to <code>src/component-previews/</code>.
+              Click <strong>New component</strong> to paste your first snippet.
             </p>
           ) : (
             <table className="w-full text-sm">

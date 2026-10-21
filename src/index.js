@@ -43,13 +43,16 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/api/articles', ArticleRoutes);
-app.use('/api/ai', AIRoutes);
+// Public (read-only) routes
 app.use('/blog', PublicRoutes);
 app.use('/api/public', PublicRoutes);
-app.use('/api/articles', PublishingRoutes);
-app.use('/api/automation', AutomationRoutes);
-app.use('/api/categories', CategoryRoutes);
+
+// Admin routes require a valid JWT
+app.use('/api/articles', authMiddleware, ArticleRoutes);
+app.use('/api/ai', authMiddleware, AIRoutes);
+app.use('/api/articles', authMiddleware, PublishingRoutes);
+app.use('/api/automation', authMiddleware, AutomationRoutes);
+app.use('/api/categories', authMiddleware, CategoryRoutes);
 
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
