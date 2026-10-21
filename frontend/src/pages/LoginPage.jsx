@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/api/client';
+import { useTheme } from '@/hooks/use-theme';
+import { Moon, Sun } from 'lucide-react';
 
 const LoginPage = () => {
     const [username, setUsername] = useState('');
@@ -12,6 +14,7 @@ const LoginPage = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { theme, toggle } = useTheme();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -32,7 +35,10 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
+            <Button variant="ghost" size="icon" className="absolute right-4 top-4" onClick={toggle} aria-label="Toggle theme">
+                {theme === 'dark' ? <Sun /> : <Moon />}
+            </Button>
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
@@ -63,7 +69,7 @@ const LoginPage = () => {
                             />
                         </div>
                         {error && (
-                            <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+                            <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md">
                                 {error}
                             </div>
                         )}
