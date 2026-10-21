@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AppShell from '@/components/layout/AppShell'
 import EditorPage from '@/pages/EditorPage'
 import ArticlesPage from '@/pages/ArticlesPage'
+import LoginPage from '@/pages/LoginPage'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 // Dev-only tooling; excluded from production builds.
 const ComponentsPage = import.meta.env.DEV ? lazy(() => import('@/pages/dev/ComponentsPage')) : null
@@ -11,7 +13,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<AppShell />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
           <Route index element={<EditorPage />} />
           <Route path="articles/:id" element={<EditorPage />} />
           <Route path="articles" element={<ArticlesPage />} />

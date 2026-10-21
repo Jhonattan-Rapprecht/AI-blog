@@ -2,12 +2,14 @@
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const AuthRoutes = require('./routes/auth.routes');
 const ArticleRoutes = require('./routes/article.routes');
 const AIRoutes = require('./routes/ai.routes');
 const PublicRoutes = require('./routes/public.routes');
 const PublishingRoutes = require('./routes/publishing.routes');
 const AutomationRoutes = require('./routes/automation.routes');
 const CategoryRoutes = require('./routes/category.routes');
+const authMiddleware = require('./middleware/auth.middleware');
 const SchedulerService = require('./services/scheduler.service');
 require('dotenv').config();
 
@@ -33,6 +35,8 @@ const io = new Server(server, {
 });
 
 app.use(express.json());
+
+app.use('/api/auth', AuthRoutes);
 
 app.use((req, res, next) => {
     req.io = io;
