@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
 import { api, errorMessage } from '@/api/client'
@@ -14,11 +14,22 @@ const tone = {
 
 export default function ArticlesPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [articles, setArticles] = useState(null)
+  const [highlightedId, setHighlightedId] = useState(() => location.state?.highlightArticleId || null)
 
   useEffect(() => {
     api.articles().then(setArticles).catch((e) => { toast.error(errorMessage(e)); setArticles([]) })
   }, [])
+
+  useEffect(() => {
+    if (!articles || !highlightedId) return
+    const row = document.getElementById(`article-${highlightedId}`)
+    if (!row) return
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const timer = window.setTimeout(() => setHighlightedId(null), 8000)
+    return () => window.clearTimeout(timer)
+  }, [articles, highlightedId])
 
   const remove = async (a) => {
     if (!window.confirm(`Delete "${a.title}"?`)) return
@@ -44,8 +55,8 @@ export default function ArticlesPage() {
             </thead>
             <tbody>
               {articles.map((a) => (
-                <tr key={a.id} onClick={() => navigate(`/articles/${a.id}`)} className="cursor-pointer border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-4 py-3"><div className="font-medium">{a.title}</div><div className="text-xs text-muted-foreground">/{a.slug}</div></td>
+                <tr id={`article-${a.id}`} key={a.id} onClick={() => navigate(`/articles/${a.id}`)} className={`cursor-pointer border-b last:border-0 transition-colors duration-300 hover:bg-muted/40 ${highlightedId === a.id ? 'bg-primary/10 ring-1 ring-inset ring-primary/40' : ''}`}>
+                  <td className="px-4 py-3"><div className="flex flex-wrap items-center gap-2 font-medium">{a.title}{highlightedId === a.id && <Badge variant="secondary">Just created</Badge>}</div><div className="text-xs text-muted-foreground">/{a.slug}</div></td>
                   <td className="px-4 py-3"><Badge variant={tone[a.status] || 'outline'} className="capitalize">{a.status}</Badge></td>
                   <td className="px-4 py-3 text-muted-foreground">{a.created_at ? new Date(a.created_at).toLocaleDateString() : ''}</td>
                   <td className="px-2"><Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); remove(a) }} title="Delete"><Trash2 /></Button></td>

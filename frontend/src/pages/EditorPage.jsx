@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
 import { toast } from 'sonner'
-import { Loader2, Plus, Save, Sparkles, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Loader2, Plus, Save, Sparkles, Trash2, X } from 'lucide-react'
 import { api, errorMessage, socket } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -63,9 +63,14 @@ export default function EditorPage() {
   const [newCategory, setNewCategory] = useState(null)
   const [newAudience, setNewAudience] = useState(null)
   const generatingRef = useRef(false)
+  const selectedCategory = categories.find((category) => String(category.id) === String(article.category_id))
 
   const set = (name) => (e) => setArticle((a) => ({ ...a, [name]: e.target.value }))
   const setAI = (name) => (e) => setAi((a) => ({ ...a, [name]: e.target.value }))
+  const setCategory = (e) => {
+    setArticle((current) => ({ ...current, category_id: e.target.value }))
+    setTopics([])
+  }
 
   const loadCategories = useCallback(
     () => api.categories().then(setCategories).catch((e) => toast.error(errorMessage(e))),
@@ -122,10 +127,8 @@ export default function EditorPage() {
     generatingRef.current = true
     setGenerating(true)
     try {
-      const res = await api.generate(ai)
-      setArticle(pick(res.article))
-      setArticleId(res.articleId)
-      navigate(`/articles/${res.articleId}`, { replace: true })
+      const result = await api.generate(ai)
+      navigate('/articles', { state: { highlightArticleId: result.articleId } })
       toast.success('Article generated and saved for review')
     } catch (e) {
       toast.error(`Generation failed: ${errorMessage(e)}`)
@@ -138,9 +141,9 @@ export default function EditorPage() {
   const suggestTopics = async () => {
     setSuggestingTopics(true)
     try {
-      const list = await api.suggestTopics()
+      const list = await api.suggestTopics(selectedCategory?.name || '')
       setTopics(list)
-      if (!list.length) toast.info('No new topics found, try again')
+      if (!list.length) toast.info('The AI model returned no topics. Try again.')
     } catch (e) { toast.error(errorMessage(e)) }
     finally { setSuggestingTopics(false) }
   }
@@ -186,8 +189,11 @@ export default function EditorPage() {
   return (
     <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1fr_340px]">
       <div className="grid min-w-0 content-start gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">{articleId ? 'Edit article' : 'New article'}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => navigate('/articles')}><ArrowLeft /> Articles overview</Button>
+            <h2 className="text-lg font-semibold">{articleId ? 'Edit article' : 'New article'}</h2>
+          </div>
           <Button onClick={save} disabled={saving}>
             {saving ? <Loader2 className="animate-spin" /> : <Save />} {articleId ? 'Save changes' : 'Save draft'}
           </Button>
@@ -209,7 +215,7 @@ export default function EditorPage() {
             </Field>
             <Field label="Category">
               <div className="flex gap-1.5">
-                <NativeSelect value={article.category_id ?? ''} onChange={set('category_id')}>
+                <NativeSelect value={article.category_id ?? ''} onChange={setCategory}>
                   <option value="">No category</option>
                   {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </NativeSelect>
@@ -230,7 +236,10 @@ export default function EditorPage() {
         <Card className="gap-4 py-4">
           <CardHeader className="px-4"><CardTitle className="flex items-center gap-2 text-sm"><Sparkles className="size-4" /> AI generation</CardTitle></CardHeader>
           <CardContent className="grid gap-3 px-4">
-            <Field label="Topic" hint={<Suggestions items={topics} onPick={(t) => setAi((a) => ({ ...a, topic: t }))} />}>
+            <Field label="Topic" hint={<>
+              <p className="text-xs text-muted-foreground">{selectedCategory ? `Suggestions based on ${selectedCategory.name}.` : 'Choose a category to focus suggestions, or leave it empty for varied topics.'}</p>
+              <Suggestions items={topics} onPick={(t) => setAi((a) => ({ ...a, topic: t }))} />
+            </>}>
               <div className="flex gap-1.5">
                 <Input value={ai.topic} onChange={setAI('topic')} placeholder="e.g. Future of AI in dev" />
                 <Button variant="outline" size="icon" onClick={suggestTopics} disabled={suggestingTopics} title="Suggest topics" aria-label="Suggest topics">

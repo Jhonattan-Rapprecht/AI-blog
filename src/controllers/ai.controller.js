@@ -4,34 +4,6 @@ const AIGenerationModel = require('../models/ai.generation.model');
 const TopicHistoryModel = require('../models/topic.history.model');
 const SettingsService = require('../services/settings.service');
 
-const TOPIC_DOMAINS = [
-    'food, cooking, and culinary traditions',
-    'travel, local culture, and outdoor adventures',
-    'personal finance, saving, and consumer choices',
-    'health, fitness, sleep, and everyday wellbeing',
-    'history, archaeology, and overlooked historical events',
-    'nature, wildlife, oceans, and environmental change',
-    'home improvement, gardening, and practical DIY',
-    'relationships, family life, and community',
-    'science discoveries and surprising natural phenomena',
-    'education, learning, and career development',
-    'sports, athletes, and the culture around competition',
-    'books, film, music, art, and popular culture',
-    'small business, entrepreneurship, and local economies',
-    'architecture, design, and the places people live',
-    'everyday technology and useful consumer products'
-];
-const AI_TOPIC_PATTERN = /\b(ai|artificial intelligence|machine learning|large language models?|llms|chatgpt|generative ai|neural networks?|chatbots?)\b/i;
-
-function chooseTopicDomains(count) {
-    const pool = [...TOPIC_DOMAINS];
-    const chosen = [];
-    while (chosen.length < count && pool.length) {
-        chosen.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-    }
-    return chosen;
-}
-
 const toText = (item) => {
     if (typeof item === 'string') return item.trim();
     if (item && typeof item === 'object') {
@@ -43,6 +15,24 @@ const toText = (item) => {
 
 const toTextList = (items, limit = 3) =>
     (Array.isArray(items) ? items : []).map(toText).filter(Boolean).slice(0, limit);
+
+function extractTopicSuggestions(value) {
+    if (typeof value === 'string') {
+        const lines = value.split(/\r?\n/).map((line) => line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim()).filter(Boolean);
+        return lines.length > 1 ? lines : (value.trim() ? [value.trim()] : []);
+    }
+    if (Array.isArray(value)) return value.flatMap(extractTopicSuggestions);
+    if (value && typeof value === 'object') {
+        for (const key of ['topics', 'suggestions', 'ideas', 'titles']) {
+            if (value[key] !== undefined) {
+                const preferred = extractTopicSuggestions(value[key]);
+                if (preferred.length) return preferred;
+            }
+        }
+        return Object.values(value).flatMap(extractTopicSuggestions);
+    }
+    return [];
+}
 
 class AIController {
     async generateArticle(req, res) {
@@ -133,63 +123,38 @@ class AIController {
 
     async suggestTopic(req, res) {
         const WANTED = 3;
-        const MAX_ATTEMPTS = 4;
-        const PROMPT_HISTORY = 40;
         try {
             const provider = require('../providers/ai.provider').ProviderFactory.getProvider();
-            const used = await TopicHistoryModel.findAllUsed();
-            const fresh = [];
+            const category = typeof req.body?.category === 'string' ? req.body.category.trim() : '';
+            const systemPrompt = `You are a creative blog editor. Return ONLY a valid JSON array of exactly ${WANTED} specific, engaging article topic titles as plain strings. You may suggest any subject matter, including artificial intelligence and technology. Do not impose a fixed subject list.`;
+            const userPrompt = category
+                ? `Suggest ${WANTED} distinct article topics for the selected category: "${category}". Keep each idea relevant to this category, concrete, and interesting to readers.`
+                : `Suggest ${WANTED} distinct, engaging article topics for a general-interest blog. Choose varied subjects freely.`;
 
-            for (let attempt = 0; attempt < MAX_ATTEMPTS && fresh.length < WANTED; attempt++) {
-                const avoid = [...fresh, ...used].slice(0, PROMPT_HISTORY);
-                const domains = chooseTopicDomains(WANTED - fresh.length);
-                const systemPrompt = `You are an editor for a broad-interest magazine. Return ONLY a valid JSON array of exactly ${domains.length} specific, engaging article topic titles as plain strings. Give one distinct topic for each subject area provided. Topics must be about real-world subjects and must NOT be about AI, artificial intelligence, machine learning, language models, or chatbots.`;
-                const userPrompt = `Generate fresh article ideas across these subject areas, one idea per area:\n${domains.map((domain, index) => `${index + 1}. ${domain}`).join('\n')}\nMake each topic concrete, useful or surprising, and clearly different from the others. Do not use generic "AI-powered" titles.` +
-                    (avoid.length
-                        ? `\nDo NOT repeat or closely paraphrase any of these previously used topics:\n${avoid.map((t) => `- ${t}`).join('\n')}`
-                        : '');
+            const result = await provider.generate({
+                systemPrompt,
+                userPrompt,
+                temperature: 0.9,
+                responseFormat: 'json'
+            });
 
-                let result;
-                try {
-                    result = await provider.generate({
-                        systemPrompt,
-                        userPrompt,
-                        temperature: Math.min(0.7 + attempt * 0.15, 1.1),
-                        responseFormat: 'json'
-                    });
-                } catch (err) {
-                    if (attempt === MAX_ATTEMPTS - 1) throw err;
-                    continue;
-                }
-
-                let content = result.content.trim();
-                if (content.startsWith('```json')) {
-                    content = content.replace(/^```json\n?/, '').replace(/\n?```$/, '');
-                } else if (content.startsWith('```')) {
-                    content = content.replace(/^```\n?/, '').replace(/\n?```$/, '');
-                }
-
-                let candidates = [];
-                try {
-                    const topics = JSON.parse(content);
-                    candidates = toTextList(Array.isArray(topics) ? topics : (topics.topics || topics.suggestions || []), 10);
-                } catch {
-                    continue;
-                }
-
-                for (const topic of candidates) {
-                    if (fresh.length >= WANTED) break;
-                    if (AI_TOPIC_PATTERN.test(topic)) continue;
-                    if (!TopicHistoryModel.isDuplicate(topic, [...used, ...fresh])) fresh.push(topic);
-                }
+            let content = result.content.trim();
+            if (content.startsWith('```json')) {
+                content = content.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+            } else if (content.startsWith('```')) {
+                content = content.replace(/^```\n?/, '').replace(/\n?```$/, '');
             }
 
-            if (fresh.length === 0) return res.status(502).json({ error: 'Could not generate fresh non-AI topics. Please try again.' });
-            await TopicHistoryModel.recordMany(fresh, 'suggested');
-            res.json({ suggestions: fresh });
+            const parsed = JSON.parse(content);
+            const suggestions = toTextList(extractTopicSuggestions(parsed), WANTED);
+            if (!suggestions.length) {
+                return res.status(502).json({ error: 'The AI model returned no topic suggestions. Please try again.' });
+            }
+            await TopicHistoryModel.recordMany(suggestions, 'suggested');
+            res.json({ suggestions });
         } catch (error) {
             console.error('[AI Controller] suggestTopic failed:', error.message);
-            res.status(502).json({ error: 'Could not generate topic suggestions' });
+            res.status(502).json({ error: `Topic generation failed with ${SettingsService.read().model}: ${error.message}` });
         }
     }
 

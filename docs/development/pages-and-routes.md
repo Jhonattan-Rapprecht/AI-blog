@@ -16,9 +16,9 @@ For a user-facing walkthrough with screenshots, see [Pages Guide](../user/pages-
 
 | Route | Component | Purpose |
 |-------|-----------|---------|
-| `/` | `pages/EditorPage.jsx` | New article: editor, AI generation, publishing, SEO metadata |
-| `/articles` | `pages/ArticlesPage.jsx` | Table of all articles (any status) with open/delete actions |
-| `/articles/:id` | `pages/EditorPage.jsx` | Edit an existing article (`PUT` on save instead of `POST`) |
+| `/` | `pages/EditorPage.jsx` | New article: editor, AI generation, publishing, SEO metadata. Includes an Articles overview button. After AI generation saves an article, the admin returns to `/articles` and highlights the new row. |
+| `/articles` | `pages/ArticlesPage.jsx` | Table of all articles (any status) with open/delete actions; newly generated articles are scrolled into view and marked `Just created` briefly |
+| `/articles/:id` | `pages/EditorPage.jsx` | Edit an existing article (`PUT` on save instead of `POST`); includes an Articles overview button |
 | `/settings` | `pages/SettingsPage.jsx` | Configure the installed Ollama model and saved article-generation defaults |
 | `/dev/components` | `pages/dev/ComponentsPage.tsx` | **Dev only.** Preview HTML/CSS files from `src/component-previews/`, view source, copy, convert to JSX. **New component** pastes a snippet and saves it to that folder. Left out of production builds. |
 | `/login` | `pages/LoginPage.jsx` | Admin login (`ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`); public route |
@@ -84,14 +84,15 @@ All admin endpoints (including article publish/schedule and `/api/automation`) r
 | DELETE | `/api/categories/:id` | Delete category |
 | GET | `/api/settings` | Read saved AI model and writing defaults; includes installed Ollama models and connection status |
 | PUT | `/api/settings` | Save `model`, `language`, `tone`, `audience`, and `articleLength`; model must be installed locally |
+| POST | `/api/settings/check-model` | Run a short JSON-mode request against the selected installed model; unload it after the check and return the exact model response status |
 | POST | `/api/ai/generate-article` | Generate an article with AI |
-| POST | `/api/ai/suggest-topic` | Three topic suggestions sampled across randomized broad-interest subject areas; filters AI-centric topics and avoids previously used suggestions |
+| POST | `/api/ai/suggest-topic` | Returns three free-form topic suggestions, guided by an optional `{ category }` value from the Editor |
 | POST | `/api/ai/suggest-slug` | Slug suggestions |
 | GET | `/api/ai/status` | Active AI provider/model |
 
-Settings endpoints require the admin JWT. Preferences are stored in the local, git-ignored `data/settings.json`; Ollama's installed model list is fetched from its `/api/tags` endpoint. The Settings screen currently exposes only Ollama and the writing defaults consumed by the Editor. The selected model is used for article generation, topic suggestions, and slug suggestions.
+Settings endpoints require the admin JWT. Preferences are stored in the local, git-ignored `data/settings.json`; Ollama's installed model list is fetched from its `/api/tags` endpoint. The Settings screen currently exposes only Ollama and the writing defaults consumed by the Editor. The selected model is used for article generation, topic suggestions, and slug suggestions. The AI connection indicator checks whether Ollama is reachable; **Test selected model** separately verifies the draft selection with a JSON-mode completion before it is saved. Qwen3-family requests disable the model's default thinking phase so JSON output is returned directly.
 
-Topic suggestions select distinct areas from a broad pool (including food, travel, finance, health, history, nature, home, relationships, science, education, sports, culture, business, architecture, and consumer technology) on each request. AI-centric titles are filtered from the results, and prior suggested/generated topics are used to avoid repeats. Shared admin buttons use a short pressed-state scale, brightness, and inset-shadow animation; asynchronous topic and slug suggestion actions also show a spinner while awaiting the API.
+Topic suggestions receive the selected category name from the Editor and ask for three ideas relevant to it. If no category is selected, the model may choose subjects freely. Suggestions are not filtered by topic or history; returned ideas are recorded for history. Shared admin buttons use a short pressed-state scale, brightness, and inset-shadow animation; asynchronous topic and slug suggestion actions also show a spinner while awaiting the API.
 
 ### Public endpoints (read-only)
 

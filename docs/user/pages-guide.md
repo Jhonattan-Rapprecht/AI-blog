@@ -27,7 +27,7 @@ npm run dev
 Write a new article or let AI generate one. Use the side panels to:
 
 - **Publishing**: set the status (Draft, Review, Scheduled, Published, Archived) and category.
-- **AI generation**: enter a topic (or click the sparkle button for topic suggestions), choose an audience and tone, then click **Generate article**.
+- **AI generation**: choose a category in Publishing to guide topic suggestions, or leave it blank for free-form ideas. Enter a topic (or click the sparkle button), choose an audience and tone, then click **Generate article**.
 - **SEO & metadata**: set the slug (the article's web address), excerpt, SEO title and SEO description.
 
 Click **Save draft** to save the article.
