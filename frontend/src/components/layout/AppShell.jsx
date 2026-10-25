@@ -16,13 +16,13 @@ const nav = [
   { to: '/articles', label: 'Articles', icon: FileText },
 ]
 
-// Settings as inline top-level item (no group header)
 const settingsNav = [{ to: '/settings', label: 'Settings', icon: Settings }]
 
 const devNav = import.meta.env.DEV ? [{ to: '/dev/components', label: 'Components', icon: Blocks }] : []
 
 const groups = [
-  { label: 'Navigation', items: [...nav, ...settingsNav] },
+  { label: 'Navigation', items: nav },
+  { label: 'System', items: settingsNav },
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
