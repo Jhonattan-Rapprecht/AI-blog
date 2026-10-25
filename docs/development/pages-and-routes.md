@@ -19,6 +19,7 @@ For a user-facing walkthrough with screenshots, see [Pages Guide](../user/pages-
 | `/` | `pages/EditorPage.jsx` | New article: editor, AI generation, publishing, SEO metadata |
 | `/articles` | `pages/ArticlesPage.jsx` | Table of all articles (any status) with open/delete actions |
 | `/articles/:id` | `pages/EditorPage.jsx` | Edit an existing article (`PUT` on save instead of `POST`) |
+| `/settings` | `pages/SettingsPage.jsx` | Configure the installed Ollama model and saved article-generation defaults |
 | `/dev/components` | `pages/dev/ComponentsPage.tsx` | **Dev only.** Preview HTML/CSS files from `src/component-previews/`, view source, copy, convert to JSX. **New component** pastes a snippet and saves it to that folder. Left out of production builds. |
 | `/login` | `pages/LoginPage.jsx` | Admin login (`ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`); public route |
 
@@ -29,6 +30,7 @@ All other routes require a login (`components/ProtectedRoute.jsx`) and are wrapp
 | `/` | ![](../user/screenshots/admin-editor.png) |
 | `/articles` | ![](../user/screenshots/admin-articles.png) |
 | `/articles/:id` | ![](../user/screenshots/admin-edit-article.png) |
+| `/settings` | Settings uses the shared `AppShell` and theme; screenshot not captured yet. |
 | `/dev/components` | ![](../../screenshots/dev-components.png) |
 
 ---
@@ -80,10 +82,14 @@ All admin endpoints (including article publish/schedule and `/api/automation`) r
 | GET | `/api/categories` | List categories |
 | POST | `/api/categories` | Create category |
 | DELETE | `/api/categories/:id` | Delete category |
+| GET | `/api/settings` | Read saved AI model and writing defaults; includes installed Ollama models and connection status |
+| PUT | `/api/settings` | Save `model`, `language`, `tone`, `audience`, and `articleLength`; model must be installed locally |
 | POST | `/api/ai/generate-article` | Generate an article with AI |
 | POST | `/api/ai/suggest-topic` | Topic suggestions (avoids previously used topics) |
 | POST | `/api/ai/suggest-slug` | Slug suggestions |
 | GET | `/api/ai/status` | Active AI provider/model |
+
+Settings endpoints require the admin JWT. Preferences are stored in the local, git-ignored `data/settings.json`; Ollama's installed model list is fetched from its `/api/tags` endpoint. The Settings screen currently exposes only Ollama and the writing defaults consumed by the Editor. The selected model is used for article generation, topic suggestions, and slug suggestions.
 
 ### Public endpoints (read-only)
 

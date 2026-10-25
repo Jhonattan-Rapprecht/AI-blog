@@ -19,8 +19,6 @@ const EMPTY = {
 }
 const FIELDS = Object.keys(EMPTY)
 const STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived']
-const TONES = ['Professional', 'Conversational', 'Technical', 'Opinionated']
-const DEFAULT_AUDIENCES = ['General', 'Technical', 'Business', 'Beginners', 'Experts']
 
 // Quill 2 serializes spaces as &nbsp;, which breaks line wrapping on the public site.
 const payload = (a) => ({ ...a, content: (a.content || '').replace(/&nbsp;/g, ' '), category_id: a.category_id || null })
@@ -54,12 +52,9 @@ export default function EditorPage() {
   const navigate = useNavigate()
   const [articleId, setArticleId] = useState(id || null)
   const [article, setArticle] = useState(EMPTY)
-  const [ai, setAi] = useState({
-    topic: '', targetAudience: 'General', language: 'English', tone: 'Professional',
-    articleLength: 'Medium', category: '', keywords: '', additionalInstructions: '',
-  })
+  const [ai, setAi] = useState({ topic: '', targetAudience: 'General', language: 'English', tone: 'Professional', articleLength: 'Medium', category: '', keywords: '', additionalInstructions: '' })
   const [categories, setCategories] = useState([])
-  const [audiences, setAudiences] = useState(DEFAULT_AUDIENCES)
+  const [writingSettings, setWritingSettings] = useState(null)
   const [topics, setTopics] = useState([])
   const [slugs, setSlugs] = useState([])
   const [saving, setSaving] = useState(false)
@@ -77,6 +72,13 @@ export default function EditorPage() {
   )
 
   useEffect(() => { loadCategories() }, [loadCategories])
+
+  useEffect(() => {
+    api.settings().then((settings) => {
+      setWritingSettings(settings)
+      setAi((current) => ({ ...current, targetAudience: settings.audience, language: settings.language, tone: settings.tone, articleLength: settings.articleLength }))
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     setArticleId(id || null)
@@ -166,8 +168,13 @@ export default function EditorPage() {
 
   const addAudience = () => {
     const v = newAudience?.trim()
-    if (v && !audiences.includes(v)) setAudiences((a) => [...a, v])
-    if (v) setAi((a) => ({ ...a, targetAudience: v }))
+    if (v) {
+      api.saveSettings({ audience: v }).then((settings) => {
+        setWritingSettings(settings)
+        setAi((a) => ({ ...a, targetAudience: settings.audience }))
+        toast.success('Default audience saved in Settings')
+      }).catch((e) => toast.error(errorMessage(e)))
+    }
     setNewAudience(null)
   }
 
@@ -224,10 +231,15 @@ export default function EditorPage() {
                 <Button variant="outline" size="icon" onClick={suggestTopics} title="Suggest topics"><Sparkles /></Button>
               </div>
             </Field>
+            <Field label="Language">
+              <NativeSelect value={ai.language} onChange={setAI('language')}>
+                {Array.from(new Set([writingSettings?.language || ai.language, 'English', 'Dutch', 'Spanish', 'French', 'German'])).map((language) => <option key={language}>{language}</option>)}
+              </NativeSelect>
+            </Field>
             <Field label="Audience">
               <div className="flex gap-1.5">
                 <NativeSelect value={ai.targetAudience} onChange={setAI('targetAudience')}>
-                  {audiences.map((a) => <option key={a}>{a}</option>)}
+                  {Array.from(new Set([writingSettings?.audience || ai.targetAudience, 'General', 'Technical', 'Business', 'Beginners', 'Experts'])).map((a) => <option key={a}>{a}</option>)}
                 </NativeSelect>
                 <Button variant="outline" size="icon" onClick={() => setNewAudience('')} title="Add audience"><Plus /></Button>
               </div>
@@ -241,7 +253,12 @@ export default function EditorPage() {
             </Field>
             <Field label="Tone">
               <NativeSelect value={ai.tone} onChange={setAI('tone')}>
-                {TONES.map((t) => <option key={t}>{t}</option>)}
+                {Array.from(new Set([writingSettings?.tone || ai.tone, 'Professional', 'Conversational', 'Technical', 'Opinionated'])).map((t) => <option key={t}>{t}</option>)}
+              </NativeSelect>
+            </Field>
+            <Field label="Article length">
+              <NativeSelect value={ai.articleLength} onChange={setAI('articleLength')}>
+                {Array.from(new Set([writingSettings?.articleLength || ai.articleLength, 'Short', 'Medium', 'Long'])).map((length) => <option key={length}>{length}</option>)}
               </NativeSelect>
             </Field>
             <Button onClick={generate} disabled={generating}>

@@ -33,6 +33,8 @@ const strings = (list) => (Array.isArray(list) ? list.filter((s) => typeof s ===
 export const api = {
   login: (username, password) => http.post('/auth/login', { username, password }).then((r) => r.data),
   status: () => http.get('/ai/status').then((r) => r.data),
+  settings: () => http.get('/settings').then((r) => r.data),
+  saveSettings: (settings) => http.put('/settings', settings).then((r) => r.data),
   categories: () => http.get('/categories').then((r) => r.data),
   addCategory: (name) => http.post('/categories', { name }),
   deleteCategory: (id) => http.delete(`/categories/${id}`),

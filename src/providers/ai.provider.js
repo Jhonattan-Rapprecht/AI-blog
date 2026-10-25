@@ -7,11 +7,13 @@ class AIProvider {
 class OllamaProvider extends AIProvider {
     async generate({ systemPrompt, userPrompt, temperature = 0.7, maxTokens = 4096, responseFormat = 'json' }) {
         try {
-            const response = await fetch(`${process.env.OLLAMA_BASE_URL}/api/generate`, {
+            const settings = require('../services/settings.service').read();
+            const model = settings.model || process.env.OLLAMA_MODEL;
+            const response = await fetch(`${settings.ollamaBaseUrl || process.env.OLLAMA_BASE_URL}/api/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: process.env.OLLAMA_MODEL,
+                    model,
                     prompt: `${systemPrompt}\n\n${userPrompt}`,
                     stream: false,
                     format: responseFormat === 'json' ? 'json' : undefined,
@@ -33,7 +35,7 @@ class OllamaProvider extends AIProvider {
             return {
                 content: data.response,
                 provider: 'ollama',
-                model: process.env.OLLAMA_MODEL,
+                model,
                 usage: data.eval_count
             };
         } catch (error) {

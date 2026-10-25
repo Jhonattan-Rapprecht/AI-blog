@@ -29,6 +29,7 @@ Topic: ${config.topic}
 Target Audience: ${config.targetAudience}
 Language: ${config.language}
 Tone: ${config.tone}
+Article Length: ${config.articleLength || 'Medium'} (Short: about 600 words; Medium: about 1,000 words; Long: about 1,600 words)
 Keywords: ${config.keywords}
 Category: ${config.category}
 Details: ${config.additionalInstructions}`;

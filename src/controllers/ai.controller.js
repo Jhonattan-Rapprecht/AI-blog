@@ -2,6 +2,7 @@ const AIService = require('../services/ai.service');
 const ArticleModel = require('../models/article.model');
 const AIGenerationModel = require('../models/ai.generation.model');
 const TopicHistoryModel = require('../models/topic.history.model');
+const SettingsService = require('../services/settings.service');
 
 const toText = (item) => {
     if (typeof item === 'string') return item.trim();
@@ -54,7 +55,7 @@ class AIController {
             try {
                 await AIGenerationModel.create({
                     provider: process.env.AI_PROVIDER,
-                    model: process.env.OLLAMA_MODEL,
+                    model: SettingsService.read().model,
                     prompt: JSON.stringify(req.body),
                     response: { error: error.message },
                     status: 'failed',
@@ -163,11 +164,13 @@ class AIController {
     }
 
     async getStatus(req, res) {
+        const settings = SettingsService.read();
+        const { connected } = await SettingsService.ollamaStatus(settings.ollamaBaseUrl);
         res.json({
-            available: true,
-            provider: process.env.AI_PROVIDER,
-            model: process.env.OLLAMA_MODEL,
-            status: 'connected'
+            available: connected,
+            provider: 'ollama',
+            model: settings.model,
+            status: connected ? 'connected' : 'disconnected'
         });
     }
 

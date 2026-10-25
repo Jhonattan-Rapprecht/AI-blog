@@ -4,6 +4,7 @@ import AppShell from '@/components/layout/AppShell'
 import EditorPage from '@/pages/EditorPage'
 import ArticlesPage from '@/pages/ArticlesPage'
 import LoginPage from '@/pages/LoginPage'
+import SettingsPage from '@/pages/SettingsPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
 
 // Dev-only tooling; excluded from production builds.
@@ -18,6 +19,7 @@ export default function App() {
           <Route index element={<EditorPage />} />
           <Route path="articles/:id" element={<EditorPage />} />
           <Route path="articles" element={<ArticlesPage />} />
+          <Route path="settings" element={<SettingsPage />} />
           {ComponentsPage && (
             <Route path="dev/components" element={<Suspense fallback={null}><ComponentsPage /></Suspense>} />
           )}

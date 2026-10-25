@@ -21,12 +21,12 @@ const settingsNav = [{ to: '/settings', label: 'Settings', icon: Settings }]
 const devNav = import.meta.env.DEV ? [{ to: '/dev/components', label: 'Components', icon: Blocks }] : []
 
 const groups = [
-  { label: 'Navigation', items: nav },
+  { label: 'Content', items: nav },
   { label: 'System', items: settingsNav },
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
-const titles = { '/': 'Editor', '/articles': 'Articles', '/dev/components': 'Components' }
+const titles = { '/': 'Editor', '/articles': 'Articles', '/settings': 'Settings', '/dev/components': 'Components' }
 
 export default function AppShell() {
   const { theme, toggle } = useTheme()

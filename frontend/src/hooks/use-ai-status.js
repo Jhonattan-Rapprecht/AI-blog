@@ -8,7 +8,7 @@ export function useAIStatus() {
     const load = () =>
       api
         .status()
-        .then((s) => setStatus({ label: `${s.provider} (${s.model})`, ok: s.status === 'connected' || s.status === 'ok' || !!s.status }))
+        .then((s) => setStatus({ label: `${s.provider} (${s.model})`, ok: s.status === 'connected' || s.status === 'ok' || s.available === true }))
         .catch(() => setStatus({ label: 'Disconnected', ok: false }))
     load()
     socket.on('connect', load)
