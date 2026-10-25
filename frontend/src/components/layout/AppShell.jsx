@@ -16,14 +16,13 @@ const nav = [
   { to: '/articles', label: 'Articles', icon: FileText },
 ]
 
-// Settings link - no text when collapsed, shows only gear icon
-const settingsNav = [{ to: '/settings', label: undefined, icon: Settings, end: false }]
+// Settings as inline top-level item (no group header)
+const settingsNav = [{ to: '/settings', label: 'Settings', icon: Settings }]
 
 const devNav = import.meta.env.DEV ? [{ to: '/dev/components', label: 'Components', icon: Blocks }] : []
 
 const groups = [
-  { label: 'Content', items: nav },
-  { label: 'Settings', items: settingsNav },
+  { label: 'Navigation', items: [...nav, ...settingsNav] },
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
@@ -93,4 +92,3 @@ export default function AppShell() {
     </SidebarProvider>
   )
 }
-
