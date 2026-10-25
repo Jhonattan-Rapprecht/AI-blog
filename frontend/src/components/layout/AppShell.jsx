@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Blocks, FileText, Moon, PenLine, Sparkles, Sun } from 'lucide-react'
+import { Blocks, FileText, Moon, PenLine, Settings, Sparkles, Sun } from 'lucide-react'
 import { Toaster } from 'sonner'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -16,10 +16,14 @@ const nav = [
   { to: '/articles', label: 'Articles', icon: FileText },
 ]
 
+// Settings link - no text when collapsed, shows only gear icon
+const settingsNav = [{ to: '/settings', label: undefined, icon: Settings, end: false }]
+
 const devNav = import.meta.env.DEV ? [{ to: '/dev/components', label: 'Components', icon: Blocks }] : []
 
 const groups = [
   { label: 'Content', items: nav },
+  { label: 'Settings', items: settingsNav },
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
