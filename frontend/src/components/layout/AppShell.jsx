@@ -12,7 +12,7 @@ import { useTheme } from '@/hooks/use-theme'
 import { useAIStatus } from '@/hooks/use-ai-status'
 
 const nav = [
-  { to: '/', label: 'New article', icon: PenLine, end: true },
+  { to: '/', label: 'Editor', icon: PenLine, end: true },
   { to: '/articles', label: 'Articles', icon: FileText },
 ]
 
