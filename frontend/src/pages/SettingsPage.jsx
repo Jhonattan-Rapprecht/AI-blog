@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Check, Loader2, RefreshCw, Server, SlidersHorizontal, Sparkles } from 'lucide-react'
+import { Check, CircleAlert, CircleCheck, Loader2, RefreshCw, Server, SlidersHorizontal, Sparkles } from 'lucide-react'
 import { api, errorMessage } from '@/api/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,9 +19,12 @@ function SettingField({ label, hint, children }) {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState(INITIAL)
+  const [activeModel, setActiveModel] = useState('')
   const [models, setModels] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const [modelCheck, setModelCheck] = useState(null)
   const [online, setOnline] = useState(false)
 
   const load = async () => {
@@ -29,6 +32,7 @@ export default function SettingsPage() {
     try {
       const data = await api.settings()
       setSettings({ model: data.model, language: data.language, tone: data.tone, audience: data.audience, articleLength: data.articleLength })
+      setActiveModel(data.model)
       setModels(data.models || [])
       setOnline(!!data.connected)
     } catch (error) {
@@ -39,12 +43,26 @@ export default function SettingsPage() {
 
   useEffect(() => { load() }, [])
 
-  const set = (key) => (event) => setSettings((current) => ({ ...current, [key]: event.target.value }))
+  const set = (key) => (event) => {
+    setSettings((current) => ({ ...current, [key]: event.target.value }))
+    if (key === 'model') setModelCheck(null)
+  }
+  const checkSelectedModel = async () => {
+    setChecking(true)
+    setModelCheck(null)
+    try {
+      const result = await api.checkModel(settings.model)
+      setModelCheck({ ok: true, message: `${result.model} responded in ${(result.durationMs / 1000).toFixed(1)}s.` })
+    } catch (error) {
+      setModelCheck({ ok: false, message: errorMessage(error) })
+    } finally { setChecking(false) }
+  }
   const save = async () => {
     setSaving(true)
     try {
       const data = await api.saveSettings(settings)
       setSettings({ model: data.model, language: data.language, tone: data.tone, audience: data.audience, articleLength: data.articleLength })
+      setActiveModel(data.model)
       setModels(data.models || [])
       toast.success('Settings saved')
     } catch (error) { toast.error(errorMessage(error)) }
@@ -61,11 +79,11 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base"><Server className="size-4" /> AI connection</CardTitle>
-          <CardDescription>Choose a model already installed in your local Ollama library.</CardDescription>
+          <CardDescription>Choose a model already installed in your local Ollama library. Save changes to use it for generation.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-5">
           <div className="flex items-center gap-2 text-sm"><span className={`size-2 rounded-full ${online ? 'bg-emerald-500' : 'bg-red-500'}`} />{loading ? 'Checking Ollama…' : online ? 'Ollama is reachable' : 'Ollama is unavailable'}<Badge variant="outline">Local</Badge></div>
-          <SettingField label="Ollama model" hint="This model will be used for article generation, topic ideas, and slug suggestions.">
+          <SettingField label="Ollama model" hint="The test runs a short request against the selected model. It is unloaded after the check.">
             <div className="flex gap-2">
               <NativeSelect value={settings.model} onChange={set('model')} disabled={loading || !models.length}>
                 {!models.length && <option value="">No Ollama models found</option>}
@@ -74,7 +92,16 @@ export default function SettingsPage() {
               <Button variant="outline" size="icon" onClick={load} disabled={loading} title="Refresh installed models"><RefreshCw className={loading ? 'animate-spin' : ''} /></Button>
             </div>
           </SettingField>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="outline" onClick={checkSelectedModel} disabled={loading || checking || !online || !settings.model}>
+              {checking ? <Loader2 className="animate-spin" /> : <Sparkles />} {checking ? 'Testing model…' : 'Test selected model'}
+            </Button>
+            {modelCheck && <p role="status" className={`flex items-center gap-2 text-sm ${modelCheck.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
+              {modelCheck.ok ? <CircleCheck className="size-4" /> : <CircleAlert className="size-4" />}{modelCheck.message}
+            </p>}
+          </div>
           {models.length > 0 && <p className="text-xs text-muted-foreground">{models.length} installed models available</p>}
+          <p className="text-xs text-muted-foreground">Currently active in the app: <span className="font-medium text-foreground">{activeModel || 'Loading…'}</span>{settings.model !== activeModel && <Badge className="ml-2" variant="secondary">Unsaved selection</Badge>}</p>
         </CardContent>
       </Card>
 

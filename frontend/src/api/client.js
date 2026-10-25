@@ -35,6 +35,7 @@ export const api = {
   status: () => http.get('/ai/status').then((r) => r.data),
   settings: () => http.get('/settings').then((r) => r.data),
   saveSettings: (settings) => http.put('/settings', settings).then((r) => r.data),
+  checkModel: (model) => http.post('/settings/check-model', { model }).then((r) => r.data),
   categories: () => http.get('/categories').then((r) => r.data),
   addCategory: (name) => http.post('/categories', { name }),
   deleteCategory: (id) => http.delete(`/categories/${id}`),

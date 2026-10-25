@@ -41,6 +41,58 @@ class SettingsController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    async checkModel(req, res) {
+        const model = typeof req.body?.model === 'string' ? req.body.model.trim() : '';
+        if (!model) return res.status(400).json({ error: 'Choose a model to test.' });
+
+        const settings = SettingsService.read();
+        try {
+            const models = await SettingsService.listModels(settings.ollamaBaseUrl);
+            if (!models.includes(model)) return res.status(400).json({ error: `${model} is not installed in this Ollama instance.` });
+
+            const startedAt = Date.now();
+            const requestBody = {
+                model,
+                prompt: 'Return only this JSON object: {"ok": true}',
+                stream: false,
+                format: 'json',
+                keep_alive: '0',
+                options: { temperature: 0, num_ctx: 2048, num_predict: 128 }
+            };
+            if (/^qwen3(?:[.:]|$)/i.test(model)) requestBody.think = false;
+
+            const response = await fetch(`${settings.ollamaBaseUrl.replace(/\/$/, '')}/api/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: AbortSignal.timeout(120000),
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const details = await response.text();
+                return res.status(502).json({ error: `Ollama could not run ${model} (HTTP ${response.status}): ${details}` });
+            }
+
+            const result = await response.json();
+            const output = String(result.response || '').trim();
+            if (!output) {
+                const hasThinking = !!String(result.thinking || '').trim();
+                const reason = hasThinking ? 'returned reasoning but no final response' : 'returned an empty response';
+                return res.status(502).json({ error: `Ollama loaded ${model} but ${reason}.` });
+            }
+            try {
+                JSON.parse(output);
+            } catch {
+                return res.status(502).json({ error: `${model} responded, but its output was not valid JSON. Article generation may fail with this model.` });
+            }
+
+            res.json({ model: result.model || model, connected: true, json: true, durationMs: Date.now() - startedAt, output: output.slice(0, 240) });
+        } catch (error) {
+            const reason = error.name === 'TimeoutError' ? 'timed out after 120 seconds' : error.message;
+            res.status(502).json({ error: `Could not test ${model}: ${reason}` });
+        }
+    }
 }
 
 module.exports = new SettingsController();
