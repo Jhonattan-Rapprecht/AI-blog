@@ -85,11 +85,13 @@ All admin endpoints (including article publish/schedule and `/api/automation`) r
 | GET | `/api/settings` | Read saved AI model and writing defaults; includes installed Ollama models and connection status |
 | PUT | `/api/settings` | Save `model`, `language`, `tone`, `audience`, and `articleLength`; model must be installed locally |
 | POST | `/api/ai/generate-article` | Generate an article with AI |
-| POST | `/api/ai/suggest-topic` | Topic suggestions (avoids previously used topics) |
+| POST | `/api/ai/suggest-topic` | Three topic suggestions sampled across randomized broad-interest subject areas; filters AI-centric topics and avoids previously used suggestions |
 | POST | `/api/ai/suggest-slug` | Slug suggestions |
 | GET | `/api/ai/status` | Active AI provider/model |
 
 Settings endpoints require the admin JWT. Preferences are stored in the local, git-ignored `data/settings.json`; Ollama's installed model list is fetched from its `/api/tags` endpoint. The Settings screen currently exposes only Ollama and the writing defaults consumed by the Editor. The selected model is used for article generation, topic suggestions, and slug suggestions.
+
+Topic suggestions select distinct areas from a broad pool (including food, travel, finance, health, history, nature, home, relationships, science, education, sports, culture, business, architecture, and consumer technology) on each request. AI-centric titles are filtered from the results, and prior suggested/generated topics are used to avoid repeats. Shared admin buttons use a short pressed-state scale, brightness, and inset-shadow animation; asynchronous topic and slug suggestion actions also show a spinner while awaiting the API.
 
 ### Public endpoints (read-only)
 

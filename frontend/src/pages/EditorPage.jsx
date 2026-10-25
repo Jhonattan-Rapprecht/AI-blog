@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { NativeSelect } from '@/components/ui/native-select'
 
@@ -39,9 +38,9 @@ function Suggestions({ items, onPick }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((s) => (
-        <Badge key={s} variant="secondary" className="cursor-pointer font-normal" onClick={() => onPick(s)}>
+        <Button key={s} type="button" variant="secondary" size="xs" className="h-auto rounded-full font-normal active:scale-[0.96]" onClick={() => onPick(s)}>
           {s}
-        </Badge>
+        </Button>
       ))}
     </div>
   )
@@ -59,6 +58,8 @@ export default function EditorPage() {
   const [slugs, setSlugs] = useState([])
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [suggestingTopics, setSuggestingTopics] = useState(false)
+  const [suggestingSlugs, setSuggestingSlugs] = useState(false)
   const [newCategory, setNewCategory] = useState(null)
   const [newAudience, setNewAudience] = useState(null)
   const generatingRef = useRef(false)
@@ -135,16 +136,20 @@ export default function EditorPage() {
   }
 
   const suggestTopics = async () => {
+    setSuggestingTopics(true)
     try {
       const list = await api.suggestTopics()
       setTopics(list)
       if (!list.length) toast.info('No new topics found, try again')
     } catch (e) { toast.error(errorMessage(e)) }
+    finally { setSuggestingTopics(false) }
   }
 
   const suggestSlugs = async () => {
     if (!article.title) return toast.error('Enter a title first')
+    setSuggestingSlugs(true)
     try { setSlugs(await api.suggestSlugs(article.title)) } catch (e) { toast.error(errorMessage(e)) }
+    finally { setSuggestingSlugs(false) }
   }
 
   const addCategory = async () => {
@@ -228,7 +233,9 @@ export default function EditorPage() {
             <Field label="Topic" hint={<Suggestions items={topics} onPick={(t) => setAi((a) => ({ ...a, topic: t }))} />}>
               <div className="flex gap-1.5">
                 <Input value={ai.topic} onChange={setAI('topic')} placeholder="e.g. Future of AI in dev" />
-                <Button variant="outline" size="icon" onClick={suggestTopics} title="Suggest topics"><Sparkles /></Button>
+                <Button variant="outline" size="icon" onClick={suggestTopics} disabled={suggestingTopics} title="Suggest topics" aria-label="Suggest topics">
+                  {suggestingTopics ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                </Button>
               </div>
             </Field>
             <Field label="Language">
@@ -273,7 +280,9 @@ export default function EditorPage() {
             <Field label="Slug" hint={<Suggestions items={slugs} onPick={(s) => setArticle((a) => ({ ...a, slug: s }))} />}>
               <div className="flex gap-1.5">
                 <Input value={article.slug} onChange={set('slug')} placeholder="article-slug" />
-                <Button variant="outline" size="icon" onClick={suggestSlugs} title="Suggest slugs"><Sparkles /></Button>
+                <Button variant="outline" size="icon" onClick={suggestSlugs} disabled={suggestingSlugs} title="Suggest slugs" aria-label="Suggest slugs">
+                  {suggestingSlugs ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                </Button>
               </div>
             </Field>
             <Field label="Excerpt"><Textarea rows={3} value={article.excerpt ?? ''} onChange={set('excerpt')} /></Field>

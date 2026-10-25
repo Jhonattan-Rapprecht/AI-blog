@@ -4,6 +4,34 @@ const AIGenerationModel = require('../models/ai.generation.model');
 const TopicHistoryModel = require('../models/topic.history.model');
 const SettingsService = require('../services/settings.service');
 
+const TOPIC_DOMAINS = [
+    'food, cooking, and culinary traditions',
+    'travel, local culture, and outdoor adventures',
+    'personal finance, saving, and consumer choices',
+    'health, fitness, sleep, and everyday wellbeing',
+    'history, archaeology, and overlooked historical events',
+    'nature, wildlife, oceans, and environmental change',
+    'home improvement, gardening, and practical DIY',
+    'relationships, family life, and community',
+    'science discoveries and surprising natural phenomena',
+    'education, learning, and career development',
+    'sports, athletes, and the culture around competition',
+    'books, film, music, art, and popular culture',
+    'small business, entrepreneurship, and local economies',
+    'architecture, design, and the places people live',
+    'everyday technology and useful consumer products'
+];
+const AI_TOPIC_PATTERN = /\b(ai|artificial intelligence|machine learning|large language models?|llms|chatgpt|generative ai|neural networks?|chatbots?)\b/i;
+
+function chooseTopicDomains(count) {
+    const pool = [...TOPIC_DOMAINS];
+    const chosen = [];
+    while (chosen.length < count && pool.length) {
+        chosen.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    }
+    return chosen;
+}
+
 const toText = (item) => {
     if (typeof item === 'string') return item.trim();
     if (item && typeof item === 'object') {
@@ -111,12 +139,12 @@ class AIController {
             const provider = require('../providers/ai.provider').ProviderFactory.getProvider();
             const used = await TopicHistoryModel.findAllUsed();
             const fresh = [];
-            const angles = ['practical how-to guides', 'industry trends', 'beginner-friendly explainers', 'case studies', 'opinion and analysis', 'tools and productivity'];
 
             for (let attempt = 0; attempt < MAX_ATTEMPTS && fresh.length < WANTED; attempt++) {
                 const avoid = [...fresh, ...used].slice(0, PROMPT_HISTORY);
-                const systemPrompt = `You are a creative content strategist. Return ONLY a JSON array of ${WANTED} high-performing, trending, and engaging article topics, each a plain string. No other text.`;
-                const userPrompt = `Suggest ${WANTED} trending topics for a high-performance AI-powered blog. Focus on ${angles[(attempt + used.length) % angles.length]}.` +
+                const domains = chooseTopicDomains(WANTED - fresh.length);
+                const systemPrompt = `You are an editor for a broad-interest magazine. Return ONLY a valid JSON array of exactly ${domains.length} specific, engaging article topic titles as plain strings. Give one distinct topic for each subject area provided. Topics must be about real-world subjects and must NOT be about AI, artificial intelligence, machine learning, language models, or chatbots.`;
+                const userPrompt = `Generate fresh article ideas across these subject areas, one idea per area:\n${domains.map((domain, index) => `${index + 1}. ${domain}`).join('\n')}\nMake each topic concrete, useful or surprising, and clearly different from the others. Do not use generic "AI-powered" titles.` +
                     (avoid.length
                         ? `\nDo NOT repeat or closely paraphrase any of these previously used topics:\n${avoid.map((t) => `- ${t}`).join('\n')}`
                         : '');
@@ -151,10 +179,12 @@ class AIController {
 
                 for (const topic of candidates) {
                     if (fresh.length >= WANTED) break;
+                    if (AI_TOPIC_PATTERN.test(topic)) continue;
                     if (!TopicHistoryModel.isDuplicate(topic, [...used, ...fresh])) fresh.push(topic);
                 }
             }
 
+            if (fresh.length === 0) return res.status(502).json({ error: 'Could not generate fresh non-AI topics. Please try again.' });
             await TopicHistoryModel.recordMany(fresh, 'suggested');
             res.json({ suggestions: fresh });
         } catch (error) {
