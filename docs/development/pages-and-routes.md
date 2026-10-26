@@ -104,7 +104,7 @@ Topic suggestions use the selected category and any text entered in the Topic fi
 
 The browser titles are `Blogstudio | Admin` for the management app and `Blogstudio | AI` for the public site. Public article cards show an `Uncategorized` badge when no category is assigned; the blog’s article count appears beside the category filters.
 
-Featured images are uploaded to `uploads/media/`, stored in the `media` table, and linked by `articles.featured_media_id`; legacy `featured_image` URLs remain supported. Photo credit/source is stored on the reusable media record and shown beneath public images. The Editor and Media Library are described in [media-library.md](media-library.md). Upload and library selection work locally. AI image generation and slow zoom-out fitting are deferred.
+Featured images are uploaded to `uploads/media/`, stored in the `media` table, and linked by `articles.featured_media_id`; legacy `featured_image` URLs remain supported. Photo credit/source is stored on the reusable media record and shown beneath the image on full article pages only, not on cards or the homepage feature. The Editor and Media Library are described in [media-library.md](media-library.md). Upload and library selection work locally. AI image generation and slow zoom-out fitting are deferred.
 
 ### Public endpoints
 

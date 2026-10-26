@@ -10,7 +10,7 @@ The backend serves files at `/uploads/media/:filename`. The public Astro site re
 
 - **Media Library** (`/media`) lists reusable media and accepts JPG, PNG, WebP, and GIF uploads up to 12 MB.
 - The Editor's **Featured image** card previews the selected image, supports upload or selection from the library, and lets the user save its photo credit/source. The article association is persisted when the article is saved.
-- Public article cards, the homepage feature, and article detail pages show a small **Photo credit/source** caption beneath each image. Images without an attribution value display **Not provided**.
+- Full article pages show a small **Photo credit/source** caption beneath the featured image. Article cards, blog overview/filter cards, and the homepage feature do not show the caption. An image without an attribution value displays **Not provided** on its article page.
 - Media in use by an article cannot be deleted until unassigned.
 - AI image generation is intentionally deferred while an image-generation solution is evaluated. The media record includes provider and prompt metadata so a future provider can be added without changing article associations.
 

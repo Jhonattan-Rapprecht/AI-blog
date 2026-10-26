@@ -32,7 +32,7 @@ const topics = categories.filter((c) => c.article_count > 0);
       <h2 class="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Featured</h2>
       <a href={`/blog/${featured.slug}`} class="group grid gap-6 rounded-lg border bg-card p-6 transition-colors hover:border-foreground/30 md:grid-cols-2">
         {featured.featured_image
-          ? <figure class="w-full"><img src={imageUrl(featured.featured_image)} alt="" class="aspect-[16/10] w-full rounded-md object-cover" /><figcaption class="break-words px-1 pt-1.5 text-[11px] text-muted-foreground">Photo credit/source: {featured.featured_image_credit || 'Not provided'}</figcaption></figure>
+          ? <img src={imageUrl(featured.featured_image)} alt="" class="aspect-[16/10] w-full rounded-md object-cover" />
           : <div class="aspect-[16/10] w-full rounded-md bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]" />}
         <div class="flex flex-col justify-center gap-3">
           <div class="flex items-center gap-2 text-xs text-muted-foreground">

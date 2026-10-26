@@ -19,6 +19,8 @@ The recent app requests in this session were:
 5. “Change the articles overview label to Articles Overview or something that reflects what is on the page because currently it says articles 2 times on the page”
 6. The user asked to add **Articles Overview** and **Articles Analytics** under an Articles navigation section and requested a useful business analytics page, specifically including actual article read time and topics where possible. They said not to implement until the data sources and prerequisites were analyzed.
 7. After the analysis, the user said: “yes proceed and also commit push and document/changelog everything also add a new md.file for the agent prompts used during this session and place the prompt history there for future refereence and for others agents to know and check what was the last thing that was done inside the app. So now there are 2 places where things are documented.”
+8. The user requested an editable photo credit/source beneath images (example: “source pphoto: michael henniway”), with the slow zoom-out image fitting behavior deferred. They asked to document the milestone, commit/push, and rename the branch `v2.1`.
+9. The user then clarified: “dont forget to update the agent.md file with the prompts used for future reference. No remove the photo credit source label from the main article blog page in the front end, so dont display it on the cards, only when you open the article if that makes sense?” The credit caption now appears only on full article pages, and this prompt is recorded here for future agents.
 
 ### App work completed in this session
 
@@ -35,10 +37,10 @@ The recent app requests in this session were:
 ### Latest state
 
 - Branch: `v2.1` (renamed from `blogstudio-v2` for the current media milestone; push requested).
-- Latest commit: `feat(analytics): add article insights and read tracking` on `blogstudio-v2`; push target is `origin/blogstudio-v2`.
-- Analytics and inline table work are the most recent app changes. Check `git status` and the latest commit before assuming there is pending work.
+- Latest milestone commit: `feat(media): add image library and photo credits` on `v2.1`, pushed to `origin/v2.1`; the follow-up moves captions off cards and records this prompt-history update.
+- Photo credit/source captions belong only on full article pages. Check `git status` and the latest commit before assuming there is pending work.
 - Reader engagement values are page-load views and visible seconds, not unique visitors. The public site's existing reading-time estimate is based on article word count.
-- The current media-library milestone is being prepared for commit/push on branch `v2.1`. Existing articles need images explicitly uploaded/selected and then saved. AI image generation and slow zoom-out crop behavior remain deferred by the user.
+- Media Library uploads and photo-source metadata are committed on branch `v2.1`. Follow-up work places the credit caption only on article detail pages; cards and homepage feature omit it. Existing articles need images explicitly uploaded/selected and then saved. AI image generation and slow zoom-out crop behavior remain deferred by the user.
 
 ### Main files for this work
 
