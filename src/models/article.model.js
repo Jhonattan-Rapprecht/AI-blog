@@ -29,6 +29,7 @@ class ArticleModel {
                     SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'topic_id'
                 `);
+                let shouldBackfillLegacyTopics = topicIdColumn.length === 0;
                 if (!topicIdColumn.length) {
                     await db.query('ALTER TABLE articles ADD COLUMN topic_id CHAR(36) NULL');
                     topicIdColumn = [{ IS_NULLABLE: 'YES' }];
@@ -37,13 +38,14 @@ class ArticleModel {
                     SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'topic'
                 `);
-                const legacyRows = await db.query(`
+                shouldBackfillLegacyTopics ||= directTopicColumn.length > 0;
+                const legacyRows = shouldBackfillLegacyTopics ? await db.query(`
                     SELECT a.id, ${directTopicColumn.length ? 'a.topic' : 'NULL AS topic'},
                         (SELECT CASE WHEN JSON_VALID(g.prompt) THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(g.prompt, '$.topic')), '') ELSE NULL END
                          FROM ai_generations g WHERE g.article_id = a.id AND g.status = 'completed'
                          ORDER BY g.created_at DESC, g.id DESC LIMIT 1) AS generated_topic
                     FROM articles a WHERE a.topic_id IS NULL
-                `);
+                `) : [];
                 for (const row of legacyRows) {
                     const topic = row.topic?.trim() || row.generated_topic?.trim();
                     if (!topic) continue;
@@ -68,23 +70,14 @@ class ArticleModel {
                     await db.query('ALTER TABLE articles ADD CONSTRAINT fk_articles_topic FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE RESTRICT');
                 }
 
-                const [{ missingTopics }] = await db.query('SELECT COUNT(*) AS missingTopics FROM articles WHERE topic_id IS NULL');
-                if (topicIdColumn[0]?.IS_NULLABLE === 'YES' && Number(missingTopics) === 0) {
-                    await db.query('ALTER TABLE articles MODIFY topic_id CHAR(36) NOT NULL');
-                }
+                const currentTopicColumn = await db.query(`
+                    SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'topic_id'
+                `);
+                if (currentTopicColumn[0]?.IS_NULLABLE === 'NO') await db.query('ALTER TABLE articles MODIFY topic_id CHAR(36) NULL');
             })().catch((error) => { this.topicSchemaReady = null; throw error; });
         }
         return this.topicSchemaReady;
-    }
-
-    async enforceTopicRequiredWhenComplete() {
-        const columns = await db.query(`
-            SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'topic_id'
-        `);
-        if (columns[0]?.IS_NULLABLE !== 'YES') return;
-        const [{ missingTopics }] = await db.query('SELECT COUNT(*) AS missingTopics FROM articles WHERE topic_id IS NULL');
-        if (Number(missingTopics) === 0) await db.query('ALTER TABLE articles MODIFY topic_id CHAR(36) NOT NULL');
     }
 
     async ensureMediaColumn() {
@@ -124,7 +117,6 @@ class ArticleModel {
             featured_media_id = null,
             status = 'draft',
             category_id = null,
-            topic = '',
             author_id = null,
             seo_title = null,
             seo_description = null,
@@ -133,7 +125,6 @@ class ArticleModel {
             scheduled_at = null
         } = data;
 
-        const topic_id = await this.getOrCreateTopicId(topic);
         const id = uuidv4();
         const sql = `
             INSERT INTO articles
@@ -151,7 +142,7 @@ class ArticleModel {
             featured_media_id ?? null,
             status ?? 'draft',
             category_id ?? null,
-            topic_id,
+            null,
             author_id ?? null,
             seo_title ?? null,
             seo_description ?? null,
@@ -213,16 +204,11 @@ class ArticleModel {
         const fields = [];
         const params = [];
 
-        const allowed = ['title', 'slug', 'excerpt', 'content', 'featured_image', 'featured_media_id', 'status', 'category_id', 'topic',
+        const allowed = ['title', 'slug', 'excerpt', 'content', 'featured_image', 'featured_media_id', 'status', 'category_id',
             'seo_title', 'seo_description', 'seo_keywords', 'published_at', 'scheduled_at'];
 
         for (const [key, value] of Object.entries(data)) {
             if (!allowed.includes(key)) continue;
-            if (key === 'topic') {
-                fields.push('topic_id = ?');
-                params.push(await this.getOrCreateTopicId(value));
-                continue;
-            }
             fields.push(`${key} = ?`);
             params.push(value ?? null);
         }
@@ -237,7 +223,6 @@ class ArticleModel {
         params.push(id);
         const sql = `UPDATE articles SET ${fields.join(', ')} WHERE id = ?`;
         await db.query(sql, params);
-        if (Object.hasOwn(data, 'topic')) await this.enforceTopicRequiredWhenComplete();
         return true;
     }
 

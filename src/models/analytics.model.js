@@ -147,9 +147,13 @@ class AnalyticsModel {
         `);
 
         const topicRows = await db.query(`
-            SELECT a.id, a.seo_keywords, t.name AS topic
+            SELECT a.id, a.seo_keywords,
+                (SELECT CASE WHEN JSON_VALID(g.prompt)
+                    THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(g.prompt, '$.topic')), '') ELSE NULL END
+                 FROM ai_generations g
+                 WHERE g.article_id = a.id AND g.status = 'completed'
+                 ORDER BY g.created_at DESC, g.id DESC LIMIT 1) AS topic
             FROM articles a
-            JOIN topics t ON t.id = a.topic_id
             WHERE ${PUBLIC_ARTICLE}
             ORDER BY a.published_at DESC
         `);

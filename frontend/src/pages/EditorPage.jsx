@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { NativeSelect } from '@/components/ui/native-select'
 
 const EMPTY = {
-  title: '', topic: '', slug: '', excerpt: '', content: '', featured_image: '', featured_media_id: null, featured_media_path: '', featured_image_credit: '', status: 'draft', category_id: '',
+  title: '', slug: '', excerpt: '', content: '', featured_image: '', featured_media_id: null, featured_media_path: '', featured_image_credit: '', status: 'draft', category_id: '',
   seo_title: '', seo_description: '', seo_keywords: '',
 }
 const FIELDS = Object.keys(EMPTY)
@@ -57,7 +57,7 @@ function normalizeReviewText(value) {
     .toLocaleLowerCase()
 }
 
-function findReviewQuoteRange(doc, quote) {
+function findReviewQuoteRange(doc, quote, requireUnique = false) {
   const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT)
   const positions = []
   let visibleText = ''
@@ -80,6 +80,7 @@ function findReviewQuoteRange(doc, quote) {
 
   let start = visibleText.indexOf(quote)
   let end = start < 0 ? -1 : start + quote.length
+  if (requireUnique && start >= 0 && visibleText.indexOf(quote, end) >= 0) return null
   let normalizedPositions = positions
   if (start < 0) {
     const normalizedText = []
@@ -113,6 +114,7 @@ function findReviewQuoteRange(doc, quote) {
     const normalizedQuote = normalizeReviewText(quote)
     start = normalizedText.join('').indexOf(normalizedQuote)
     if (start < 0) return null
+    if (requireUnique && normalizedText.join('').indexOf(normalizedQuote, start + normalizedQuote.length) >= 0) return null
     end = start + normalizedQuote.length
     normalizedPositions = normalizedMap
   }
@@ -122,6 +124,29 @@ function findReviewQuoteRange(doc, quote) {
   const last = normalizedPositions[end - 1]
   if (!first || !last) return null
   return { start: first, end: { node: last.node, offset: last.offset + 1 } }
+}
+
+function replaceReviewText(html, quote, replacement, removeSentence = false) {
+  const doc = new DOMParser().parseFromString(html || '', 'text/html')
+  const match = findReviewQuoteRange(doc, quote, true)
+  if (!match) return null
+  const range = doc.createRange()
+  range.setStart(match.start.node, match.start.offset)
+  range.setEnd(match.end.node, match.end.offset)
+  let block = match.start.node.parentElement?.closest('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,div,td,th')
+  if (removeSentence) {
+    const startNode = range.startContainer
+    const endNode = range.endContainer
+    if (startNode.nodeType === Node.TEXT_NODE && range.startOffset > 0 && /\s/.test(startNode.nodeValue[range.startOffset - 1])) {
+      range.setStart(startNode, range.startOffset - 1)
+    } else if (endNode.nodeType === Node.TEXT_NODE && /\s/.test(endNode.nodeValue[range.endOffset] || '')) {
+      range.setEnd(endNode, range.endOffset + 1)
+    }
+  }
+  range.deleteContents()
+  if (!removeSentence && replacement) range.insertNode(doc.createTextNode(replacement))
+  if (removeSentence && block && /^(P|H[1-6]|LI|BLOCKQUOTE)$/.test(block.tagName) && !block.textContent.trim() && !block.querySelector('img,video,table,ul,ol')) block.remove()
+  return doc.body.innerHTML
 }
 
 export default function EditorPage() {
@@ -141,6 +166,8 @@ export default function EditorPage() {
   const [reviewing, setReviewing] = useState(false)
   const [review, setReview] = useState(null)
   const [appliedFindings, setAppliedFindings] = useState([])
+  const [dismissedFindings, setDismissedFindings] = useState([])
+  const [reviewHistory, setReviewHistory] = useState([])
   const [media, setMedia] = useState([])
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
@@ -151,15 +178,21 @@ export default function EditorPage() {
   const selectedCategory = categories.find((category) => String(category.id) === String(article.category_id))
   const imageSrc = mediaUrl(article.featured_media_path || article.featured_image)
 
-  const set = (name) => (e) => {
-    setArticle((a) => ({ ...a, [name]: e.target.value }))
+  const clearCurrentReview = () => {
+    if (review?.id) setReviewHistory((current) => current.some((item) => item.id === review.id) ? current : [review, ...current])
     setReview(null)
     setAppliedFindings([])
+    setDismissedFindings([])
+  }
+  const set = (name) => (e) => {
+    setArticle((a) => ({ ...a, [name]: e.target.value }))
+    clearCurrentReview()
   }
   const setAI = (name) => (e) => setAi((a) => ({ ...a, [name]: e.target.value }))
   const setCategory = (e) => {
     setArticle((current) => ({ ...current, category_id: e.target.value }))
     setTopics([])
+    clearCurrentReview()
   }
 
   const loadMedia = useCallback(() => api.media().then(setMedia).catch(() => {}), [])
@@ -201,9 +234,23 @@ export default function EditorPage() {
   }, [])
 
   useEffect(() => {
+    let active = true
     setArticleId(id || null)
-    if (!id) { setArticle(EMPTY); return }
-    api.article(id).then((a) => setArticle(pick(a))).catch((e) => toast.error(errorMessage(e)))
+    setReview(null)
+    setReviewHistory([])
+    setAppliedFindings([])
+    setDismissedFindings([])
+    if (!id) { setArticle(EMPTY); return () => { active = false } }
+    api.article(id).then((a) => { if (active) setArticle(pick(a)) }).catch((e) => { if (active) toast.error(errorMessage(e)) })
+    api.articleReviewHistory(id).then((history) => {
+      if (!active) return
+      const [latest, ...older] = history || []
+      setReview(latest || null)
+      setReviewHistory(older)
+      setAppliedFindings(latest?.findings?.flatMap((finding, index) => finding.status === 'applied' ? [index] : []) || [])
+      setDismissedFindings(latest?.findings?.flatMap((finding, index) => finding.status === 'dismissed' ? [index] : []) || [])
+    }).catch((e) => { if (active) toast.error(`Could not load article review history: ${errorMessage(e)}`) })
+    return () => { active = false }
   }, [id])
 
   // Releases the Generate button even when the socket event never arrives
@@ -214,8 +261,8 @@ export default function EditorPage() {
   }, [])
 
   const save = async () => {
-    if (!article.title || !article.topic.trim() || !article.slug || !article.content) {
-      return toast.error('Title, topic, slug and content are required')
+    if (!article.title || !article.slug || !article.content) {
+      return toast.error('Title, slug and content are required')
     }
     setSaving(true)
     try {
@@ -228,6 +275,10 @@ export default function EditorPage() {
       } else {
         const { id: newId } = await api.createArticle(payload(article))
         setArticleId(newId)
+        if (review && !review.id) {
+          try { setReview(await api.saveArticleReviewHistory(newId, review)) }
+          catch (reviewError) { toast.error(`Article saved, but its review history could not be saved: ${errorMessage(reviewError)}`) }
+        }
         navigate(`/articles/${newId}`, { replace: true })
         toast.success('Article saved')
       }
@@ -275,17 +326,45 @@ export default function EditorPage() {
   const reviewCurrentArticle = async () => {
     if (!article.title.trim() || !article.content.trim()) return toast.error('Add an article title and content before reviewing.')
     setReviewing(true)
-    setReview(null)
-    setAppliedFindings([])
     try {
-      setReview(await api.reviewArticle({ articleId, topic: article.topic, category: selectedCategory?.name || '', title: article.title, excerpt: article.excerpt, content: article.content }))
+      const result = await api.reviewArticle({ articleId, category: selectedCategory?.name || '', title: article.title, excerpt: article.excerpt, content: article.content })
+      if (articleId && result.id) {
+        const history = await api.articleReviewHistory(articleId)
+        setReviewHistory(history.slice(1))
+        setReview(history[0] || result)
+      } else {
+        if (review) setReviewHistory((current) => [review, ...current])
+        setReview(result)
+      }
+      setAppliedFindings([])
+      setDismissedFindings([])
     } catch (e) { toast.error(errorMessage(e)) }
     finally { setReviewing(false) }
   }
 
+  const markFindingStatus = (finding, index, status, action = null) => {
+    if (finding.id && articleId) {
+      api.updateReviewFinding(finding.id, { articleId, status, action }).catch((e) => {
+        toast.error(`The editor changed, but could not save this suggestion's status: ${errorMessage(e)}`)
+      })
+    }
+    setReview((current) => current ? ({
+      ...current,
+      findings: current.findings.map((item, itemIndex) => itemIndex === index ? { ...item, status, action } : item),
+    }) : current)
+    if (status === 'applied') setAppliedFindings((current) => [...new Set([...current, index])])
+    if (status === 'dismissed') setDismissedFindings((current) => [...new Set([...current, index])])
+  }
+
+  const dismissFinding = (finding, index) => {
+    markFindingStatus(finding, index, 'dismissed', 'dismissed')
+    if (!finding.id) toast.info('Dismissed for this session. Saving the article will keep this dismissal in its review history.')
+    else toast.success('Suggestion dismissed and saved in this article’s review history.')
+  }
+
   const applyFinding = (finding, index) => {
     if (finding.type === 'fact_check') return
-    if (finding.field === 'title' || finding.field === 'topic') {
+    if (finding.field === 'title') {
       const currentValue = String(article[finding.field] || '')
       if (normalizeReviewText(currentValue) !== normalizeReviewText(finding.quote)) {
         return toast.error(`The article ${finding.field} changed since this review. Rerun the review and try again.`)
@@ -293,7 +372,7 @@ export default function EditorPage() {
       const suggestion = finding.suggestion.trim()
       if (!suggestion) return toast.error('The AI did not provide replacement text for this suggestion.')
       setArticle((current) => ({ ...current, [finding.field]: suggestion }))
-      setAppliedFindings((current) => [...current, index])
+      markFindingStatus(finding, index, 'applied', 'replace_field')
       return
     }
     const doc = new DOMParser().parseFromString(article.content || '', 'text/html')
@@ -305,23 +384,39 @@ export default function EditorPage() {
     range.deleteContents()
     range.insertNode(doc.createTextNode(finding.suggestion))
     setArticle((current) => ({ ...current, content: doc.body.innerHTML }))
-    setAppliedFindings((current) => [...current, index])
+    markFindingStatus(finding, index, 'applied', 'replace_text')
+  }
+
+  const applyFactCheckAction = (finding, index, action) => {
+    const sentence = String(finding.sentenceQuote || '').trim()
+    if (!sentence) return toast.error('This finding has no complete sentence to safely edit. Rerun the review to get updated context.')
+    const replacement = action === 'rewrite' ? String(finding.neutralRewrite || '').trim() : ''
+    if (action === 'rewrite' && !replacement) return toast.error('No neutral rewrite is available for this finding. Remove the sentence or rerun the review.')
+    const preview = action === 'remove'
+      ? `Remove this complete sentence from the editor?\n\nBEFORE:\n${sentence}\n\nAFTER:\n[Sentence removed]`
+      : `Replace this sentence with the neutral rewrite?\n\nBEFORE:\n${sentence}\n\nAFTER:\n${replacement}`
+    if (!window.confirm(preview)) return
+    const content = replaceReviewText(article.content, sentence, replacement, action === 'remove')
+    if (content === null) return toast.error('Could not match the reviewed sentence. Rerun the review and try again.')
+    setArticle((current) => ({ ...current, content }))
+    markFindingStatus(finding, index, 'applied', action === 'remove' ? 'remove_sentence' : 'neutral_rewrite')
+    toast.success(action === 'remove' ? 'Sentence removed from the editor.' : 'Neutral rewrite applied to the editor.')
   }
 
   const applyAllFindings = () => {
     const pending = review.findings
       .map((finding, index) => ({ finding, index }))
-      .filter(({ finding, index }) => finding.type !== 'fact_check' && !appliedFindings.includes(index))
+      .filter(({ finding, index }) => finding.type !== 'fact_check' && !appliedFindings.includes(index) && !dismissedFindings.includes(index))
     if (!pending.length) return toast.info('There are no unapplied editable suggestions.')
 
     let nextArticle = { ...article }
     const applied = []
     const skipped = []
     for (const { finding, index } of pending) {
-      const field = finding.field === 'title' || finding.field === 'topic' ? finding.field : 'content'
+      const field = finding.field === 'title' ? finding.field : 'content'
       const suggestion = String(finding.suggestion || '').trim()
       if (!suggestion) { skipped.push(index); continue }
-      if (field === 'title' || field === 'topic') {
+      if (field === 'title') {
         if (normalizeReviewText(nextArticle[field] || '') !== normalizeReviewText(finding.quote)) { skipped.push(index); continue }
         nextArticle[field] = suggestion
       } else {
@@ -341,6 +436,10 @@ export default function EditorPage() {
     if (applied.length) {
       setArticle(nextArticle)
       setAppliedFindings((current) => [...new Set([...current, ...applied])])
+      const appliedSet = new Set(applied)
+      for (const { finding, index } of pending) {
+        if (appliedSet.has(index)) markFindingStatus(finding, index, 'applied', 'apply_all')
+      }
     }
     if (skipped.length) toast.info(`Applied ${applied.length} suggestion${applied.length === 1 ? '' : 's'}; skipped ${skipped.length} that no longer matched or had no replacement.`)
     else toast.success(`Applied ${applied.length} suggestion${applied.length === 1 ? '' : 's'} to the editor.`)
@@ -349,8 +448,7 @@ export default function EditorPage() {
   const onArticleContentChange = (content, _delta, source) => {
     setArticle((current) => ({ ...current, content }))
     if (source === 'user') {
-      setReview(null)
-      setAppliedFindings([])
+      clearCurrentReview()
     }
   }
 
@@ -398,39 +496,63 @@ export default function EditorPage() {
           </Button>
         </div>
         <Input value={article.title} onChange={set('title')} placeholder="Article title" className="h-11 text-base" />
-        <Field label="Article topic" hint={<p className="text-xs text-muted-foreground">Every article needs one topic. AI-generated articles use the generation topic; you can edit it here.</p>}>
-          <Input value={article.topic} onChange={set('topic')} placeholder="e.g. AI-assisted software development" maxLength={500} required />
-        </Field>
         <div className="editor-quill">
           <ReactQuill theme="snow" value={article.content} onChange={onArticleContentChange} />
         </div>
         <Card className="gap-4 py-4">
           <CardHeader className="flex flex-row items-center justify-between gap-3 px-4">
             <div><CardTitle className="text-sm">AI article review</CardTitle><p className="mt-1 text-xs text-muted-foreground">Proofreading, clarity, consistency, and claims to verify</p></div>
-            <Button type="button" variant="outline" size="sm" onClick={reviewCurrentArticle} disabled={reviewing || saving || !article.title || !article.content}>
+            <Button type="button" variant="outline" size="sm" className={reviewing ? 'animate-pulse border-sky-600 bg-sky-600 text-white hover:bg-sky-600 disabled:opacity-100' : ''} onClick={reviewCurrentArticle} disabled={reviewing || saving || !article.title || !article.content}>
               {reviewing ? <Loader2 className="animate-spin" /> : <Sparkles />} {reviewing ? 'Reviewing…' : 'Review article'}
             </Button>
           </CardHeader>
           {review && <CardContent className="grid gap-3 px-4">
-            <p className="text-xs text-muted-foreground">Reviewed with {review.model || 'the selected AI model'} on {new Date(review.reviewedAt).toLocaleString()}. Topic: {review.topic || 'not recorded'} · Category: {review.category || 'not assigned'}. No live sources were checked; factual findings need your verification.</p>
-            {review.titleTopicReviewNote && <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{review.titleTopicReviewNote}</p>}
+            <p className="text-xs text-muted-foreground">Reviewed with {review.model || 'the selected AI model'} on {new Date(review.reviewedAt).toLocaleString()}. Category: {review.category || 'not assigned'}. No live sources were checked; factual findings need your verification.</p>
+            {review.titleReviewNote && <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{review.titleReviewNote}</p>}
             {!review.findings.length && <p className="rounded-md bg-muted p-3 text-sm">No actionable findings returned. This does not guarantee the article is error-free.</p>}
-            {review.findings.some((finding, index) => finding.type !== 'fact_check' && !appliedFindings.includes(index)) && <Button type="button" size="sm" className="w-fit" onClick={applyAllFindings}><Check /> Apply all suggestions</Button>}
+            {review.findings.some((finding, index) => finding.type !== 'fact_check' && !appliedFindings.includes(index) && !dismissedFindings.includes(index)) && <Button type="button" size="sm" className="w-fit" onClick={applyAllFindings}><Check /> Apply all suggestions</Button>}
             {review.findings.map((finding, index) => {
               const applied = appliedFindings.includes(index)
+              const dismissed = dismissedFindings.includes(index)
+              const handled = applied || dismissed
               const factCheck = finding.type === 'fact_check'
               const severityColor = finding.severity === 'high'
                 ? 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500'
                 : finding.severity === 'medium'
                   ? 'bg-orange-500 text-white hover:bg-orange-600 focus-visible:ring-orange-500'
                   : 'bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500'
-              return <div key={`${index}-${finding.quote}`} className={`grid gap-2 rounded-md border p-3 ${factCheck ? 'border-yellow-300 bg-yellow-100/70 dark:border-yellow-700 dark:bg-yellow-950/30' : ''}`}>
+              return <div key={`${index}-${finding.quote}`} className={`grid gap-2 rounded-md border p-3 ${factCheck ? 'border-yellow-500 bg-yellow-200/90 dark:border-yellow-600 dark:bg-yellow-900/50' : ''}`}>
                 <div className="flex flex-wrap items-center gap-2 text-xs font-medium"><span className="rounded-full bg-muted px-2 py-1">{finding.field} · {finding.type.replace('_', ' ')}</span><span className="text-muted-foreground">{finding.severity} priority</span></div>
-                <p className="text-sm"><span className="font-medium">“{finding.quote || (finding.field === 'topic' ? 'No topic entered' : '')}”</span> — {finding.explanation}</p>
+                <p className="text-sm"><span className="font-medium">“{finding.quote}”</span> — {finding.explanation}</p>
                 <p className="text-sm text-muted-foreground"><span className="font-medium">Suggestion:</span> {finding.suggestion}</p>
-                {finding.type !== 'fact_check' && <Button type="button" size="sm" className={`w-fit ${severityColor}`} disabled={applied} onClick={() => applyFinding(finding, index)}>{applied ? <Check /> : <AlertTriangle />}{applied ? 'Applied to editor' : 'Apply suggestion'}</Button>}
+                {factCheck && finding.sentenceQuote && <p className="rounded bg-yellow-100/80 p-2 text-sm dark:bg-yellow-950/40"><span className="font-medium">Sentence in article:</span> “{finding.sentenceQuote}”</p>}
+                {factCheck && finding.neutralRewrite && <p className="text-sm text-muted-foreground"><span className="font-medium">Neutral rewrite:</span> {finding.neutralRewrite}</p>}
+                {finding.type === 'fact_check'
+                  ? <div className="flex flex-wrap gap-2">
+                    {handled ? <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground"><Check className="size-4" /> {dismissed ? 'Suggestion dismissed' : 'Updated in editor'}</span> : <>
+                      <Button type="button" variant="outline" size="sm" disabled={!finding.sentenceQuote} onClick={() => applyFactCheckAction(finding, index, 'remove')}>Remove sentence</Button>
+                      <Button type="button" variant="outline" size="sm" disabled={!finding.neutralRewrite} onClick={() => applyFactCheckAction(finding, index, 'rewrite')}>Use neutral rewrite</Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => dismissFinding(finding, index)}>Dismiss suggestion</Button>
+                    </>}
+                  </div>
+                  : <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" className={`w-fit ${severityColor}`} disabled={handled} onClick={() => applyFinding(finding, index)}>{handled ? <Check /> : <AlertTriangle />}{dismissed ? 'Suggestion dismissed' : applied ? 'Applied to editor' : 'Apply suggestion'}</Button>
+                    {!handled && <Button type="button" variant="ghost" size="sm" onClick={() => dismissFinding(finding, index)}>Dismiss suggestion</Button>}
+                  </div>}
               </div>
             })}
+          </CardContent>}
+          {reviewHistory.length > 0 && <CardContent className="grid gap-2 border-t px-4 pt-4">
+            <h3 className="text-sm font-medium">Previous review history</h3>
+            {reviewHistory.map((past) => <details key={past.id} className="rounded-md border p-3">
+              <summary className="cursor-pointer text-sm">{new Date(past.reviewedAt).toLocaleString()} · {past.findings.length} suggestion{past.findings.length === 1 ? '' : 's'}</summary>
+              <div className="mt-3 grid gap-2">
+                {past.findings.map((finding) => <div key={finding.id} className="rounded bg-muted/50 p-2 text-xs">
+                  <p className="font-medium">{finding.field} · {finding.type.replace('_', ' ')} · {finding.status}</p>
+                  <p>“{finding.quote}” — {finding.explanation}</p>
+                </div>)}
+              </div>
+            </details>)}
           </CardContent>}
         </Card>
       </div>

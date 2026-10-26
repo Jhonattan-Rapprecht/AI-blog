@@ -46,7 +46,7 @@ The Articles section of the sidebar contains **Articles Overview** and **Article
 
 **URL:** http://localhost:5173/articles/analytics
 
-View article totals, publishing activity for the last six months, published content by category, topic and SEO keyword coverage, and reader views and active reading time for the selected 7-, 30-, or 90-day period. Estimated reading time is calculated from article length and is shown separately from measured reader time. Public reader tracking starts when this version is deployed; historical visits are not available.
+View article totals, publishing activity for the last six months, published content by category, AI generation topics and SEO keyword coverage, and reader views and active reading time for the selected 7-, 30-, or 90-day period. Generation topics come from saved AI-generation prompts. Estimated reading time is calculated from article length and is shown separately from measured reader time. Public reader tracking starts when this version is deployed; historical visits are not available.
 
 ### Edit article
 
@@ -54,7 +54,7 @@ View article totals, publishing activity for the last six months, published cont
 
 Opens an existing article in the editor. Make your changes and click **Save changes**.
 
-Enter an **Article topic** for each article. AI-generated and automatically generated articles inherit the generation topic; you can edit the topic before saving changes. The topic is stored with the article. **AI article review** checks the title and topic as well as spelling, grammar, clarity, consistency, alignment with the article's topic/category, and claims that may need fact checking. Review each finding and apply writing suggestions individually; applying a suggestion updates its target field in the Editor but does not save the article. Fact-check findings require manual verification. The selected Ollama model does not check live web sources or provide a dependable knowledge-cutoff date, so review results are advisory. This works for published articles too; save your changes when ready to update the published version.
+The Editor contains the article title, body, category, publishing controls, and metadata. Topic is only used in the **AI generation** panel; generated topics are retained with the generation record and are not saved as a required article field. **AI article review** checks title spelling, grammar and clarity, along with body spelling, grammar, clarity, consistency, and claims that may need fact checking. Apply a suggestion individually or use **Apply all suggestions** for editable writing suggestions. You can dismiss individual findings; review runs and dismissed/applied statuses are saved in each article's review history and deleted with the article. Fact-check findings still require manual verification, but can remove the containing sentence or apply an available neutral rewrite after previewing the change. The selected Ollama model does not check live web sources or provide a dependable knowledge-cutoff date, so review results are advisory. This works for published articles too; save your changes when ready to update the published version.
 
 In **Featured image**, upload a JPG, PNG, WebP, or GIF (up to 12 MB), or select an existing library image. Enter a photo credit/source, such as the photographer's name, below the preview. It appears in a small caption beneath the image on the full article page after you save the article, not on article cards. AI image generation will be added later.
 

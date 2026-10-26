@@ -2,6 +2,7 @@ const db = require('../config/db');
 const AIService = require('./ai.service');
 const ArticleModel = require('../models/article.model');
 const PublishingService = require('./publishing.service');
+const AIGenerationModel = require('../models/ai.generation.model');
 
 class AutomationService {
     async runAutoGeneration(config) {
@@ -13,9 +14,21 @@ class AutomationService {
             // 2. Create article
             const articleId = await ArticleModel.create({
                 ...result.data,
-                topic: config.topic,
                 status: config.auto_publish ? 'published' : 'draft'
             });
+
+            try {
+                await AIGenerationModel.create({
+                    article_id: articleId,
+                    provider: result.meta.provider,
+                    model: result.meta.model,
+                    prompt: JSON.stringify(config),
+                    response: result.data,
+                    status: 'completed'
+                });
+            } catch (historyError) {
+                console.error('[Automation] Could not save generation history:', historyError.message);
+            }
 
             // 3. If auto-publish is disabled, maybe schedule it
             if (!config.auto_publish && config.publication_time) {

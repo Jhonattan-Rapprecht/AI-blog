@@ -8,5 +8,8 @@ router.get('/history/:articleId', AIController.getHistory);
 router.post('/suggest-slug', AIController.suggestSlug);
 router.post('/suggest-topic', AIController.suggestTopic);
 router.post('/review-article', AIController.reviewArticle);
+router.post('/review-history/:articleId', AIController.saveArticleReviewHistory);
+router.get('/review-history/:articleId', AIController.getArticleReviewHistory);
+router.patch('/review-findings/:findingId', AIController.updateArticleReviewFinding);
 
 module.exports = router;

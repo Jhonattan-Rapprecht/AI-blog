@@ -153,11 +153,11 @@ export default function ArticlesAnalyticsPage() {
             </Card>
 
             <Card className="gap-4 py-4">
-              <CardHeader className="px-4"><CardTitle className="text-sm">Topic coverage</CardTitle><CardDescription>Saved article topics and SEO keywords.</CardDescription></CardHeader>
+              <CardHeader className="px-4"><CardTitle className="text-sm">Generation topics and SEO keywords</CardTitle><CardDescription>Topics from saved AI-generation prompts, plus article SEO keywords.</CardDescription></CardHeader>
               <CardContent className="grid gap-5 px-4">
                 <div>
-                  <h3 className="mb-2 text-xs font-medium text-muted-foreground">TOP TOPICS</h3>
-                  {data.top_topics.length ? <div className="flex flex-wrap gap-2">{data.top_topics.map((item) => <Badge key={item.topic} variant="secondary" title={`${item.article_count} article(s)`}>{item.topic} <span className="ml-1 opacity-60">{item.article_count}</span></Badge>)}</div> : <p className="text-sm text-muted-foreground">No published topics yet.</p>}
+                  <h3 className="mb-2 text-xs font-medium text-muted-foreground">AI GENERATION TOPICS</h3>
+                  {data.top_topics.length ? <div className="flex flex-wrap gap-2">{data.top_topics.map((item) => <Badge key={item.topic} variant="secondary" title={`${item.article_count} article(s)`}>{item.topic} <span className="ml-1 opacity-60">{item.article_count}</span></Badge>)}</div> : <p className="text-sm text-muted-foreground">No published AI-generated topics yet.</p>}
                 </div>
                 <div>
                   <h3 className="mb-2 text-xs font-medium text-muted-foreground">SEO KEYWORDS</h3>
