@@ -52,6 +52,7 @@ The recent app requests in this session were:
 37. The user reported an `Incorrect datetime value` for `article_reviews.reviewed_at`, requested removing the article topic field and topic review (generation topic remains), and said to implement the previously discussed dismissal/history changes. The timestamp insert now uses database `CURRENT_TIMESTAMP`; restart a non-watch backend if the old error persists. Removed editor article topic and topic-specific review pass; article topic storage is now optional/nullable and new article writes leave it empty while preserving old links. AI review checks title/body/category only. Analytics reads generation topics from `ai_generations.prompt`, and automated generation now saves that record. The persistent dismissal/review-history implementation remains uncommitted.
 38. The user asked whether the title review checks spelling and grammar, then approved adding those checks. Expanded the title-only prompt to check spelling, grammar, clarity, and accuracy, returning at most one combined whole-title replacement. Updated user/developer docs; uncommitted.
 39. The user clarified and confirmed the topic field should stay only in AI generation settings: entered topic/category can guide topic suggestions, and blank settings allow topic/title generation. Do not add an article topic field to the draft editor or reviewer. Manual article drafts continue to save without an article topic. The accumulated changes were committed as `19aa76d` (`feat(article-review): persist findings and improve review actions`) and pushed to `origin/feat/article-reviewer-v2.3`.
+40. The user reported a Network Error after applying a title suggestion. The text replacement succeeded, but status persistence used PATCH and the API CORS allowlist omitted PATCH, so browser preflight blocked the status request. Added PATCH to CORS, a **Retry saving status** button on failures, and recovery when the current title already equals the suggestion. Documented in the changelog and known issues; this fix is uncommitted.
 
 ### App work completed in this session
 
@@ -69,6 +70,7 @@ The recent app requests in this session were:
 
 - Current feature branch: `feat/article-reviewer-v2.3` (standardized from `Feat-article-reviewer-v2.3`; pushed to origin).
 - The accumulated reviewer, article-topic, persistence, and documentation changes were committed as `19aa76d` and pushed to `origin/feat/article-reviewer-v2.3`.
+- Follow-up: fixed a CORS preflight failure for PATCH status updates; this follow-up is uncommitted.
 - Latest milestone commit: `feat(media): add image library and photo credits` on `v2.1`, pushed to `origin/v2.1`; the follow-up moves captions off cards and records this prompt-history update.
 - Photo credit/source captions belong only on full article pages. Check `git status` and the latest commit before assuming there is pending work.
 - Reader engagement values are page-load views and visible seconds, not unique visitors. The public site's existing reading-time estimate is based on article word count.

@@ -167,6 +167,7 @@ export default function EditorPage() {
   const [review, setReview] = useState(null)
   const [appliedFindings, setAppliedFindings] = useState([])
   const [dismissedFindings, setDismissedFindings] = useState([])
+  const [findingStatusSaveErrors, setFindingStatusSaveErrors] = useState({})
   const [reviewHistory, setReviewHistory] = useState([])
   const [media, setMedia] = useState([])
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
@@ -183,6 +184,7 @@ export default function EditorPage() {
     setReview(null)
     setAppliedFindings([])
     setDismissedFindings([])
+    setFindingStatusSaveErrors({})
   }
   const set = (name) => (e) => {
     setArticle((a) => ({ ...a, [name]: e.target.value }))
@@ -240,6 +242,7 @@ export default function EditorPage() {
     setReviewHistory([])
     setAppliedFindings([])
     setDismissedFindings([])
+    setFindingStatusSaveErrors({})
     if (!id) { setArticle(EMPTY); return () => { active = false } }
     api.article(id).then((a) => { if (active) setArticle(pick(a)) }).catch((e) => { if (active) toast.error(errorMessage(e)) })
     api.articleReviewHistory(id).then((history) => {
@@ -338,15 +341,24 @@ export default function EditorPage() {
       }
       setAppliedFindings([])
       setDismissedFindings([])
+      setFindingStatusSaveErrors({})
     } catch (e) { toast.error(errorMessage(e)) }
     finally { setReviewing(false) }
   }
 
   const markFindingStatus = (finding, index, status, action = null) => {
+    let statusRequest = Promise.resolve(true)
     if (finding.id && articleId) {
-      api.updateReviewFinding(finding.id, { articleId, status, action }).catch((e) => {
-        toast.error(`The editor changed, but could not save this suggestion's status: ${errorMessage(e)}`)
-      })
+      statusRequest = api.updateReviewFinding(finding.id, { articleId, status, action })
+        .then(() => {
+          setFindingStatusSaveErrors((current) => { const next = { ...current }; delete next[finding.id]; return next })
+          return true
+        })
+        .catch((e) => {
+          setFindingStatusSaveErrors((current) => ({ ...current, [finding.id]: { status, action } }))
+          toast.error(`The editor changed, but could not save this suggestion's status: ${errorMessage(e)}`)
+          return false
+        })
     }
     setReview((current) => current ? ({
       ...current,
@@ -354,22 +366,37 @@ export default function EditorPage() {
     }) : current)
     if (status === 'applied') setAppliedFindings((current) => [...new Set([...current, index])])
     if (status === 'dismissed') setDismissedFindings((current) => [...new Set([...current, index])])
+    return statusRequest
+  }
+
+  const retryFindingStatusSave = (finding) => {
+    const pending = findingStatusSaveErrors[finding.id]
+    if (!pending || !articleId) return
+    api.updateReviewFinding(finding.id, { articleId, ...pending }).then(() => {
+      setFindingStatusSaveErrors((current) => { const next = { ...current }; delete next[finding.id]; return next })
+      toast.success('Suggestion status saved to review history.')
+    }).catch((e) => toast.error(`Could not save this suggestion's status: ${errorMessage(e)}`))
   }
 
   const dismissFinding = (finding, index) => {
-    markFindingStatus(finding, index, 'dismissed', 'dismissed')
+    const request = markFindingStatus(finding, index, 'dismissed', 'dismissed')
     if (!finding.id) toast.info('Dismissed for this session. Saving the article will keep this dismissal in its review history.')
-    else toast.success('Suggestion dismissed and saved in this article’s review history.')
+    else request.then((saved) => saved && toast.success('Suggestion dismissed and saved in this article’s review history.'))
   }
 
   const applyFinding = (finding, index) => {
     if (finding.type === 'fact_check') return
     if (finding.field === 'title') {
       const currentValue = String(article[finding.field] || '')
+      const suggestion = finding.suggestion.trim()
+      if (normalizeReviewText(currentValue) === normalizeReviewText(suggestion)) {
+        markFindingStatus(finding, index, 'applied', 'replace_field')
+        toast.info('The suggested title is already in the editor; saving its review status.')
+        return
+      }
       if (normalizeReviewText(currentValue) !== normalizeReviewText(finding.quote)) {
         return toast.error(`The article ${finding.field} changed since this review. Rerun the review and try again.`)
       }
-      const suggestion = finding.suggestion.trim()
       if (!suggestion) return toast.error('The AI did not provide replacement text for this suggestion.')
       setArticle((current) => ({ ...current, [finding.field]: suggestion }))
       markFindingStatus(finding, index, 'applied', 'replace_field')
@@ -539,6 +566,7 @@ export default function EditorPage() {
                     <Button type="button" size="sm" className={`w-fit ${severityColor}`} disabled={handled} onClick={() => applyFinding(finding, index)}>{handled ? <Check /> : <AlertTriangle />}{dismissed ? 'Suggestion dismissed' : applied ? 'Applied to editor' : 'Apply suggestion'}</Button>
                     {!handled && <Button type="button" variant="ghost" size="sm" onClick={() => dismissFinding(finding, index)}>Dismiss suggestion</Button>}
                   </div>}
+                {findingStatusSaveErrors[finding.id] && <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => retryFindingStatusSave(finding)}>Retry saving status</Button>}
               </div>
             })}
           </CardContent>}
