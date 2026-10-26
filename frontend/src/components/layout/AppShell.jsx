@@ -76,9 +76,12 @@ export default function AppShell() {
           ))}
         </SidebarContent>
         <SidebarFooter>
-          <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:justify-center">
-            <span className={`size-2 shrink-0 rounded-full ${ai.ok ? 'bg-emerald-500' : 'bg-red-500'}`} />
-            <span className="truncate group-data-[collapsible=icon]:hidden">{ai.label}</span>
+          <div className="grid gap-2 px-2 py-1.5 group-data-[collapsible=icon]:justify-items-center" title={`Connection status: ${ai.ok ? 'Connected' : 'Disconnected'} · ${ai.label}`}>
+            <span className="text-xs font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">Connection status</span>
+            <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+              <span className={`size-2 shrink-0 rounded-full ${ai.ok ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              <span className="truncate group-data-[collapsible=icon]:hidden">{ai.label}</span>
+            </div>
           </div>
         </SidebarFooter>
         <SidebarRail />

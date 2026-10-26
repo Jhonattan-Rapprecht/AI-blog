@@ -21,6 +21,9 @@ The recent app requests in this session were:
 7. After the analysis, the user said: “yes proceed and also commit push and document/changelog everything also add a new md.file for the agent prompts used during this session and place the prompt history there for future refereence and for others agents to know and check what was the last thing that was done inside the app. So now there are 2 places where things are documented.”
 8. The user requested an editable photo credit/source beneath images (example: “source pphoto: michael henniway”), with the slow zoom-out image fitting behavior deferred. They asked to document the milestone, commit/push, and rename the branch `v2.1`.
 9. The user then clarified: “dont forget to update the agent.md file with the prompts used for future reference. No remove the photo credit source label from the main article blog page in the front end, so dont display it on the cards, only when you open the article if that makes sense?” The credit caption now appears only on full article pages, and this prompt is recorded here for future agents.
+10. The user requested: “on the article analystics page the title is truncated... make it a bit less truncated but dont let it go on endlessly either”. Follow-up: “make it longer try to fit the title on one line, unless its too long then truncate it on one line not two”. The analytics **Most-read articles** table gives titles 70% of the width, keeps them on one line with ellipsis, and exposes the full title on hover.
+11. The user requested a **Connection status** section at the bottom of the admin sidebar, around the current model status. The existing status now has that label; collapsed sidebar mode retains the dot with a tooltip containing the provider/model details.
+12. The user said the label and connection information felt too close together. Increased the vertical spacing between those two rows in the sidebar footer.
 
 ### App work completed in this session
 
@@ -41,6 +44,8 @@ The recent app requests in this session were:
 - Photo credit/source captions belong only on full article pages. Check `git status` and the latest commit before assuming there is pending work.
 - Reader engagement values are page-load views and visible seconds, not unique visitors. The public site's existing reading-time estimate is based on article word count.
 - Media Library uploads and photo-source metadata are committed on branch `v2.1`. Follow-up work places the credit caption only on article detail pages; cards and homepage feature omit it. Existing articles need images explicitly uploaded/selected and then saved. AI image generation and slow zoom-out crop behavior remain deferred by the user.
+- The Analytics **Most-read articles** table reserves 70% of its width for titles. Titles stay on one line with ellipsis when needed; the full text is available on hover.
+- The admin sidebar footer labels the existing provider/model indicator **Connection status**.
 
 ### Main files for this work
 

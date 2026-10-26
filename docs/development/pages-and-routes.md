@@ -26,7 +26,7 @@ For recent user prompt history and the latest app handoff, see the repository-ro
 | `/dev/components` | `pages/dev/ComponentsPage.tsx` | **Dev only.** Preview HTML/CSS files from `src/component-previews/`, view source, copy, convert to JSX. **New component** pastes a snippet and saves it to that folder. Left out of production builds. |
 | `/login` | `pages/LoginPage.jsx` | Admin login (`ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`); public route |
 
-All other routes require a login (`components/ProtectedRoute.jsx`) and are wrapped in `components/layout/AppShell.jsx` (sidebar, header, theme toggle, AI status).
+All other routes require a login (`components/ProtectedRoute.jsx`) and are wrapped in `components/layout/AppShell.jsx` (sidebar, header, theme toggle, and labeled **Connection status** with the active AI provider/model).
 
 | Screen | Screenshot |
 |--------|------------|

@@ -143,9 +143,9 @@ export default function ArticlesAnalyticsPage() {
               <CardContent className="px-4">
                 {data.top_articles.length ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="border-b text-left text-xs text-muted-foreground"><tr><th className="py-2 font-medium">Article</th><th className="px-3 py-2 text-right font-medium">Views</th><th className="py-2 text-right font-medium">Avg. read</th></tr></thead>
-                      <tbody>{data.top_articles.map((article) => <tr key={article.id} className="border-b last:border-0"><td className="max-w-0 py-3"><button type="button" onClick={() => navigate(`/articles/${article.id}`)} className="block max-w-full truncate text-left font-medium hover:underline">{article.title}</button></td><td className="px-3 py-3 text-right tabular-nums">{formatCount(article.views)}</td><td className="py-3 text-right text-muted-foreground">{formatDuration(article.average_read_seconds)}</td></tr>)}</tbody>
+                    <table className="w-full table-fixed text-sm">
+                      <thead className="border-b text-left text-xs text-muted-foreground"><tr><th className="w-[70%] py-2 font-medium">Article</th><th className="w-[14%] px-3 py-2 text-right font-medium">Views</th><th className="w-[16%] py-2 text-right font-medium">Avg. read</th></tr></thead>
+                      <tbody>{data.top_articles.map((article) => <tr key={article.id} className="border-b last:border-0"><td className="max-w-0 py-3"><button type="button" title={article.title} onClick={() => navigate(`/articles/${article.id}`)} className="block w-full truncate whitespace-nowrap text-left font-medium hover:underline">{article.title}</button></td><td className="px-3 py-3 text-right tabular-nums">{formatCount(article.views)}</td><td className="py-3 text-right text-muted-foreground">{formatDuration(article.average_read_seconds)}</td></tr>)}</tbody>
                     </table>
                   </div>
                 ) : <p className="rounded-md border p-5 text-sm text-muted-foreground">No reader activity has been recorded in this period yet. New visits will appear here.</p>}
