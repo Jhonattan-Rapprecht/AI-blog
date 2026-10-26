@@ -24,6 +24,13 @@
 - The Editor requires an article topic. Manual input resolves to a reusable topic ID; AI and automated generation save their topic through the same relationship.
 - Added an idempotent lazy migration for existing installations. It migrates a prior direct `articles.topic` value or an article's completed AI generation prompt when available. Articles with no saved topic remain blank for the user to fill in; the migration never substitutes the title. Existing databases become non-null only after all legacy rows have topics.
 - Article editing, AI review, and analytics read the saved topic relationship. Category remains a separate `category_id` relationship.
+
+## Article review suggestion application
+
+- Fixed suggestion application for rich-text content. The Editor now matches quoted visible text across inline formatting and normalizes common whitespace and quote-style differences, then replaces the selected text range while preserving surrounding editor content.
+- Kept the analysis visible after applying a suggestion. The editor now clears review results only after a user-originated text edit, not when Quill receives the programmatic replacement.
+- Updated review prompting to request exact visible-text quotes and replacement text for spelling, grammar, clarity, and consistency findings; factual checks remain verification advice rather than automatic edits.
+- Expanded the review to check title quality and topic suitability. Findings identify whether they target the title, topic, or body, and Apply suggestion updates the matching Editor field.
 - Editing the title or article body clears the previous result so findings do not silently carry over to different text.
 - The review never saves content automatically and reports that live sources were not checked. Model knowledge and cutoff dates are not treated as verification.
 - Updated the user guide, routes/API documentation, and `AGENTS.md` handoff history.

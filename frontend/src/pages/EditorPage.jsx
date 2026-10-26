@@ -46,6 +46,84 @@ function Suggestions({ items, onPick }) {
   )
 }
 
+function normalizeReviewText(value) {
+  return String(value || '')
+    .replace(/[\u00a0\u202f]/g, ' ')
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLocaleLowerCase()
+}
+
+function findReviewQuoteRange(doc, quote) {
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT)
+  const positions = []
+  let visibleText = ''
+  let previousBlock = null
+  let node
+
+  while ((node = walker.nextNode())) {
+    const block = node.parentElement?.closest('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,div,td,th') || doc.body
+    if (visibleText && block !== previousBlock && !visibleText.endsWith('\n')) {
+      visibleText += '\n'
+      positions.push(null)
+    }
+    const value = node.nodeValue || ''
+    for (let offset = 0; offset < value.length; offset += 1) {
+      visibleText += value[offset]
+      positions.push({ node, offset })
+    }
+    previousBlock = block
+  }
+
+  let start = visibleText.indexOf(quote)
+  let end = start < 0 ? -1 : start + quote.length
+  let normalizedPositions = positions
+  if (start < 0) {
+    const normalizedText = []
+    const normalizedMap = []
+    let previousSpace = false
+    for (let i = 0; i < visibleText.length; i += 1) {
+      if (!positions[i]) {
+        if (normalizedText.length && !previousSpace) {
+          normalizedText.push(' ')
+          normalizedMap.push(null)
+          previousSpace = true
+        }
+        continue
+      }
+      const char = visibleText[i].replace(/[\u00a0\u202f]/g, ' ')
+      if (/\s/.test(char)) {
+        if (!previousSpace) {
+          normalizedText.push(' ')
+          normalizedMap.push(positions[i])
+          previousSpace = true
+        }
+      } else {
+        const normalizedChar = char.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').toLocaleLowerCase()
+        for (let part = 0; part < normalizedChar.length; part += 1) {
+          normalizedText.push(normalizedChar[part])
+          normalizedMap.push(positions[i])
+        }
+        previousSpace = false
+      }
+    }
+    const normalizedQuote = normalizeReviewText(quote)
+    start = normalizedText.join('').indexOf(normalizedQuote)
+    if (start < 0) return null
+    end = start + normalizedQuote.length
+    normalizedPositions = normalizedMap
+  }
+
+  if (normalizedPositions.slice(start, end).some((position) => !position)) return null
+  const first = normalizedPositions[start]
+  const last = normalizedPositions[end - 1]
+  if (!first || !last) return null
+  return { start: first, end: { node: last.node, offset: last.offset + 1 } }
+}
+
 export default function EditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -207,18 +285,35 @@ export default function EditorPage() {
 
   const applyFinding = (finding, index) => {
     if (finding.type === 'fact_check') return
-    const doc = new DOMParser().parseFromString(article.content || '', 'text/html')
-    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT)
-    let node
-    while ((node = walker.nextNode())) {
-      const at = node.nodeValue.indexOf(finding.quote)
-      if (at < 0) continue
-      node.nodeValue = `${node.nodeValue.slice(0, at)}${finding.suggestion}${node.nodeValue.slice(at + finding.quote.length)}`
-      setArticle((current) => ({ ...current, content: doc.body.innerHTML }))
+    if (finding.field === 'title' || finding.field === 'topic') {
+      const currentValue = String(article[finding.field] || '')
+      if (normalizeReviewText(currentValue) !== normalizeReviewText(finding.quote)) {
+        return toast.error(`The article ${finding.field} changed since this review. Rerun the review and try again.`)
+      }
+      const suggestion = finding.suggestion.trim()
+      if (!suggestion) return toast.error('The AI did not provide replacement text for this suggestion.')
+      setArticle((current) => ({ ...current, [finding.field]: suggestion }))
       setAppliedFindings((current) => [...current, index])
       return
     }
-    toast.error('The quoted text could not be matched exactly. Please edit it manually.')
+    const doc = new DOMParser().parseFromString(article.content || '', 'text/html')
+    const match = findReviewQuoteRange(doc, finding.quote)
+    if (!match) return toast.error('Could not match the quoted passage. Rerun the review and try again.')
+    const range = doc.createRange()
+    range.setStart(match.start.node, match.start.offset)
+    range.setEnd(match.end.node, match.end.offset)
+    range.deleteContents()
+    range.insertNode(doc.createTextNode(finding.suggestion))
+    setArticle((current) => ({ ...current, content: doc.body.innerHTML }))
+    setAppliedFindings((current) => [...current, index])
+  }
+
+  const onArticleContentChange = (content, _delta, source) => {
+    setArticle((current) => ({ ...current, content }))
+    if (source === 'user') {
+      setReview(null)
+      setAppliedFindings([])
+    }
   }
 
   const addCategory = async () => {
@@ -269,7 +364,7 @@ export default function EditorPage() {
           <Input value={article.topic} onChange={set('topic')} placeholder="e.g. AI-assisted software development" maxLength={500} required />
         </Field>
         <div className="editor-quill">
-          <ReactQuill theme="snow" value={article.content} onChange={(content) => { setArticle((a) => ({ ...a, content })); setReview(null); setAppliedFindings([]) }} />
+          <ReactQuill theme="snow" value={article.content} onChange={onArticleContentChange} />
         </div>
         <Card className="gap-4 py-4">
           <CardHeader className="flex flex-row items-center justify-between gap-3 px-4">
@@ -284,7 +379,7 @@ export default function EditorPage() {
             {review.findings.map((finding, index) => {
               const applied = appliedFindings.includes(index)
               return <div key={`${index}-${finding.quote}`} className="grid gap-2 rounded-md border p-3">
-                <div className="flex flex-wrap items-center gap-2 text-xs font-medium"><span className="rounded-full bg-muted px-2 py-1">{finding.type.replace('_', ' ')}</span><span className="text-muted-foreground">{finding.severity} priority</span></div>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium"><span className="rounded-full bg-muted px-2 py-1">{finding.field} · {finding.type.replace('_', ' ')}</span><span className="text-muted-foreground">{finding.severity} priority</span></div>
                 <p className="text-sm"><span className="font-medium">“{finding.quote}”</span> — {finding.explanation}</p>
                 <p className="text-sm text-muted-foreground"><span className="font-medium">Suggestion:</span> {finding.suggestion}</p>
                 {finding.type !== 'fact_check' && <Button type="button" variant="secondary" size="sm" className="w-fit" disabled={applied} onClick={() => applyFinding(finding, index)}>{applied ? <Check /> : <AlertTriangle />}{applied ? 'Applied to editor' : 'Apply suggestion'}</Button>}
