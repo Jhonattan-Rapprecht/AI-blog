@@ -31,6 +31,10 @@
 - Kept the analysis visible after applying a suggestion. The editor now clears review results only after a user-originated text edit, not when Quill receives the programmatic replacement.
 - Updated review prompting to request exact visible-text quotes and replacement text for spelling, grammar, clarity, and consistency findings; factual checks remain verification advice rather than automatic edits.
 - Expanded the review to check title quality and topic suitability. Findings identify whether they target the title, topic, or body, and Apply suggestion updates the matching Editor field.
+- Kept the established, thorough body-proofreading pass intact and moved title/topic review into a separate focused model pass. If title/topic review fails, body results still display with a note.
 - Editing the title or article body clears the previous result so findings do not silently carry over to different text.
 - The review never saves content automatically and reports that live sources were not checked. Model knowledge and cutoff dates are not treated as verification.
 - Updated the user guide, routes/API documentation, and `AGENTS.md` handoff history.
+- Distinguished fact-check findings with a light yellow card background; these remain manual verification reminders with no Apply button.
+- Colored individual Apply suggestion buttons by severity: low green, medium orange, and high red.
+- Added Apply all suggestions to apply pending editable title, topic, and article-body replacements together. Fact-check findings are excluded; stale quotes and missing replacements are skipped and reported. Applying suggestions updates the Editor only and does not save the article.

@@ -42,6 +42,9 @@ The recent app requests in this session were:
 28. The user reported that AI review's Apply suggestion button often told them to edit manually. Root cause: quote matching searched only for an exact phrase inside a single raw HTML text node, so formatting splits and minor whitespace/quote differences failed. Updated the Editor to match visible text across inline formatting and replace via a DOM Range; adjusted the AI prompt to request exact visible phrases and replacement text for language findings. Documented the fix. Current work is uncommitted.
 29. The user then reported that applying a suggestion made the analysis disappear and the text change was unclear. Root cause: the ReactQuill onChange handler cleared findings on all content changes, including app-applied updates. It now clears the analysis only for user-originated Quill changes so suggestions remain visible and mark as applied. Documented; uncommitted.
 30. The user asked whether review can improve article title and topic. It previously used both only as context and applied suggestions only to the body. Extended review output with a target field (`title`, `topic`, or `content`), prompt checks for title/topic quality, and apply handlers that update the selected field. Updated user guide/changelog. Uncommitted.
+31. The user reported the review returned fewer/worse body findings after adding title/topic checks. The combined prompt's stricter rules likely suppressed findings. Restored a dedicated thorough body-proofreading prompt and split title/topic recommendations into a second focused pass, preserving body findings if the second pass fails. Documented; uncommitted.
+
+32. The user asked why fact-check findings lack Apply buttons and requested severity colors. They confirmed to keep fact checks non-applicable, color fact-check cards light yellow, and asked about applying all suggestions at once. Added green/orange/red buttons for low/medium/high editable suggestions, plus Apply all that skips fact checks and stale/missing replacements and does not save automatically. The branch is `feat/article-reviewer-v2.3`; changes are uncommitted.
 
 ### App work completed in this session
 
@@ -57,7 +60,7 @@ The recent app requests in this session were:
 
 ### Latest state
 
-- Branch: `v2.1` (renamed from `blogstudio-v2` for the current media milestone; push requested).
+- Current feature branch: `feat/article-reviewer-v2.3` (standardized from `Feat-article-reviewer-v2.3`; pushed to origin).
 - Latest milestone commit: `feat(media): add image library and photo credits` on `v2.1`, pushed to `origin/v2.1`; the follow-up moves captions off cards and records this prompt-history update.
 - Photo credit/source captions belong only on full article pages. Check `git status` and the latest commit before assuming there is pending work.
 - Reader engagement values are page-load views and visible seconds, not unique visitors. The public site's existing reading-time estimate is based on article word count.
@@ -69,7 +72,7 @@ The recent app requests in this session were:
 - The literal `` `r`n `` formerly rendered at the bottom of `/blog` was removed and is included in the baseline commit before AI article-review work.
 - AI article review is available in the Editor for drafts and published articles. It returns advisory proofreading, clarity, consistency, and fact-check findings from the selected Ollama model. It does not use live sources or provide a dependable cutoff date; fact findings require manual verification. Non-factual suggestions are individually applied to editor content only, with no automatic save. Feature work is currently uncommitted; see `docs/development/changelog-2026-10-26-article-review-baseline.md`.
 - Every new article stores a required `topic_id` referencing the normalized `topics` table. Manual Editor saves, AI generation, and automated generation all pass a topic. Existing rows are backfilled only from saved topic data or a generation prompt; rows without one remain blank and the Editor requires a topic before saving them. Titles are never used as topics.
-- AI review suggestions can replace quoted text across rich-text inline formatting and tolerate common whitespace or quote-style differences.
+- AI review suggestions can replace quoted text across rich-text inline formatting and tolerate common whitespace or quote-style differences. Editable buttons use green/orange/red for low/medium/high priority; fact-check cards are yellow and remain manual verification. Apply all skips fact checks and does not save automatically.
 
 ### Main files for this work
 

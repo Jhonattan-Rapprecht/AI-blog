@@ -308,6 +308,44 @@ export default function EditorPage() {
     setAppliedFindings((current) => [...current, index])
   }
 
+  const applyAllFindings = () => {
+    const pending = review.findings
+      .map((finding, index) => ({ finding, index }))
+      .filter(({ finding, index }) => finding.type !== 'fact_check' && !appliedFindings.includes(index))
+    if (!pending.length) return toast.info('There are no unapplied editable suggestions.')
+
+    let nextArticle = { ...article }
+    const applied = []
+    const skipped = []
+    for (const { finding, index } of pending) {
+      const field = finding.field === 'title' || finding.field === 'topic' ? finding.field : 'content'
+      const suggestion = String(finding.suggestion || '').trim()
+      if (!suggestion) { skipped.push(index); continue }
+      if (field === 'title' || field === 'topic') {
+        if (normalizeReviewText(nextArticle[field] || '') !== normalizeReviewText(finding.quote)) { skipped.push(index); continue }
+        nextArticle[field] = suggestion
+      } else {
+        const doc = new DOMParser().parseFromString(nextArticle.content || '', 'text/html')
+        const match = findReviewQuoteRange(doc, finding.quote)
+        if (!match) { skipped.push(index); continue }
+        const range = doc.createRange()
+        range.setStart(match.start.node, match.start.offset)
+        range.setEnd(match.end.node, match.end.offset)
+        range.deleteContents()
+        range.insertNode(doc.createTextNode(suggestion))
+        nextArticle.content = doc.body.innerHTML
+      }
+      applied.push(index)
+    }
+
+    if (applied.length) {
+      setArticle(nextArticle)
+      setAppliedFindings((current) => [...new Set([...current, ...applied])])
+    }
+    if (skipped.length) toast.info(`Applied ${applied.length} suggestion${applied.length === 1 ? '' : 's'}; skipped ${skipped.length} that no longer matched or had no replacement.`)
+    else toast.success(`Applied ${applied.length} suggestion${applied.length === 1 ? '' : 's'} to the editor.`)
+  }
+
   const onArticleContentChange = (content, _delta, source) => {
     setArticle((current) => ({ ...current, content }))
     if (source === 'user') {
@@ -375,14 +413,22 @@ export default function EditorPage() {
           </CardHeader>
           {review && <CardContent className="grid gap-3 px-4">
             <p className="text-xs text-muted-foreground">Reviewed with {review.model || 'the selected AI model'} on {new Date(review.reviewedAt).toLocaleString()}. Topic: {review.topic || 'not recorded'} · Category: {review.category || 'not assigned'}. No live sources were checked; factual findings need your verification.</p>
+            {review.titleTopicReviewNote && <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{review.titleTopicReviewNote}</p>}
             {!review.findings.length && <p className="rounded-md bg-muted p-3 text-sm">No actionable findings returned. This does not guarantee the article is error-free.</p>}
+            {review.findings.some((finding, index) => finding.type !== 'fact_check' && !appliedFindings.includes(index)) && <Button type="button" size="sm" className="w-fit" onClick={applyAllFindings}><Check /> Apply all suggestions</Button>}
             {review.findings.map((finding, index) => {
               const applied = appliedFindings.includes(index)
-              return <div key={`${index}-${finding.quote}`} className="grid gap-2 rounded-md border p-3">
+              const factCheck = finding.type === 'fact_check'
+              const severityColor = finding.severity === 'high'
+                ? 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500'
+                : finding.severity === 'medium'
+                  ? 'bg-orange-500 text-white hover:bg-orange-600 focus-visible:ring-orange-500'
+                  : 'bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500'
+              return <div key={`${index}-${finding.quote}`} className={`grid gap-2 rounded-md border p-3 ${factCheck ? 'border-yellow-300 bg-yellow-100/70 dark:border-yellow-700 dark:bg-yellow-950/30' : ''}`}>
                 <div className="flex flex-wrap items-center gap-2 text-xs font-medium"><span className="rounded-full bg-muted px-2 py-1">{finding.field} · {finding.type.replace('_', ' ')}</span><span className="text-muted-foreground">{finding.severity} priority</span></div>
-                <p className="text-sm"><span className="font-medium">“{finding.quote}”</span> — {finding.explanation}</p>
+                <p className="text-sm"><span className="font-medium">“{finding.quote || (finding.field === 'topic' ? 'No topic entered' : '')}”</span> — {finding.explanation}</p>
                 <p className="text-sm text-muted-foreground"><span className="font-medium">Suggestion:</span> {finding.suggestion}</p>
-                {finding.type !== 'fact_check' && <Button type="button" variant="secondary" size="sm" className="w-fit" disabled={applied} onClick={() => applyFinding(finding, index)}>{applied ? <Check /> : <AlertTriangle />}{applied ? 'Applied to editor' : 'Apply suggestion'}</Button>}
+                {finding.type !== 'fact_check' && <Button type="button" size="sm" className={`w-fit ${severityColor}`} disabled={applied} onClick={() => applyFinding(finding, index)}>{applied ? <Check /> : <AlertTriangle />}{applied ? 'Applied to editor' : 'Apply suggestion'}</Button>}
               </div>
             })}
           </CardContent>}
