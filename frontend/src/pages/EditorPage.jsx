@@ -217,6 +217,7 @@ export default function EditorPage() {
   const selectedTextRef = useRef('')
   const selectedRangeRef = useRef(null)
   const [reviewHistory, setReviewHistory] = useState([])
+  const [showOlderReviewHistory, setShowOlderReviewHistory] = useState(false)
   const [media, setMedia] = useState([])
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
@@ -291,6 +292,7 @@ export default function EditorPage() {
     setArticleId(id || null)
     setReview(null)
     setReviewHistory([])
+    setShowOlderReviewHistory(false)
     setAppliedFindings([])
     setDismissedFindings([])
     setFindingStatusSaveErrors({})
@@ -719,28 +721,35 @@ export default function EditorPage() {
         <div className="editor-quill" onMouseUp={captureSelectedText} onKeyUp={captureSelectedText}>
           <ReactQuill ref={editorRef} theme="snow" value={article.content} onChange={onArticleContentChange} />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onMouseDown={(event) => { event.preventDefault(); captureSelectedText() }} onClick={spellcheckSelectedText} disabled={spellchecking || saving || !selectedTextForSpellcheck}>
-            {spellchecking ? <Loader2 className="animate-spin" /> : <Check />} Spell check selection
+        <div className="grid gap-2 rounded-lg border bg-muted/20 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Spell-check selected text</p>
+            <p className="mt-1 text-xs text-muted-foreground">Select a word or passage in the editor, then check only that selection.</p>
+            {selectedTextForSpellcheck
+              ? <p className="mt-1 truncate text-xs text-foreground" title={selectedTextForSpellcheck}>Selected: “{selectedTextForSpellcheck}”</p>
+              : <p className="mt-1 text-xs text-muted-foreground">No text selected yet.</p>}
+          </div>
+          <Button type="button" variant="outline" onMouseDown={(event) => { event.preventDefault(); captureSelectedText() }} onClick={spellcheckSelectedText} disabled={spellchecking || saving || !selectedTextForSpellcheck}>
+            {spellchecking ? <Loader2 className="animate-spin" /> : <Check />} {spellchecking ? 'Checking selection…' : 'Check selection'}
           </Button>
-          {selectedTextForSpellcheck && <span className="max-w-xl truncate text-xs text-muted-foreground" title={selectedTextForSpellcheck}>Selected: {selectedTextForSpellcheck}</span>}
         </div>
         <Card className="gap-4 py-4">
-          <CardHeader className="flex flex-wrap flex-row items-center justify-between gap-3 px-4">
-            <div><CardTitle className="text-sm">AI article review</CardTitle><p className="mt-1 text-xs text-muted-foreground">Proofreading, clarity, consistency, and claims to verify</p></div>
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={spellcheckArticle} disabled={reviewing || spellchecking || saving || !article.title || !article.content}>
+          <CardHeader className="grid gap-2 px-4">
+            <div><CardTitle className="text-sm">Full-article checks</CardTitle><p className="mt-1 text-xs text-muted-foreground">Choose a check:</p></div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button type="button" variant="outline" className="w-full" onClick={spellcheckArticle} disabled={reviewing || spellchecking || saving || !article.title || !article.content}>
                 {spellchecking ? <Loader2 className="animate-spin" /> : <Check />} {spellchecking ? 'Checking spelling…' : 'Spell check'}
               </Button>
-              <Button type="button" variant="outline" size="sm" className={reviewing ? 'animate-pulse border-sky-600 bg-sky-600 text-white hover:bg-sky-600 disabled:opacity-100' : ''} onClick={reviewCurrentArticle} disabled={reviewing || spellchecking || saving || !article.title || !article.content}>
-                {reviewing ? <Loader2 className="animate-spin" /> : <Sparkles />} {reviewing ? 'Reviewing…' : 'Review article'}
+              <Button type="button" variant="outline" className={`w-full ${reviewing ? 'animate-pulse border-sky-600 bg-sky-600 text-white hover:bg-sky-600 disabled:opacity-100' : ''}`} onClick={reviewCurrentArticle} disabled={reviewing || spellchecking || saving || !article.title || !article.content}>
+                {reviewing ? <Loader2 className="animate-spin" /> : <Sparkles />} {reviewing ? 'Reviewing…' : 'Full article review'}
               </Button>
             </div>
           </CardHeader>
           {review && <CardContent className="grid gap-3 px-4">
-            <p className="text-xs text-muted-foreground">Reviewed with {review.model || 'the selected AI model'} on {new Date(review.reviewedAt).toLocaleString()}. Category: {review.category || 'not assigned'}. No live sources were checked; factual findings need your verification.</p>
+            <p className="text-xs text-muted-foreground">{review.model || 'AI model'} · {new Date(review.reviewedAt).toLocaleString()}</p>
+            {review.findings.some((finding) => finding.type === 'fact_check') && <p className="text-xs text-muted-foreground">Fact-check suggestions need manual verification; no live sources were checked.</p>}
             {review.titleReviewNote && <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{review.titleReviewNote}</p>}
-            {!review.findings.length && <p className="rounded-md bg-muted p-3 text-sm">No actionable findings returned. This does not guarantee the article is error-free.</p>}
+            {!review.findings.length && <p className="rounded-md bg-muted p-3 text-sm">No suggestions found.</p>}
             {review.findings.some((_finding, index) => !appliedFindings.includes(index) && !dismissedFindings.includes(index)) && <div className="flex flex-wrap gap-2">
               {review.findings.some((finding, index) => finding.type !== 'fact_check' && !appliedFindings.includes(index) && !dismissedFindings.includes(index)) && <Button type="button" size="sm" onClick={applyAllFindings}><Check /> Apply all suggestions</Button>}
               <Button type="button" size="sm" variant="outline" onClick={dismissAllFindings}><X /> Dismiss all suggestions</Button>
@@ -787,8 +796,8 @@ export default function EditorPage() {
             </details>}
           </CardContent>}
           {reviewHistory.length > 0 && <CardContent className="grid gap-2 border-t px-4 pt-4">
-            <h3 className="text-sm font-medium">Previous review history</h3>
-            {reviewHistory.map((past) => <details key={past.id} className="rounded-md border p-3">
+            <h3 className="text-sm font-medium">Previous review history <span className="text-muted-foreground">({reviewHistory.length})</span></h3>
+            {(showOlderReviewHistory ? reviewHistory : reviewHistory.slice(0, 3)).map((past) => <details key={past.id} className="rounded-md border p-3">
               <summary className="cursor-pointer text-sm">{new Date(past.reviewedAt).toLocaleString()} · {past.findings.length} suggestion{past.findings.length === 1 ? '' : 's'}</summary>
               <div className="mt-3 grid gap-2">
                 {past.findings.map((finding) => <div key={finding.id} className="rounded bg-muted/50 p-2 text-xs">
@@ -797,6 +806,9 @@ export default function EditorPage() {
                 </div>)}
               </div>
             </details>)}
+            {reviewHistory.length > 3 && <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setShowOlderReviewHistory((current) => !current)}>
+              {showOlderReviewHistory ? 'Show fewer reviews' : `Show older reviews (${reviewHistory.length - 3})`}
+            </Button>}
           </CardContent>}
         </Card>
       </div>

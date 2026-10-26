@@ -52,6 +52,18 @@ The user reported that an explicitly selected misspelled word was still missed. 
 
 The user reported Dutch corrections such as “Ton” being changed to other valid but contextually wrong words. Selected spelling requests now include up to 500 characters of surrounding editor text, clearly labeled as context only; the model is instructed to use meaning to select the correction, not suggest an arbitrary valid alternative. The selected text stays the only correction target. Changelog updated; runtime behavior not tested; changes remain uncommitted/unpushed.
 
+### Follow-up — make spell-check actions clearer
+
+The user said contextual checking works, though it took several attempts, and asked to clarify the distinction between selection spelling and full article checks. Before changing layout, committed and pushed the accumulated reviewer/spell-check fixes plus documentation as `ebaed79` (`feat(article-review): add contextual spell checking and safe actions`) to `origin/feat/article-reviewer-v2.3`. Then grouped whole-article spelling and complete review under **Full-article checks** with explanatory descriptions, and moved selection checking into its own labeled panel with selected-text preview and **Check selection** action. This layout change is documented and remains uncommitted/unpushed. Runtime visual check not run.
+
+### Latest request — shorten previous review history
+
+The user requested a shorter history section that shows only recent runs with a control for older entries. The Editor now displays the three newest previous review runs by default, shows the count, and expands older runs on **Show older reviews (N)**; **Show fewer reviews** collapses them. Saved history is unchanged. Documented in the dated changelog. `git diff --check` passed; runtime visual check not run; this UI change remains uncommitted/unpushed.
+
+### Follow-up — reduce article review panel text
+
+The user said the accompanying explanations made the review panel crowded. Removed the two per-button description paragraphs, shortened the header, condensed run metadata to model/date, shortened the no-findings message, and show the manual fact-check notice only when relevant. Changelog updated. Runtime visual check not run; changes remain uncommitted/unpushed.
+
 ### Latest request — refine AI article reviewer
 
 The user requested graceful disappearance of dismissed suggestions, using previous review history to avoid repeating similar suggestions (especially title changes already applied), plus recommendation items 1 and 3: safe application with a combined preview and reliable persistent history/status writes. Implemented animated dismissal with an expandable dismissed list; reviewer generation now consults up to 100 prior runs, tells the model to avoid repeating applied/dismissed findings, and filters exact title repeats (with extra protection when the current title is an earlier applied suggestion). Individual and bulk text edits require unique quote matches; Apply all confirms a preview before editing. Review run + findings inserts now share a transaction; setting a status is idempotent when an identical update already persisted. See `docs/development/changelog-2026-10-26-article-review-baseline.md`. Runtime behavior was not tested; no commit or push was requested.

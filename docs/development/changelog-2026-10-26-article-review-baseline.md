@@ -120,3 +120,21 @@
 
 - Selected-text spelling checks now include up to 500 characters of nearby editor text as context, while clearly separating the selected correction target from context-only text. The request includes the editor's spelling language and asks the model to choose corrections based on sentence meaning (for example, distinguish valid words that do not fit the context).
 - Verification: `git diff --check` and backend syntax check passed. Runtime behavior has not been tested.
+
+## Article review control layout
+
+- Grouped whole-article actions under **Full-article checks**, with separate descriptions for **Check full article spelling** and **Review full article**.
+- Put selected spelling in its own **Spell-check selected text** panel directly below the editor, with selection instructions, a preview of the selected passage, and a dedicated **Check selection** button.
+- The preceding contextual spelling and reviewer changes were committed and pushed as `ebaed79` (`feat(article-review): add contextual spell checking and safe actions`) to `origin/feat/article-reviewer-v2.3` before this layout change.
+- Verification: `git diff --check` passed. Runtime visual checks were not run.
+
+## Compact previous review history
+
+- The Editor now shows the three most recent previous review runs by default, displays the total run count, and provides **Show older reviews (N)** to expand the rest. **Show fewer reviews** collapses the list again. All saved history remains available.
+- Verification: `git diff --check` passed. Runtime visual checks were not run.
+
+## Simplified article review panel
+
+- Removed the explanatory paragraphs beneath the full-article check buttons and tightened the header. The controls now read **Spell check** and **Full article review**.
+- Review metadata is one compact model/date line; the no-findings state is shorter. The manual verification note appears only when the run includes fact-check findings.
+- Verification: `git diff --check` passed. Runtime visual checks were not run.
