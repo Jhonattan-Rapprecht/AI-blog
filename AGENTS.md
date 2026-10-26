@@ -4,6 +4,10 @@ Read this file before continuing work when the repository history or the latest 
 
 ## Active session — 2026-10-26
 
+### Latest user request — article images and media library
+
+The user reported that public article cards show a dark placeholder instead of the article image and asked whether local Ollama models could generate images. They approved the media library and upload workflow, then clarified to build media management first and defer AI image generation until they evaluate a solution. They then asked to add an editable photo credit/source caption beneath images and explicitly defer the slow zoom-out crop behavior. Investigation showed published articles had empty `featured_image` fields and the Editor had no image assignment control. Added local uploads, reusable media records, per-image credit/source metadata, article-featured-media associations, Media Library navigation/page, Editor upload/select, public credit captions, and public URL resolution. Generation and zoom fitting changes are deferred. See `docs/development/media-library.md`.
+
 ### User prompt history
 
 The recent app requests in this session were:
@@ -30,10 +34,11 @@ The recent app requests in this session were:
 
 ### Latest state
 
-- Branch: `blogstudio-v2`.
+- Branch: `v2.1` (renamed from `blogstudio-v2` for the current media milestone; push requested).
 - Latest commit: `feat(analytics): add article insights and read tracking` on `blogstudio-v2`; push target is `origin/blogstudio-v2`.
 - Analytics and inline table work are the most recent app changes. Check `git status` and the latest commit before assuming there is pending work.
 - Reader engagement values are page-load views and visible seconds, not unique visitors. The public site's existing reading-time estimate is based on article word count.
+- The current media-library milestone is being prepared for commit/push on branch `v2.1`. Existing articles need images explicitly uploaded/selected and then saved. AI image generation and slow zoom-out crop behavior remain deferred by the user.
 
 ### Main files for this work
 

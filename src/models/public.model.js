@@ -1,14 +1,16 @@
 const db = require('../config/db');
+const ArticleModel = require('./article.model');
 
 const VISIBLE = `a.status = 'published' AND a.published_at IS NOT NULL AND a.published_at <= CURRENT_TIMESTAMP`;
 
 const LIST_COLUMNS = `
-    a.id, a.title, a.slug, a.excerpt, a.featured_image, a.published_at, a.updated_at,
+    a.id, a.title, a.slug, a.excerpt, COALESCE(m.filepath, a.featured_image) AS featured_image, m.credit AS featured_image_credit, a.published_at, a.updated_at,
     c.id AS category_id, c.name AS category_name, c.slug AS category_slug
 `;
 
 class PublicBlogModel {
     async getPublicArticles({ limit = 10, offset = 0, category = null, q = null } = {}) {
+        await ArticleModel.ensureMediaColumn();
         const where = [VISIBLE];
         const params = [];
 
@@ -25,7 +27,7 @@ class PublicBlogModel {
             params.push(`%${q}%`, `%${q}%`);
         }
 
-        const from = `FROM articles a LEFT JOIN categories c ON c.id = a.category_id WHERE ${where.join(' AND ')}`;
+        const from = `FROM articles a LEFT JOIN categories c ON c.id = a.category_id LEFT JOIN media m ON m.id = a.featured_media_id WHERE ${where.join(' AND ')}`;
 
         const [{ total }] = await db.query(`SELECT COUNT(*) AS total ${from}`, params);
         const articles = await db.query(
@@ -37,9 +39,10 @@ class PublicBlogModel {
     }
 
     async getArticleBySlug(slug) {
+        await ArticleModel.ensureMediaColumn();
         const results = await db.query(
             `SELECT ${LIST_COLUMNS}, a.content, a.seo_title, a.seo_description, a.seo_keywords
-             FROM articles a LEFT JOIN categories c ON c.id = a.category_id
+             FROM articles a LEFT JOIN categories c ON c.id = a.category_id LEFT JOIN media m ON m.id = a.featured_media_id
              WHERE a.slug = ? AND ${VISIBLE}
              LIMIT 1`,
             [slug]
@@ -48,9 +51,10 @@ class PublicBlogModel {
     }
 
     async getRelated(article, limit = 3) {
+        await ArticleModel.ensureMediaColumn();
         return await db.query(
             `SELECT ${LIST_COLUMNS}
-             FROM articles a LEFT JOIN categories c ON c.id = a.category_id
+             FROM articles a LEFT JOIN categories c ON c.id = a.category_id LEFT JOIN media m ON m.id = a.featured_media_id
              WHERE ${VISIBLE} AND a.id <> ?
              ORDER BY (a.category_id <=> ?) DESC, a.published_at DESC
              LIMIT ?`,

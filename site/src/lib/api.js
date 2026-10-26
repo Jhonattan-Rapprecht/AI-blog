@@ -1,4 +1,11 @@
 const API = import.meta.env.API_URL || 'http://localhost:3000/api/public';
+const API_ORIGIN = new URL(API).origin;
+
+export const imageUrl = (value) => {
+  if (!value) return '';
+  if (/^(?:https?:)?\/\//i.test(value) || value.startsWith('data:')) return value;
+  return `${API_ORIGIN}${value.startsWith('/') ? value : `/${value}`}`;
+};
 
 async function get(path) {
   const res = await fetch(`${API}${path}`);

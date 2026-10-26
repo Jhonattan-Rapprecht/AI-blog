@@ -1,12 +1,12 @@
 ---
-import { formatDate } from '../lib/api.js';
+import { formatDate, imageUrl } from '../lib/api.js';
 
 const { article } = Astro.props;
 ---
 
 <a href={`/blog/${article.slug}`} class="group flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-foreground/30">
   {article.featured_image
-    ? <img src={article.featured_image} alt="" loading="lazy" class="aspect-[16/9] w-full object-cover" />
+    ? <figure class="w-full"><img src={imageUrl(article.featured_image)} alt="" loading="lazy" class="aspect-[16/9] w-full object-cover" /><figcaption class="break-words px-3 pt-1.5 text-[11px] text-muted-foreground">Photo credit/source: {article.featured_image_credit || 'Not provided'}</figcaption></figure>
     : <div class="aspect-[16/9] w-full bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]" />}
   <div class="flex flex-1 flex-col gap-2 p-5">
     <div class="flex items-center gap-2 text-xs text-muted-foreground">

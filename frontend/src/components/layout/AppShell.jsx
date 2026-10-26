@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Blocks, ChartPie, FileText, Moon, PenLine, Settings, Sparkles, Sun } from 'lucide-react'
+import { Blocks, ChartPie, FileText, Images, Moon, PenLine, Settings, Sparkles, Sun } from 'lucide-react'
 import { Toaster } from 'sonner'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -13,6 +13,7 @@ import { useAIStatus } from '@/hooks/use-ai-status'
 
 const nav = [
   { to: '/', label: 'Editor', icon: PenLine, end: true },
+  { to: '/media', label: 'Media Library', icon: Images },
 ]
 
 const articleNav = [
@@ -33,7 +34,7 @@ const groups = [
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
-const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/settings': 'Settings', '/dev/components': 'Components' }
+const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/media': 'Media Library', '/settings': 'Settings', '/dev/components': 'Components' }
 
 export default function AppShell() {
   const { theme, toggle } = useTheme()

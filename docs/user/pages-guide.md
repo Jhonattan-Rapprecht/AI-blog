@@ -54,7 +54,15 @@ View article totals, publishing activity for the last six months, published cont
 
 Opens an existing article in the editor. Make your changes and click **Save changes**.
 
+In **Featured image**, upload a JPG, PNG, WebP, or GIF (up to 12 MB), or select an existing library image. Enter a photo credit/source, such as the photographer's name, below the preview. It appears in a small caption beneath the image on the public site after you save the article. AI image generation will be added later.
+
 ![Editing an existing article](screenshots/admin-edit-article.png)
+
+### Media Library
+
+**URL:** http://localhost:5173/media
+
+Upload images and reuse them across articles. Add or update a photo credit/source beneath each library preview; the saved credit appears under public images. Images assigned to an article must first be removed from that article before they can be deleted. Files are stored on the Blogstudio server.
 
 ---
 

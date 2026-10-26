@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleCard from '../../components/ArticleCard.astro';
-import { getArticle, formatDate, readingTime, normalizeHtml } from '../../lib/api.js';
+import { getArticle, formatDate, readingTime, normalizeHtml, imageUrl } from '../../lib/api.js';
 
 const article = await getArticle(Astro.params.slug);
 if (!article) return Astro.rewrite('/404');
@@ -10,7 +10,7 @@ if (!article) return Astro.rewrite('/404');
 <BaseLayout
   title={article.seo_title || article.title}
   description={article.seo_description || article.excerpt || undefined}
-  image={article.featured_image || undefined}
+  image={imageUrl(article.featured_image) || undefined}
   type="article"
 >
   <article data-article-read-id={article.id} class="mx-auto max-w-3xl px-6 py-12">
@@ -26,7 +26,7 @@ if (!article) return Astro.rewrite('/404');
       {article.excerpt && <p class="mt-4 text-lg text-muted-foreground">{article.excerpt}</p>}
     </header>
 
-    {article.featured_image && <img src={article.featured_image} alt="" class="mt-8 w-full rounded-lg border" />}
+    {article.featured_image && <figure class="mt-8"><img src={imageUrl(article.featured_image)} alt="" class="w-full rounded-lg border" /><figcaption class="break-words px-1 pt-1.5 text-xs text-muted-foreground">Photo credit/source: {article.featured_image_credit || 'Not provided'}</figcaption></figure>}
 
     <div class="prose prose-article mt-8 max-w-none" set:html={normalizeHtml(article.content)} />
   </article>

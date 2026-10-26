@@ -3,8 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Plus, Save, Sparkles, Trash2, X } from 'lucide-react'
-import { api, errorMessage, socket } from '@/api/client'
+import { ArrowLeft, ImagePlus, Images, Loader2, Plus, Save, Sparkles, Trash2, Upload, X } from 'lucide-react'
+import { api, errorMessage, mediaUrl, socket } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { NativeSelect } from '@/components/ui/native-select'
 
 const EMPTY = {
-  title: '', slug: '', excerpt: '', content: '', featured_image: '', status: 'draft', category_id: '',
+  title: '', slug: '', excerpt: '', content: '', featured_image: '', featured_media_id: null, featured_media_path: '', featured_image_credit: '', status: 'draft', category_id: '',
   seo_title: '', seo_description: '', seo_keywords: '',
 }
 const FIELDS = Object.keys(EMPTY)
@@ -60,16 +60,45 @@ export default function EditorPage() {
   const [generating, setGenerating] = useState(false)
   const [suggestingTopics, setSuggestingTopics] = useState(false)
   const [suggestingSlugs, setSuggestingSlugs] = useState(false)
+  const [media, setMedia] = useState([])
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
+  const [uploadingMedia, setUploadingMedia] = useState(false)
+  const mediaInput = useRef(null)
   const [newCategory, setNewCategory] = useState(null)
   const [newAudience, setNewAudience] = useState(null)
   const generatingRef = useRef(false)
   const selectedCategory = categories.find((category) => String(category.id) === String(article.category_id))
+  const imageSrc = mediaUrl(article.featured_media_path || article.featured_image)
 
   const set = (name) => (e) => setArticle((a) => ({ ...a, [name]: e.target.value }))
   const setAI = (name) => (e) => setAi((a) => ({ ...a, [name]: e.target.value }))
   const setCategory = (e) => {
     setArticle((current) => ({ ...current, category_id: e.target.value }))
     setTopics([])
+  }
+
+  const loadMedia = useCallback(() => api.media().then(setMedia).catch(() => {}), [])
+  useEffect(() => { loadMedia() }, [loadMedia])
+
+  const assignMedia = (item) => {
+    setArticle((current) => ({ ...current, featured_media_id: item?.id || null, featured_media_path: item?.filepath || '', featured_image: '', featured_image_credit: item?.credit || '' }))
+    setMediaPickerOpen(false)
+  }
+
+  const uploadFeatured = async (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) return toast.error('Choose a JPG, PNG, WebP, or GIF image.')
+    if (file.size > 12 * 1024 * 1024) return toast.error('Images must be 12 MB or smaller.')
+    setUploadingMedia(true)
+    try {
+      const item = await api.uploadMedia(file)
+      setMedia((current) => [item, ...current])
+      assignMedia(item)
+      toast.success('Featured image uploaded')
+    } catch (e) { toast.error(errorMessage(e)) }
+    finally { setUploadingMedia(false) }
   }
 
   const loadCategories = useCallback(
@@ -105,6 +134,9 @@ export default function EditorPage() {
     }
     setSaving(true)
     try {
+      if (article.featured_media_id) {
+        await api.updateMedia(article.featured_media_id, { credit: article.featured_image_credit || '' })
+      }
       if (articleId) {
         await api.updateArticle(articleId, payload(article))
         toast.success('Article updated')
@@ -206,6 +238,22 @@ export default function EditorPage() {
 
       <div className="grid min-w-0 content-start gap-4">
         <Card className="gap-4 py-4">
+          <CardHeader className="px-4"><CardTitle className="text-sm">Featured image</CardTitle></CardHeader>
+          <CardContent className="grid gap-3 px-4">
+            {imageSrc ? <img src={imageSrc} alt="Featured image preview" className="aspect-[16/9] w-full rounded-md border bg-muted object-cover" /> : <div className="grid aspect-[16/9] place-items-center rounded-md border border-dashed bg-muted/30 text-muted-foreground"><ImagePlus className="size-7" /></div>}
+            {imageSrc && article.featured_media_id && <Field label="Photo credit/source"><Input value={article.featured_image_credit || ''} onChange={set('featured_image_credit')} placeholder="e.g. Michael Henniway" maxLength={500} /></Field>}
+            {imageSrc && !article.featured_media_id && <p className="text-xs text-muted-foreground">To save a credit for this image, upload it to the Media Library and select it here.</p>}
+            <input ref={mediaInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={uploadFeatured} />
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" onClick={() => mediaInput.current?.click()} disabled={uploadingMedia}>{uploadingMedia ? <Loader2 className="animate-spin" /> : <Upload />} Upload</Button>
+              <Button type="button" variant="outline" onClick={() => { loadMedia(); setMediaPickerOpen(true) }}><Images /> Choose</Button>
+            </div>
+            {imageSrc && <Button type="button" variant="ghost" size="sm" onClick={() => assignMedia(null)} className="text-muted-foreground">Remove featured image</Button>}
+            <p className="text-xs text-muted-foreground">Add a credit/source for this image. It will appear beneath the image on the public blog when you save.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="gap-4 py-4">
           <CardHeader className="px-4"><CardTitle className="text-sm">Publishing</CardTitle></CardHeader>
           <CardContent className="grid min-w-0 gap-3 overflow-hidden px-4">
             <Field label="Status">
@@ -300,6 +348,15 @@ export default function EditorPage() {
           </CardContent>
         </Card>
       </div>
+      {mediaPickerOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setMediaPickerOpen(false) }}>
+        <div role="dialog" aria-modal="true" aria-labelledby="media-picker-title" className="grid max-h-[85vh] w-full max-w-4xl gap-4 overflow-hidden rounded-xl border bg-background p-5 shadow-xl">
+          <div className="flex items-center justify-between"><div><h2 id="media-picker-title" className="font-semibold">Choose featured image</h2><p className="text-sm text-muted-foreground">Select an image from your Media Library.</p></div><Button variant="ghost" size="icon" onClick={() => setMediaPickerOpen(false)} aria-label="Close media picker"><X /></Button></div>
+          <div className="grid min-h-0 gap-3 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+            {media.map((item) => <button type="button" key={item.id} onClick={() => assignMedia(item)} className="group overflow-hidden rounded-lg border text-left transition hover:border-primary focus-visible:ring-2 focus-visible:ring-ring"><img src={mediaUrl(item.filepath)} alt="" className="aspect-[16/10] w-full bg-muted object-cover" loading="lazy" /><span className="block truncate p-2 text-xs" title={item.filename}>{item.filename}</span></button>)}
+            {!media.length && <div className="grid justify-items-center gap-2 py-12 text-sm text-muted-foreground sm:col-span-2 lg:col-span-3"><Images className="size-7" />No images yet. Upload one to get started.</div>}
+          </div>
+        </div>
+      </div>}
     </div>
   )
 }

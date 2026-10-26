@@ -6,6 +6,7 @@ import ArticlesPage from '@/pages/ArticlesPage'
 import ArticlesAnalyticsPage from '@/pages/ArticlesAnalyticsPage'
 import LoginPage from '@/pages/LoginPage'
 import SettingsPage from '@/pages/SettingsPage'
+import MediaPage from '@/pages/MediaPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
 
 // Dev-only tooling; excluded from production builds.
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="articles/analytics" element={<ArticlesAnalyticsPage />} />
           <Route path="articles/:id" element={<EditorPage />} />
           <Route path="articles" element={<ArticlesPage />} />
+          <Route path="media" element={<MediaPage />} />
           <Route path="settings" element={<SettingsPage />} />
           {ComponentsPage && (
             <Route path="dev/components" element={<Suspense fallback={null}><ComponentsPage /></Suspense>} />

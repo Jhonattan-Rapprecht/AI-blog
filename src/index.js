@@ -11,6 +11,7 @@ const AutomationRoutes = require('./routes/automation.routes');
 const CategoryRoutes = require('./routes/category.routes');
 const SettingsRoutes = require('./routes/settings.routes');
 const AnalyticsRoutes = require('./routes/analytics.routes');
+const MediaRoutes = require('./routes/media.routes');
 const authMiddleware = require('./middleware/auth.middleware');
 const SchedulerService = require('./services/scheduler.service');
 require('dotenv').config();
@@ -38,6 +39,13 @@ const io = new Server(server, {
 
 app.use(express.json());
 
+app.use('/uploads/media', express.static(require('path').resolve(__dirname, '../uploads/media'), {
+    fallthrough: false,
+    maxAge: '7d',
+    immutable: true,
+    setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff')
+}));
+
 app.use('/api/auth', AuthRoutes);
 
 app.use((req, res, next) => {
@@ -57,6 +65,7 @@ app.use('/api/automation', authMiddleware, AutomationRoutes);
 app.use('/api/categories', authMiddleware, CategoryRoutes);
 app.use('/api/settings', authMiddleware, SettingsRoutes);
 app.use('/api/analytics', authMiddleware, AnalyticsRoutes);
+app.use('/api/media', authMiddleware, MediaRoutes);
 
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);

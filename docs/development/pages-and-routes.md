@@ -21,6 +21,7 @@ For recent user prompt history and the latest app handoff, see the repository-ro
 | `/articles` | `pages/ArticlesPage.jsx` | Articles Overview table, sortable by title, status, category, or creation date; unpublished statuses and uncategorized rows support inline editing; only article titles open the editor |
 | `/articles/analytics` | `pages/ArticlesAnalyticsPage.jsx` | Publishing and category charts, saved topics/SEO keywords, estimated reading time, and tracked reader views/active time |
 | `/articles/:id` | `pages/EditorPage.jsx` | Edit an existing article (`PUT` on save instead of `POST`); includes an Articles overview button |
+| `/media` | `pages/MediaPage.jsx` | Upload, browse, and remove reusable article images |
 | `/settings` | `pages/SettingsPage.jsx` | Configure the installed Ollama model and saved article-generation defaults |
 | `/dev/components` | `pages/dev/ComponentsPage.tsx` | **Dev only.** Preview HTML/CSS files from `src/component-previews/`, view source, copy, convert to JSX. **New component** pastes a snippet and saves it to that folder. Left out of production builds. |
 | `/login` | `pages/LoginPage.jsx` | Admin login (`ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`); public route |
@@ -92,12 +93,18 @@ All admin endpoints (including article publish/schedule and `/api/automation`) r
 | POST | `/api/ai/suggest-slug` | Slug suggestions |
 | GET | `/api/ai/status` | Active AI provider/model |
 | GET | `/api/analytics/overview?days=30` | Authenticated editorial and reader analytics for the selected 7–90 day engagement window |
+| GET | `/api/media` | List uploaded/generated image library items |
+| POST | `/api/media/upload?filename=...` | Upload a validated JPG, PNG, WebP, or GIF image (12 MB max) |
+| PUT | `/api/media/:id` | Update a media item's photo credit/source |
+| DELETE | `/api/media/:id` | Delete an image when it is not assigned to an article |
 
 Settings endpoints require the admin JWT. Preferences are stored in the local, git-ignored `data/settings.json`; Ollama's installed model list is fetched from its `/api/tags` endpoint. The Settings screen currently exposes only Ollama and the writing defaults consumed by the Editor. The selected model is used for article generation, topic suggestions, and slug suggestions. The AI connection indicator checks whether Ollama is reachable; **Test selected model** separately verifies the draft selection with a JSON-mode completion before it is saved. Qwen3-family requests disable the model's default thinking phase so JSON output is returned directly.
 
 Topic suggestions use the selected category and any text entered in the Topic field as context. The backend retries for missing suggestions and returns three distinct ideas or an error. Returned ideas are recorded for history. Shared admin buttons use a short pressed-state scale, brightness, and inset-shadow animation; asynchronous topic and slug suggestion actions also show a spinner while awaiting the API. Suggestion chips are width-constrained to avoid expanding the Editor sidebar.
 
 The browser titles are `Blogstudio | Admin` for the management app and `Blogstudio | AI` for the public site. Public article cards show an `Uncategorized` badge when no category is assigned; the blog’s article count appears beside the category filters.
+
+Featured images are uploaded to `uploads/media/`, stored in the `media` table, and linked by `articles.featured_media_id`; legacy `featured_image` URLs remain supported. Photo credit/source is stored on the reusable media record and shown beneath public images. The Editor and Media Library are described in [media-library.md](media-library.md). Upload and library selection work locally. AI image generation and slow zoom-out fitting are deferred.
 
 ### Public endpoints
 

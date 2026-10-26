@@ -7,6 +7,22 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Uploaded and generated image assets used by article featured images.
+CREATE TABLE IF NOT EXISTS media (
+    id CHAR(36) PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    filepath VARCHAR(500) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    file_size BIGINT UNSIGNED NOT NULL,
+    width INT UNSIGNED NULL,
+    height INT UNSIGNED NULL,
+    provider VARCHAR(50) NOT NULL DEFAULT 'upload',
+    prompt TEXT NULL,
+    credit VARCHAR(500) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_media_created_at (created_at)
+);
+
 -- Articles Table
 CREATE TABLE IF NOT EXISTS articles (
     id CHAR(36) PRIMARY KEY,
@@ -15,6 +31,7 @@ CREATE TABLE IF NOT EXISTS articles (
     excerpt TEXT,
     content TEXT NOT NULL,
     featured_image TEXT,
+    featured_media_id CHAR(36) NULL,
     status ENUM('draft', 'review', 'scheduled', 'published', 'archived') DEFAULT 'draft',
     category_id CHAR(36),
     author_id CHAR(36),
@@ -25,7 +42,8 @@ CREATE TABLE IF NOT EXISTS articles (
     scheduled_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (featured_media_id) REFERENCES media(id) ON DELETE SET NULL
 );
 
 -- Tags Table

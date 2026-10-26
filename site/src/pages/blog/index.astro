@@ -55,7 +55,7 @@ if (q) filterQuery.set('q', q);
 </BaseLayout>
 
 <script>
-  import { listArticles, formatDate } from '../../lib/api.js';
+  import { listArticles, formatDate, imageUrl } from '../../lib/api.js';
 
   const grid = document.querySelector('#blog-articles');
   const count = document.querySelector('#blog-count');
@@ -106,12 +106,18 @@ if (q) filterQuery.set('q', q);
     link.className = 'group flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-foreground/30';
 
     if (article.featured_image) {
+      const figure = document.createElement('figure');
+      figure.className = 'w-full';
       const image = document.createElement('img');
-      image.src = article.featured_image;
+      image.src = imageUrl(article.featured_image);
       image.alt = '';
       image.loading = 'lazy';
       image.className = 'aspect-[16/9] w-full object-cover';
-      link.append(image);
+      const credit = document.createElement('figcaption');
+      credit.className = 'break-words px-3 pt-1.5 text-[11px] text-muted-foreground';
+      credit.textContent = `Photo credit/source: ${article.featured_image_credit || 'Not provided'}`;
+      figure.append(image, credit);
+      link.append(figure);
     } else {
       const placeholder = document.createElement('div');
       placeholder.className = 'aspect-[16/9] w-full bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]';

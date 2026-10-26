@@ -45,7 +45,17 @@ export const api = {
   createArticle: (data) => http.post('/articles', data).then((r) => r.data),
   updateArticle: (id, data) => http.put(`/articles/${id}`, data).then((r) => r.data),
   deleteArticle: (id) => http.delete(`/articles/${id}`),
+  media: () => http.get('/media').then((r) => r.data),
+  uploadMedia: (file) => http.post(`/media/upload?filename=${encodeURIComponent(file.name)}`, file, { headers: { 'Content-Type': file.type }, timeout: 60000 }).then((r) => r.data),
+  updateMedia: (id, data) => http.put(`/media/${id}`, data).then((r) => r.data),
+  deleteMedia: (id) => http.delete(`/media/${id}`),
   generate: (config) => http.post('/ai/generate-article', config).then((r) => r.data),
   suggestTopics: (context) => http.post('/ai/suggest-topic', context).then((r) => strings(r.data.suggestions)),
   suggestSlugs: (title) => http.post('/ai/suggest-slug', { title }).then((r) => strings(r.data.suggestions)),
+}
+
+export const mediaUrl = (filepath) => {
+  if (!filepath) return ''
+  if (/^(?:https?:)?\/\//i.test(filepath) || filepath.startsWith('data:')) return filepath
+  return `${ORIGIN}${filepath.startsWith('/') ? filepath : `/${filepath}`}`
 }
