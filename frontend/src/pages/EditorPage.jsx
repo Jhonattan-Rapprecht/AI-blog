@@ -36,10 +36,10 @@ function Field({ label, children, hint }) {
 function Suggestions({ items, onPick }) {
   if (!items.length) return null
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex min-w-0 max-w-full flex-wrap gap-1.5 overflow-hidden">
       {items.map((s) => (
-        <Button key={s} type="button" variant="secondary" size="xs" className="h-auto rounded-full font-normal active:scale-[0.96]" onClick={() => onPick(s)}>
-          {s}
+        <Button key={s} type="button" variant="secondary" size="xs" title={s} className="h-auto min-w-0 max-w-full truncate rounded-full font-normal active:scale-[0.96]" onClick={() => onPick(s)}>
+          <span className="block truncate">{s}</span>
         </Button>
       ))}
     </div>
@@ -141,7 +141,7 @@ export default function EditorPage() {
   const suggestTopics = async () => {
     setSuggestingTopics(true)
     try {
-      const list = await api.suggestTopics(selectedCategory?.name || '')
+      const list = await api.suggestTopics({ category: selectedCategory?.name || '', topic: ai.topic })
       setTopics(list)
       if (!list.length) toast.info('The AI model returned no topics. Try again.')
     } catch (e) { toast.error(errorMessage(e)) }
@@ -204,10 +204,10 @@ export default function EditorPage() {
         </div>
       </div>
 
-      <div className="grid content-start gap-4">
+      <div className="grid min-w-0 content-start gap-4">
         <Card className="gap-4 py-4">
           <CardHeader className="px-4"><CardTitle className="text-sm">Publishing</CardTitle></CardHeader>
-          <CardContent className="grid gap-3 px-4">
+          <CardContent className="grid min-w-0 gap-3 overflow-hidden px-4">
             <Field label="Status">
               <NativeSelect value={article.status} onChange={set('status')}>
                 {STATUSES.map((s) => <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>)}

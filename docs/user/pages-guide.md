@@ -71,7 +71,7 @@ The landing page with a featured article, the latest articles and a list of topi
 All published articles. You can:
 
 - **Search**: type in the search box, e.g. http://localhost:4321/blog?q=music
-- **Filter by category**: click a category button to open its category page, e.g. http://localhost:4321/category/business
+- **Filter by category**: click a category button to open its category page, e.g. http://localhost:4321/category/business. If published articles have no category, an **Uncategorized** button appears and opens `/category/uncategorized`.
 - **Browse pages**: use the page buttons at the bottom, e.g. http://localhost:4321/blog?page=2
 
 ![Blog overview](screenshots/site-blog.png)

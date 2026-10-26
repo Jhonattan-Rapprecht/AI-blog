@@ -44,10 +44,10 @@ All other routes require a login (`components/ProtectedRoute.jsx`) and are wrapp
 | `/blog?q=keyword` | | Search title/excerpt |
 | `/blog?page=2` | | Pagination |
 | `/blog/:slug` | `src/pages/blog/[slug].astro` | Article detail, reading time, related articles |
-| `/category/:slug` | `src/pages/category/[slug].astro` | Articles in one category (supports `?page=`) |
+| `/category/:slug` | `src/pages/category/[slug].astro` | Articles in one category, including `/category/uncategorized` (supports `?page=`) |
 | any unknown route | `src/pages/404.astro` | Not found (also used for unknown article/category slugs) |
 
-Category slugs: `business`, `entertainment`, `finance`, `geopolitics`, `health`, `lifestyle`, `technology`.
+Category slugs include `business`, `entertainment`, `finance`, `geopolitics`, `health`, `lifestyle`, and `technology`. The API also adds an `uncategorized` pseudo-category when published articles without a category exist.
 
 | Screen | Screenshot |
 |--------|------------|
@@ -86,13 +86,15 @@ All admin endpoints (including article publish/schedule and `/api/automation`) r
 | PUT | `/api/settings` | Save `model`, `language`, `tone`, `audience`, and `articleLength`; model must be installed locally |
 | POST | `/api/settings/check-model` | Run a short JSON-mode request against the selected installed model; unload it after the check and return the exact model response status |
 | POST | `/api/ai/generate-article` | Generate an article with AI |
-| POST | `/api/ai/suggest-topic` | Returns three free-form topic suggestions, guided by an optional `{ category }` value from the Editor |
+| POST | `/api/ai/suggest-topic` | Returns three distinct topic suggestions guided by optional `{ category, topic }` values from the Editor |
 | POST | `/api/ai/suggest-slug` | Slug suggestions |
 | GET | `/api/ai/status` | Active AI provider/model |
 
 Settings endpoints require the admin JWT. Preferences are stored in the local, git-ignored `data/settings.json`; Ollama's installed model list is fetched from its `/api/tags` endpoint. The Settings screen currently exposes only Ollama and the writing defaults consumed by the Editor. The selected model is used for article generation, topic suggestions, and slug suggestions. The AI connection indicator checks whether Ollama is reachable; **Test selected model** separately verifies the draft selection with a JSON-mode completion before it is saved. Qwen3-family requests disable the model's default thinking phase so JSON output is returned directly.
 
-Topic suggestions receive the selected category name from the Editor and ask for three ideas relevant to it. If no category is selected, the model may choose subjects freely. Suggestions are not filtered by topic or history; returned ideas are recorded for history. Shared admin buttons use a short pressed-state scale, brightness, and inset-shadow animation; asynchronous topic and slug suggestion actions also show a spinner while awaiting the API.
+Topic suggestions use the selected category and any text entered in the Topic field as context. The backend retries for missing suggestions and returns three distinct ideas or an error. Returned ideas are recorded for history. Shared admin buttons use a short pressed-state scale, brightness, and inset-shadow animation; asynchronous topic and slug suggestion actions also show a spinner while awaiting the API. Suggestion chips are width-constrained to avoid expanding the Editor sidebar.
+
+The browser titles are `Blogstudio | Admin` for the management app and `Blogstudio | AI` for the public site.
 
 ### Public endpoints (read-only)
 
@@ -102,7 +104,7 @@ Also mounted at `/blog` for backwards compatibility.
 |--------|----------|---------|
 | GET | `/api/public/articles` | Published articles; query: `page`, `limit`, `category` (slug), `q` |
 | GET | `/api/public/articles/:slug` | One published article with related articles |
-| GET | `/api/public/categories` | Categories with published article counts |
+| GET | `/api/public/categories` | Categories with published article counts, plus `uncategorized` when applicable |
 
 An article is publicly visible only when `status = 'published'` and `published_at <= now`.
 

@@ -13,8 +13,12 @@ class PublicBlogModel {
         const params = [];
 
         if (category) {
-            where.push('c.slug = ?');
-            params.push(category);
+            if (category === 'uncategorized') {
+                where.push('a.category_id IS NULL');
+            } else {
+                where.push('c.slug = ?');
+                params.push(category);
+            }
         }
         if (q) {
             where.push('(a.title LIKE ? OR a.excerpt LIKE ?)');
@@ -56,11 +60,17 @@ class PublicBlogModel {
 
     async getCategories() {
         return await db.query(
-            `SELECT c.id, c.name, c.slug, c.description, COUNT(a.id) AS article_count
-             FROM categories c
-             LEFT JOIN articles a ON a.category_id = c.id AND ${VISIBLE}
-             GROUP BY c.id, c.name, c.slug, c.description
-             ORDER BY c.name ASC`
+            `(SELECT c.id, c.name, c.slug, c.description, COUNT(a.id) AS article_count
+              FROM categories c
+              LEFT JOIN articles a ON a.category_id = c.id AND ${VISIBLE}
+              GROUP BY c.id, c.name, c.slug, c.description)
+             UNION ALL
+             (SELECT NULL AS id, 'Uncategorized' AS name, 'uncategorized' AS slug,
+                     NULL AS description, COUNT(*) AS article_count
+              FROM articles a
+              WHERE ${VISIBLE} AND a.category_id IS NULL
+              HAVING COUNT(*) > 0)
+             ORDER BY name ASC`
         );
     }
 }

@@ -45,6 +45,6 @@ export const api = {
   updateArticle: (id, data) => http.put(`/articles/${id}`, data).then((r) => r.data),
   deleteArticle: (id) => http.delete(`/articles/${id}`),
   generate: (config) => http.post('/ai/generate-article', config).then((r) => r.data),
-  suggestTopics: (category) => http.post('/ai/suggest-topic', { category }).then((r) => strings(r.data.suggestions)),
+  suggestTopics: (context) => http.post('/ai/suggest-topic', context).then((r) => strings(r.data.suggestions)),
   suggestSlugs: (title) => http.post('/ai/suggest-slug', { title }).then((r) => strings(r.data.suggestions)),
 }

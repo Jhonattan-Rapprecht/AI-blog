@@ -2,8 +2,8 @@
 import '../styles/global.css';
 
 const { title, description = 'AI-assisted articles on technology, business and more.', image, type = 'website' } = Astro.props;
-const siteName = 'AI Blog';
-const fullTitle = title ? `${title} | ${siteName}` : siteName;
+const siteName = 'Blogstudio | AI';
+const fullTitle = siteName;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const path = Astro.url.pathname;
 const nav = [

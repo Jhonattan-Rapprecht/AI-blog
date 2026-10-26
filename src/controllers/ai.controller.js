@@ -126,29 +126,47 @@ class AIController {
         try {
             const provider = require('../providers/ai.provider').ProviderFactory.getProvider();
             const category = typeof req.body?.category === 'string' ? req.body.category.trim() : '';
+            const topic = typeof req.body?.topic === 'string' ? req.body.topic.trim() : '';
             const systemPrompt = `You are a creative blog editor. Return ONLY a valid JSON array of exactly ${WANTED} specific, engaging article topic titles as plain strings. You may suggest any subject matter, including artificial intelligence and technology. Do not impose a fixed subject list.`;
-            const userPrompt = category
-                ? `Suggest ${WANTED} distinct article topics for the selected category: "${category}". Keep each idea relevant to this category, concrete, and interesting to readers.`
-                : `Suggest ${WANTED} distinct, engaging article topics for a general-interest blog. Choose varied subjects freely.`;
+            const focus = topic
+                ? `The user's topic idea is: "${topic}". Create focused variations and related angles based on this idea; preserve the key subject and do not switch to unrelated topics.`
+                : 'No topic idea was entered. Choose varied subjects freely.';
+            const userPrompt = `Suggest ${WANTED} distinct, engaging article topics. ${focus}${category ? ` Keep them relevant to the selected category: "${category}".` : ''} Make each idea concrete and interesting to readers.`;
+            const suggestions = [];
+            // Some models return fewer items than requested. Ask for only the
+            // missing count and merge unique results before responding.
+            for (let attempt = 0; attempt < WANTED && suggestions.length < WANTED; attempt += 1) {
+                const missing = WANTED - suggestions.length;
+                const prompt = attempt === 0
+                    ? userPrompt
+                    : `${userPrompt} Return exactly ${missing} additional topic${missing === 1 ? '' : 's'} not duplicating these: ${JSON.stringify(suggestions)}.`;
+                const result = await provider.generate({
+                    systemPrompt: systemPrompt.replace(`exactly ${WANTED}`, `exactly ${missing}`),
+                    userPrompt: prompt,
+                    temperature: 0.9,
+                    responseFormat: 'json'
+                });
 
-            const result = await provider.generate({
-                systemPrompt,
-                userPrompt,
-                temperature: 0.9,
-                responseFormat: 'json'
-            });
+                let content = result.content.trim();
+                if (content.startsWith('```json')) {
+                    content = content.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+                } else if (content.startsWith('```')) {
+                    content = content.replace(/^```\n?/, '').replace(/\n?```$/, '');
+                }
 
-            let content = result.content.trim();
-            if (content.startsWith('```json')) {
-                content = content.replace(/^```json\n?/, '').replace(/\n?```$/, '');
-            } else if (content.startsWith('```')) {
-                content = content.replace(/^```\n?/, '').replace(/\n?```$/, '');
+                const parsed = JSON.parse(content);
+                for (const suggestion of toTextList(extractTopicSuggestions(parsed), WANTED)) {
+                    if (!suggestions.some((existing) => existing.toLocaleLowerCase() === suggestion.toLocaleLowerCase())) {
+                        suggestions.push(suggestion);
+                        if (suggestions.length === WANTED) break;
+                    }
+                }
             }
-
-            const parsed = JSON.parse(content);
-            const suggestions = toTextList(extractTopicSuggestions(parsed), WANTED);
             if (!suggestions.length) {
                 return res.status(502).json({ error: 'The AI model returned no topic suggestions. Please try again.' });
+            }
+            if (suggestions.length < WANTED) {
+                return res.status(502).json({ error: `The AI model returned only ${suggestions.length} distinct topic suggestions after retries. Please try again.` });
             }
             await TopicHistoryModel.recordMany(suggestions, 'suggested');
             res.json({ suggestions });
