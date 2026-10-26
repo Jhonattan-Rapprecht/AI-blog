@@ -6,17 +6,22 @@ import { listArticles, listCategories } from '../../lib/api.js';
 
 const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10) || 1);
 const q = (Astro.url.searchParams.get('q') || '').trim();
+const category = (Astro.url.searchParams.get('category') || '').trim();
 
 let result = { articles: [], total: 0, pages: 1 };
 let categories = [];
 let failed = false;
 try {
-  [result, categories] = await Promise.all([listArticles({ page, q }), listCategories()]);
+  [result, categories] = await Promise.all([listArticles({ page, q, category }), listCategories()]);
 } catch (e) {
   console.error(e);
   failed = true;
 }
 const topics = categories.filter((c) => c.article_count > 0);
+const selectedCategory = topics.find((c) => c.slug === category);
+const filterQuery = new URLSearchParams();
+if (category) filterQuery.set('category', category);
+if (q) filterQuery.set('q', q);
 ---
 
 <BaseLayout title="Blog" description="All published articles.">
@@ -24,27 +29,205 @@ const topics = categories.filter((c) => c.article_count > 0);
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <h1 class="text-3xl font-semibold tracking-tight">Blog</h1>
-        <p class="mt-1 text-sm text-muted-foreground">{result.total} {result.total === 1 ? 'article' : 'articles'}{q && <> matching “{q}”</>}</p>
       </div>
-      <form method="get" action="/blog" role="search">
+      <form id="blog-search" method="get" action="/blog" role="search">
         <input name="q" value={q} placeholder="Search articles..." class="h-9 w-64 rounded-md border bg-transparent px-3 text-sm outline-none focus:border-foreground/40" />
       </form>
     </div>
 
-    {topics.length > 0 && (
-      <div class="flex flex-wrap gap-2">
-        <a href="/blog" class="rounded-full border bg-primary px-3 py-1 text-xs text-primary-foreground">All</a>
-        {topics.map((c) => <a href={`/category/${c.slug}`} class="rounded-full border px-3 py-1 text-xs hover:bg-accent">{c.name}</a>)}
-      </div>
-    )}
+    <div id="blog-filters" class="flex flex-wrap items-center gap-2" aria-label="Filter articles by category">
+        <a href="/blog" data-category="" aria-current={!category ? 'page' : undefined} class:list={['category-filter rounded-full border px-3 py-1 text-xs hover:bg-accent', !category && 'bg-primary text-primary-foreground']}>All</a>
+        {topics.map((c) => <a href={`/blog?category=${encodeURIComponent(c.slug)}${q ? `&q=${encodeURIComponent(q)}` : ''}`} data-category={c.slug} aria-current={category === c.slug ? 'page' : undefined} class:list={['category-filter rounded-full border px-3 py-1 text-xs hover:bg-accent', category === c.slug && 'bg-primary text-primary-foreground']}>{c.name}</a>)}
+        <span id="blog-count" class="px-1 text-xs text-muted-foreground">{result.total} {result.total === 1 ? 'article' : 'articles'}</span>
+    </div>
 
-    {failed && <p class="rounded-md border p-6 text-sm text-muted-foreground">The blog is temporarily unavailable.</p>}
-    {!failed && result.articles.length === 0 && <p class="rounded-md border p-6 text-sm text-muted-foreground">No articles found.</p>}
+    <p id="blog-loading" class="sr-only" role="status" aria-live="polite"></p>
+    <p id="blog-empty" class="rounded-md border p-6 text-sm text-muted-foreground" hidden={!failed && result.articles.length > 0}>{failed ? 'The blog is temporarily unavailable.' : 'No articles found.'}</p>
 
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div id="blog-articles" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="false">
       {result.articles.map((a) => <ArticleCard article={a} />)}
     </div>
 
-    <Pagination page={page} pages={result.pages} base="/blog" query={q ? `q=${encodeURIComponent(q)}` : ''} />
+    <div id="blog-pagination">
+      <Pagination page={page} pages={result.pages} base="/blog" query={filterQuery.toString()} />
+    </div>
   </div>
 </BaseLayout>
+
+<script>
+  import { listArticles, formatDate } from '../../lib/api.js';
+
+  const grid = document.querySelector('#blog-articles');
+  const count = document.querySelector('#blog-count');
+  const empty = document.querySelector('#blog-empty');
+  const loading = document.querySelector('#blog-loading');
+  const pagination = document.querySelector('#blog-pagination');
+  const filters = document.querySelector('#blog-filters');
+  const searchForm = document.querySelector('#blog-search');
+  let requestId = 0;
+
+  const currentParams = () => new URLSearchParams(window.location.search);
+
+  function setFilterState(category) {
+    for (const link of filters?.querySelectorAll('.category-filter') || []) {
+      const active = link.dataset.category === category;
+      link.classList.toggle('bg-primary', active);
+      link.classList.toggle('text-primary-foreground', active);
+      link.setAttribute('aria-current', active ? 'page' : 'false');
+    }
+  }
+
+  function showLoading() {
+    grid.setAttribute('aria-busy', 'true');
+    loading.textContent = 'Loading articles';
+    empty.hidden = true;
+    grid.replaceChildren(...Array.from({ length: 6 }, () => {
+      const card = document.createElement('div');
+      card.className = 'overflow-hidden rounded-lg border animate-pulse';
+      const image = document.createElement('div');
+      image.className = 'aspect-[16/9] bg-muted';
+      const body = document.createElement('div');
+      body.className = 'grid gap-3 p-5';
+      const badge = document.createElement('div');
+      badge.className = 'h-5 w-20 rounded-full bg-muted';
+      const title = document.createElement('div');
+      title.className = 'h-5 w-4/5 rounded bg-muted';
+      const excerpt = document.createElement('div');
+      excerpt.className = 'h-4 w-full rounded bg-muted';
+      body.append(badge, title, excerpt);
+      card.append(image, body);
+      return card;
+    }));
+  }
+
+  function articleCard(article) {
+    const link = document.createElement('a');
+    link.href = `/blog/${encodeURIComponent(article.slug)}`;
+    link.className = 'group flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-foreground/30';
+
+    if (article.featured_image) {
+      const image = document.createElement('img');
+      image.src = article.featured_image;
+      image.alt = '';
+      image.loading = 'lazy';
+      image.className = 'aspect-[16/9] w-full object-cover';
+      link.append(image);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'aspect-[16/9] w-full bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]';
+      link.append(placeholder);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'flex flex-1 flex-col gap-2 p-5';
+    const meta = document.createElement('div');
+    meta.className = 'flex items-center gap-2 text-xs text-muted-foreground';
+    const badge = document.createElement('span');
+    badge.className = 'rounded-full border px-2 py-0.5';
+    badge.textContent = article.category_name || 'Uncategorized';
+    meta.append(badge);
+    const date = document.createElement('time');
+    date.dateTime = article.published_at || '';
+    date.textContent = formatDate(article.published_at);
+    meta.append(date);
+    const title = document.createElement('h3');
+    title.className = 'font-semibold leading-snug group-hover:underline';
+    title.textContent = article.title;
+    body.append(meta, title);
+    if (article.excerpt) {
+      const excerpt = document.createElement('p');
+      excerpt.className = 'line-clamp-3 text-sm text-muted-foreground';
+      excerpt.textContent = article.excerpt;
+      body.append(excerpt);
+    }
+    link.append(body);
+    return link;
+  }
+
+  function renderPagination(page, pages, params) {
+    pagination.replaceChildren();
+    if (pages <= 1) return;
+    const nav = document.createElement('nav');
+    nav.className = 'flex items-center justify-between border-t pt-6 text-sm';
+    nav.setAttribute('aria-label', 'Pagination');
+    const makeLink = (target, label) => {
+      const next = new URLSearchParams(params);
+      if (target > 1) next.set('page', String(target));
+      else next.delete('page');
+      const link = document.createElement('a');
+      link.href = `/blog${next.size ? `?${next}` : ''}`;
+      link.dataset.page = String(target);
+      link.className = 'rounded-md border px-3 py-1.5 hover:bg-accent';
+      link.textContent = label;
+      return link;
+    };
+    nav.append(page > 1 ? makeLink(page - 1, '← Newer') : document.createElement('span'));
+    const label = document.createElement('span');
+    label.className = 'text-muted-foreground';
+    label.textContent = `Page ${page} of ${pages}`;
+    nav.append(label);
+    nav.append(page < pages ? makeLink(page + 1, 'Older →') : document.createElement('span'));
+    pagination.append(nav);
+  }
+
+  async function loadArticles(params, { updateUrl = true } = {}) {
+    const id = ++requestId;
+    const category = params.get('category') || '';
+    const query = params.get('q') || '';
+    const page = Number(params.get('page')) || 1;
+    setFilterState(category);
+    showLoading();
+    if (updateUrl) history.pushState({}, '', `/blog${params.size ? `?${params}` : ''}`);
+
+    try {
+      const result = await listArticles({ category, q: query, page });
+      if (id !== requestId) return;
+      grid.replaceChildren(...result.articles.map(articleCard));
+      grid.setAttribute('aria-busy', 'false');
+      loading.textContent = '';
+      empty.hidden = result.articles.length > 0;
+      empty.textContent = result.articles.length ? '' : 'No articles found.';
+      count.textContent = `${result.total} ${result.total === 1 ? 'article' : 'articles'}${query ? ` matching “${query}”` : ''}${category ? ` in ${filters?.querySelector(`[data-category="${CSS.escape(category)}"]`)?.textContent || 'this category'}` : ''}`;
+      renderPagination(result.page, result.pages, params);
+    } catch (error) {
+      if (id !== requestId) return;
+      console.error(error);
+      grid.replaceChildren();
+      grid.setAttribute('aria-busy', 'false');
+      loading.textContent = '';
+      empty.textContent = 'The blog is temporarily unavailable.';
+      empty.hidden = false;
+    }
+  }
+
+  filters?.addEventListener('click', (event) => {
+    const link = event.target.closest('.category-filter');
+    if (!link) return;
+    event.preventDefault();
+    const params = currentParams();
+    params.delete('page');
+    if (link.dataset.category) params.set('category', link.dataset.category);
+    else params.delete('category');
+    loadArticles(params);
+  });
+
+  pagination?.addEventListener('click', (event) => {
+    const link = event.target.closest('a[data-page]');
+    if (!link) return;
+    event.preventDefault();
+    const params = new URL(link.href).searchParams;
+    loadArticles(params);
+  });
+
+  searchForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const params = currentParams();
+    params.delete('page');
+    const query = new FormData(searchForm).get('q')?.toString().trim();
+    if (query) params.set('q', query);
+    else params.delete('q');
+    loadArticles(params);
+  });
+
+  window.addEventListener('popstate', () => loadArticles(currentParams(), { updateUrl: false }));
+</script>

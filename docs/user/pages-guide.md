@@ -38,7 +38,7 @@ Click **Save draft** to save the article.
 
 **URL:** http://localhost:5173/articles
 
-An overview of all your articles with their status and creation date. Click an article to open it, or use the trash icon to delete it. Click **New article** to start a new one.
+An overview of all your articles with their status and creation date. Click the **Title**, **Status**, or **Created** column heading to sort; click it again to reverse the order. Click an article to open it, or use the trash icon to delete it. Click **New article** to start a new one.
 
 ![Articles list](screenshots/admin-articles.png)
 
@@ -71,7 +71,7 @@ The landing page with a featured article, the latest articles and a list of topi
 All published articles. You can:
 
 - **Search**: type in the search box, e.g. http://localhost:4321/blog?q=music
-- **Filter by category**: click a category button to open its category page, e.g. http://localhost:4321/category/business. If published articles have no category, an **Uncategorized** button appears and opens `/category/uncategorized`.
+- **Filter by category**: click a category button to update the article list in place. An animated placeholder appears while results load. If published articles have no category, an **Uncategorized** filter appears. Articles without a category show an **Uncategorized** badge on their cards.
 - **Browse pages**: use the page buttons at the bottom, e.g. http://localhost:4321/blog?page=2
 
 ![Blog overview](screenshots/site-blog.png)

@@ -17,7 +17,7 @@ For a user-facing walkthrough with screenshots, see [Pages Guide](../user/pages-
 | Route | Component | Purpose |
 |-------|-----------|---------|
 | `/` | `pages/EditorPage.jsx` | New article: editor, AI generation, publishing, SEO metadata. Includes an Articles overview button. After AI generation saves an article, the admin returns to `/articles` and highlights the new row. |
-| `/articles` | `pages/ArticlesPage.jsx` | Table of all articles (any status) with open/delete actions; newly generated articles are scrolled into view and marked `Just created` briefly |
+| `/articles` | `pages/ArticlesPage.jsx` | Table of all articles (any status), sortable by title, status, or creation date, with open/delete actions; newly generated articles are scrolled into view and marked `Just created` briefly |
 | `/articles/:id` | `pages/EditorPage.jsx` | Edit an existing article (`PUT` on save instead of `POST`); includes an Articles overview button |
 | `/settings` | `pages/SettingsPage.jsx` | Configure the installed Ollama model and saved article-generation defaults |
 | `/dev/components` | `pages/dev/ComponentsPage.tsx` | **Dev only.** Preview HTML/CSS files from `src/component-previews/`, view source, copy, convert to JSX. **New component** pastes a snippet and saves it to that folder. Left out of production builds. |
@@ -40,7 +40,7 @@ All other routes require a login (`components/ProtectedRoute.jsx`) and are wrapp
 | Route | File | Purpose |
 |-------|------|---------|
 | `/` | `src/pages/index.astro` | Hero, featured article, latest articles, topics |
-| `/blog` | `src/pages/blog/index.astro` | Article grid with search, category links and pagination |
+| `/blog` | `src/pages/blog/index.astro` | Article grid with search, in-place category filtering and pagination; displays animated loading placeholders during filter requests |
 | `/blog?q=keyword` | | Search title/excerpt |
 | `/blog?page=2` | | Pagination |
 | `/blog/:slug` | `src/pages/blog/[slug].astro` | Article detail, reading time, related articles |
@@ -94,7 +94,7 @@ Settings endpoints require the admin JWT. Preferences are stored in the local, g
 
 Topic suggestions use the selected category and any text entered in the Topic field as context. The backend retries for missing suggestions and returns three distinct ideas or an error. Returned ideas are recorded for history. Shared admin buttons use a short pressed-state scale, brightness, and inset-shadow animation; asynchronous topic and slug suggestion actions also show a spinner while awaiting the API. Suggestion chips are width-constrained to avoid expanding the Editor sidebar.
 
-The browser titles are `Blogstudio | Admin` for the management app and `Blogstudio | AI` for the public site.
+The browser titles are `Blogstudio | Admin` for the management app and `Blogstudio | AI` for the public site. Public article cards show an `Uncategorized` badge when no category is assigned; the blog’s article count appears beside the category filters.
 
 ### Public endpoints (read-only)
 
