@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Blocks, FileText, Moon, PenLine, Settings, Sparkles, Sun } from 'lucide-react'
+import { Blocks, ChartPie, FileText, Moon, PenLine, Settings, Sparkles, Sun } from 'lucide-react'
 import { Toaster } from 'sonner'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -13,20 +13,27 @@ import { useAIStatus } from '@/hooks/use-ai-status'
 
 const nav = [
   { to: '/', label: 'Editor', icon: PenLine, end: true },
-  { to: '/articles', label: 'Articles', icon: FileText },
+]
+
+const articleNav = [
+  { to: '/articles', label: 'Articles Overview', icon: FileText, end: true },
+  { to: '/articles/analytics', label: 'Articles Analytics', icon: ChartPie },
 ]
 
 const settingsNav = [{ to: '/settings', label: 'Settings', icon: Settings }]
+
+const titleBranding = 'Blogstudio | AI'
 
 const devNav = import.meta.env.DEV ? [{ to: '/dev/components', label: 'Components', icon: Blocks }] : []
 
 const groups = [
   { label: 'Content', items: nav },
+  { label: 'Articles', items: articleNav },
   { label: 'System', items: settingsNav },
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
-const titles = { '/': 'Editor', '/articles': 'Articles', '/settings': 'Settings', '/dev/components': 'Components' }
+const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/settings': 'Settings', '/dev/components': 'Components' }
 
 export default function AppShell() {
   const { theme, toggle } = useTheme()
@@ -42,7 +49,7 @@ export default function AppShell() {
             <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <Sparkles className="size-4" />
             </div>
-            <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">AI Blog Studio</span>
+            <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">{titleBranding}</span>
           </div>
         </SidebarHeader>
         <SidebarContent>

@@ -40,6 +40,7 @@ export const api = {
   addCategory: (name) => http.post('/categories', { name }),
   deleteCategory: (id) => http.delete(`/categories/${id}`),
   articles: () => http.get('/articles', { params: { limit: 100 } }).then((r) => r.data),
+  articleAnalytics: (days = 30) => http.get('/analytics/overview', { params: { days } }).then((r) => r.data),
   article: (id) => http.get(`/articles/${id}`).then((r) => r.data),
   createArticle: (data) => http.post('/articles', data).then((r) => r.data),
   updateArticle: (id, data) => http.put(`/articles/${id}`, data).then((r) => r.data),

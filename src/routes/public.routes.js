@@ -1,6 +1,10 @@
 ﻿const express = require('express');
 const router = express.Router();
 const PublicBlogController = require('../controllers/public.controller');
+const AnalyticsController = require('../controllers/analytics.controller');
+
+router.post('/analytics/views', AnalyticsController.startView);
+router.post('/analytics/views/:viewId/finish', express.text({ type: 'text/plain', limit: '1kb' }), AnalyticsController.finishView);
 
 router.get('/categories', PublicBlogController.getCategories);
 router.get('/articles', PublicBlogController.getArticles);

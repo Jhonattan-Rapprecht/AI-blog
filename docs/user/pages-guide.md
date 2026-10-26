@@ -34,13 +34,19 @@ Click **Save draft** to save the article.
 
 ![New article editor](screenshots/admin-editor.png)
 
-### Articles
+### Articles Overview
 
 **URL:** http://localhost:5173/articles
 
-An overview of all your articles with their status and creation date. Click the **Title**, **Status**, or **Created** column heading to sort; click it again to reverse the order. Click an article to open it, or use the trash icon to delete it. Click **New article** to start a new one.
+The Articles section of the sidebar contains **Articles Overview** and **Articles Analytics**. The overview lists all articles with status, category, and creation date. Click a sortable column heading to change the order. Unpublished statuses and uncategorized rows can be edited inline; only the article title opens the editor. Use the trash icon to delete an article, or **New article** to start one.
 
 ![Articles list](screenshots/admin-articles.png)
+
+### Articles Analytics
+
+**URL:** http://localhost:5173/articles/analytics
+
+View article totals, publishing activity for the last six months, published content by category, topic and SEO keyword coverage, and reader views and active reading time for the selected 7-, 30-, or 90-day period. Estimated reading time is calculated from article length and is shown separately from measured reader time. Public reader tracking starts when this version is deployed; historical visits are not available.
 
 ### Edit article
 

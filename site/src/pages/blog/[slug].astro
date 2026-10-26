@@ -13,7 +13,7 @@ if (!article) return Astro.rewrite('/404');
   image={article.featured_image || undefined}
   type="article"
 >
-  <article class="mx-auto max-w-3xl px-6 py-12">
+  <article data-article-read-id={article.id} class="mx-auto max-w-3xl px-6 py-12">
     <a href="/blog" class="text-sm text-muted-foreground hover:text-foreground">← All articles</a>
     <header class="mt-8 border-b pb-8">
       <div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -42,3 +42,10 @@ if (!article) return Astro.rewrite('/404');
     </section>
   )}
 </BaseLayout>
+
+<script>
+  import { trackArticleRead } from '../../lib/analytics.js';
+
+  const articleElement = document.querySelector('[data-article-read-id]');
+  if (articleElement) trackArticleRead(articleElement.dataset.articleReadId);
+</script>

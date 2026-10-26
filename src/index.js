@@ -10,6 +10,7 @@ const PublishingRoutes = require('./routes/publishing.routes');
 const AutomationRoutes = require('./routes/automation.routes');
 const CategoryRoutes = require('./routes/category.routes');
 const SettingsRoutes = require('./routes/settings.routes');
+const AnalyticsRoutes = require('./routes/analytics.routes');
 const authMiddleware = require('./middleware/auth.middleware');
 const SchedulerService = require('./services/scheduler.service');
 require('dotenv').config();
@@ -55,6 +56,7 @@ app.use('/api/articles', authMiddleware, PublishingRoutes);
 app.use('/api/automation', authMiddleware, AutomationRoutes);
 app.use('/api/categories', authMiddleware, CategoryRoutes);
 app.use('/api/settings', authMiddleware, SettingsRoutes);
+app.use('/api/analytics', authMiddleware, AnalyticsRoutes);
 
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);

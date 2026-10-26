@@ -47,16 +47,16 @@ class ArticleModel {
     }
 
     async findAll(filters = {}, pagination = { limit: 20, offset: 0 }) {
-        let sql = 'SELECT * FROM articles';
+        let sql = 'SELECT a.*, c.name AS category_name FROM articles a LEFT JOIN categories c ON c.id = a.category_id';
         const params = [];
         const whereClauses = [];
 
         if (filters.status) {
-            whereClauses.push('status = ?');
+            whereClauses.push('a.status = ?');
             params.push(filters.status);
         }
         if (filters.category_id) {
-            whereClauses.push('category_id = ?');
+            whereClauses.push('a.category_id = ?');
             params.push(filters.category_id);
         }
 
@@ -64,7 +64,7 @@ class ArticleModel {
             sql += ' WHERE ' + whereClauses.join(' AND ');
         }
 
-        sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        sql += ' ORDER BY a.created_at DESC LIMIT ? OFFSET ?';
         params.push(parseInt(pagination.limit), parseInt(pagination.offset));
 
         return await db.query(sql, params);

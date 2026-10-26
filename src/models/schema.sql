@@ -77,3 +77,14 @@ CREATE INDEX idx_articles_scheduled_at ON articles(scheduled_at);
 CREATE INDEX idx_articles_published_at ON articles(published_at);
 CREATE INDEX idx_articles_category_id ON articles(category_id);
 CREATE INDEX idx_ai_generations_article_id ON ai_generations(article_id);
+
+-- Anonymous public article visits and accumulated visible read time.
+CREATE TABLE IF NOT EXISTS article_read_views (
+    id CHAR(36) PRIMARY KEY,
+    article_id CHAR(36) NOT NULL,
+    read_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+    INDEX idx_article_read_views_date (created_at),
+    INDEX idx_article_read_views_article_date (article_id, created_at)
+);

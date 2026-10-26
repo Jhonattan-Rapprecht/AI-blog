@@ -9,6 +9,7 @@ The project runs three apps. `npm run dev` in the project root starts all of the
 | Public site (AI Blog) | `site/` | Astro (server mode) | 4321 | `dev:site` |
 
 For a user-facing walkthrough with screenshots, see [Pages Guide](../user/pages-guide.md).
+For recent user prompt history and the latest app handoff, see the repository-root [AGENTS.md](../../AGENTS.md).
 
 ---
 
@@ -17,7 +18,8 @@ For a user-facing walkthrough with screenshots, see [Pages Guide](../user/pages-
 | Route | Component | Purpose |
 |-------|-----------|---------|
 | `/` | `pages/EditorPage.jsx` | New article: editor, AI generation, publishing, SEO metadata. Includes an Articles overview button. After AI generation saves an article, the admin returns to `/articles` and highlights the new row. |
-| `/articles` | `pages/ArticlesPage.jsx` | Table of all articles (any status), sortable by title, status, or creation date, with open/delete actions; newly generated articles are scrolled into view and marked `Just created` briefly |
+| `/articles` | `pages/ArticlesPage.jsx` | Articles Overview table, sortable by title, status, category, or creation date; unpublished statuses and uncategorized rows support inline editing; only article titles open the editor |
+| `/articles/analytics` | `pages/ArticlesAnalyticsPage.jsx` | Publishing and category charts, saved topics/SEO keywords, estimated reading time, and tracked reader views/active time |
 | `/articles/:id` | `pages/EditorPage.jsx` | Edit an existing article (`PUT` on save instead of `POST`); includes an Articles overview button |
 | `/settings` | `pages/SettingsPage.jsx` | Configure the installed Ollama model and saved article-generation defaults |
 | `/dev/components` | `pages/dev/ComponentsPage.tsx` | **Dev only.** Preview HTML/CSS files from `src/component-previews/`, view source, copy, convert to JSX. **New component** pastes a snippet and saves it to that folder. Left out of production builds. |
@@ -89,6 +91,7 @@ All admin endpoints (including article publish/schedule and `/api/automation`) r
 | POST | `/api/ai/suggest-topic` | Returns three distinct topic suggestions guided by optional `{ category, topic }` values from the Editor |
 | POST | `/api/ai/suggest-slug` | Slug suggestions |
 | GET | `/api/ai/status` | Active AI provider/model |
+| GET | `/api/analytics/overview?days=30` | Authenticated editorial and reader analytics for the selected 7–90 day engagement window |
 
 Settings endpoints require the admin JWT. Preferences are stored in the local, git-ignored `data/settings.json`; Ollama's installed model list is fetched from its `/api/tags` endpoint. The Settings screen currently exposes only Ollama and the writing defaults consumed by the Editor. The selected model is used for article generation, topic suggestions, and slug suggestions. The AI connection indicator checks whether Ollama is reachable; **Test selected model** separately verifies the draft selection with a JSON-mode completion before it is saved. Qwen3-family requests disable the model's default thinking phase so JSON output is returned directly.
 
@@ -96,7 +99,7 @@ Topic suggestions use the selected category and any text entered in the Topic fi
 
 The browser titles are `Blogstudio | Admin` for the management app and `Blogstudio | AI` for the public site. Public article cards show an `Uncategorized` badge when no category is assigned; the blog’s article count appears beside the category filters.
 
-### Public endpoints (read-only)
+### Public endpoints
 
 Also mounted at `/blog` for backwards compatibility.
 
@@ -105,8 +108,14 @@ Also mounted at `/blog` for backwards compatibility.
 | GET | `/api/public/articles` | Published articles; query: `page`, `limit`, `category` (slug), `q` |
 | GET | `/api/public/articles/:slug` | One published article with related articles |
 | GET | `/api/public/categories` | Categories with published article counts, plus `uncategorized` when applicable |
+| POST | `/api/public/analytics/views` | Record an anonymous view of a currently published article and return a view ID |
+| POST | `/api/public/analytics/views/:viewId/finish` | Update active visible reading seconds when the article page is hidden or closed |
 
 An article is publicly visible only when `status = 'published'` and `published_at <= now`.
+
+Reader events are stored in `article_read_views` with one random ID per page load, the article ID, active visible seconds, and event timestamp. No visitor identity is stored. Views are page loads rather than unique people. Active reading time accumulates while the article tab is visible and is submitted on tab hide or page exit. These measurements begin after deployment; the public article's existing minutes estimate remains a content-length calculation. The analytics model creates the event table lazily for existing databases; `src/models/schema.sql` includes it for new installations.
+
+Topic coverage uses the saved topic from an AI generation prompt when available, otherwise the published article title. Keyword counts use saved `seo_keywords`. Neither is an audience preference metric.
 
 ---
 
