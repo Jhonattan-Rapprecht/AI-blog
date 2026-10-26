@@ -53,6 +53,7 @@ export const api = {
   suggestTopics: (context) => http.post('/ai/suggest-topic', context).then((r) => strings(r.data.suggestions)),
   suggestSlugs: (title) => http.post('/ai/suggest-slug', { title }).then((r) => strings(r.data.suggestions)),
   reviewArticle: (article) => http.post('/ai/review-article', article, { timeout: 120000 }).then((r) => r.data),
+  spellcheckArticle: (article) => http.post('/ai/spellcheck-article', article, { timeout: 120000 }).then((r) => r.data),
   articleReviewHistory: (articleId) => http.get(`/ai/review-history/${articleId}`).then((r) => r.data),
   saveArticleReviewHistory: (articleId, review) => http.post(`/ai/review-history/${articleId}`, review).then((r) => r.data),
   updateReviewFinding: (findingId, data) => http.patch(`/ai/review-findings/${findingId}`, data).then((r) => r.data),

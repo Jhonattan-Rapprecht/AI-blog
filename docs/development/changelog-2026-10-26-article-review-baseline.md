@@ -47,3 +47,76 @@
 - Extended the focused title-review pass to check spelling and grammar as well as title clarity and accuracy. It returns one combined full-title replacement so multiple title fixes do not conflict. Article topic is not part of this review.
 - Confirmed with the user that Topic stays only in AI generation settings, where it and Category guide suggestions and generation; the AI may suggest a topic/title when inputs are blank. Do not show Topic in the existing-draft editor or reviewer. Manual drafts continue to save without an article topic.
 - Fixed review-status persistence: CORS now permits the `PATCH` method used to record applied/dismissed findings. The Editor exposes **Retry saving status** if a status update fails after the article text changed; reapplying a title suggestion that is already present retries only the history update.
+
+## Article reviewer refinement
+
+- Dismissed suggestion cards now collapse with a short fade/height transition. A **Dismissed suggestions** disclosure keeps their details available, and each finding remains in the article's review history.
+- New reviews load up to 100 saved runs and pass handled findings to the reviewer to avoid repeating the same or substantially similar applied/dismissed changes. If the current title matches a previously applied title suggestion, the title pass avoids style-only rewrites; exact repeated title findings are filtered server-side.
+- Applying a body suggestion now requires a unique quote match. **Apply all suggestions** uses unique matches and shows a combined confirmation preview before changing the Editor.
+- Review-run and findings inserts now commit or roll back as one database transaction. Repeating an identical applied/dismissed status update succeeds, allowing safe retries after a network error.
+- Verification: `git diff --check` passed. Runtime tests were not run.
+
+## Focused spelling and bulk dismissal
+
+- Added **Dismiss all suggestions** beside **Apply all suggestions**. It confirms the action, dismisses every remaining pending finding (including fact checks), and persists each status in review history; applied findings are left as-is.
+- Added a dedicated **Spell check** action. It requests only likely misspelled words, returns each as a single-word finding, checks the title and body, avoids repeating handled spelling findings, and stores results in the same per-article review history. Each word can be reviewed and applied individually through the existing Apply suggestion button.
+- Verification: `git diff --check` passed. Runtime tests were not run. Git commit/push of the preceding reviewer refinement was attempted first but was blocked because Git could not create `.git/index.lock` in this environment; those changes and this follow-up remain uncommitted/unpushed.
+
+## Title suggestion matching fix
+
+- Title suggestions now compare normalized title text while ignoring surrounding quote marks and trailing punctuation, so typographic quote differences do not block application. The existing stale-title guard remains in place for genuinely changed titles.
+- Apply all uses the same normalized title comparison.
+- Verification: `git diff --check` passed. Runtime tests were not run.
+
+## Case-insensitive spelling suggestion matching
+
+- Fixed the visible-text matcher to search a normalized text stream while preserving a mapping back to the original editor characters. Case differences no longer produce an incorrect text range or prevent applying a one-word spelling suggestion. Ambiguous matches still require a unique occurrence.
+- Verification: `git diff --check` passed. Runtime tests were not run.
+
+## Title suggestion confirmation
+
+- Removed the unreliable exact-match guard that kept blocking title suggestions as stale. Applying an individual title suggestion now shows the current and proposed titles and requires confirmation before replacement. Apply all includes title changes in its combined preview and likewise replaces the current title only after confirmation.
+- Verification: `git diff --check` passed. Runtime tests were not run.
+
+## Word-level title spelling corrections
+
+- Title findings tagged as spelling with a one-word quote now replace only that quoted word in the current title. Full-title clarity/grammar suggestions continue to replace the whole title. Apply all uses the same word-level behavior and its combined preview shows the resulting full title.
+- Verification: `git diff --check` passed. Runtime tests were not run.
+
+## Unicode tolerant spelling quote matching
+
+- Extended article-text matching to normalize accented Unicode characters and, for single-word findings, use a word-boundary match that tolerates surrounding punctuation. It still requires exactly one matching word in the article before applying.
+- Verification: `git diff --check` passed. Runtime tests were not run.
+
+## Locate spelling findings in the editor
+
+- Spelling cards now include **Locate in article**. It selects the uniquely matching word in the title input or rich-text editor and scrolls it into view, making the target visible before applying a correction.
+- Verification: `git diff --check` passed. Runtime tests were not run.
+
+## In-editor spelling highlight and confirmation dialogs
+
+- **Locate in article** now selects the word directly from Quill's rendered text and adds a temporary yellow text highlight where the browser supports the CSS Custom Highlight API.
+- Replaced native browser confirmation popups in the Editor with a styled in-app dialog for title changes, bulk apply/dismiss, fact-check sentence actions, and category deletion.
+- Verification: `git diff --check` passed. Runtime behavior has not been tested.
+
+## Spell-check selected text
+
+- Added **Spell check selection** below the rich-text editor. Select a single word or passage, then run a focused spelling-only check on that selection; it is not asked to assess the rest of the article or title.
+- Selected-text findings retain the selected Quill range for the current session, so applying a finding replaces the matched word inside that selected passage, even if the word appears elsewhere in the article.
+- Verification: `git diff --check` passed. Runtime behavior has not been tested.
+
+## Selected-passage spelling follow-up
+
+- Added the **Spell check selection** control directly beneath the editor. Mouse or keyboard selection captures a word or passage before the control takes focus; only that text is sent to the focused spell-check request.
+- Findings keep the selected Quill range during the current session. Applying a finding replaces the matching word inside that range and adjusts the remaining finding ranges after each correction.
+- Verification: `git diff --check` passed. Runtime behavior has not been tested.
+
+## Selected spelling language and repeat checks
+
+- Spell checks now receive the Editor's selected writing language. Explicitly selected text is treated as a direct spelling question, including a single word without context, and older handled findings no longer suppress results from this manual focused check.
+- Verification: `git diff --check` and backend syntax check passed. Runtime behavior has not been tested.
+
+## Context-aware selected spelling check
+
+- Selected-text spelling checks now include up to 500 characters of nearby editor text as context, while clearly separating the selected correction target from context-only text. The request includes the editor's spelling language and asks the model to choose corrections based on sentence meaning (for example, distinguish valid words that do not fit the context).
+- Verification: `git diff --check` and backend syntax check passed. Runtime behavior has not been tested.

@@ -4,6 +4,58 @@ Read this file before continuing work when the repository history or the latest 
 
 ## Active session — 2026-10-26
 
+### Latest request — bulk dismiss and focused spelling check
+
+The user requested a **Dismiss all suggestions** control next to **Apply all suggestions**, plus a dedicated spelling check because the general review misses misspelled words; spelling findings should isolate a specific word for review and correction. Added a confirmed bulk dismissal that persists each pending finding's status, and a separate AI spell-check endpoint/button returning single-word title/body findings that use the existing individual apply flow and article review history. The user also asked to commit/push/document preceding changes first; documentation has been updated, but the Git commit attempt was blocked when Git could not create `.git/index.lock` (permission denied). No commit or push has succeeded. `git diff --check` passed; runtime tests not run.
+
+### Follow-up — applying title suggestions
+
+The user reported a stale-title error while applying a title suggestion. Updated individual and bulk title matching to ignore quote-mark style and trailing punctuation while retaining the stale-title safeguard for actual title edits. Documented in the dated changelog. `git diff --check` passed; runtime tests not run; changes remain uncommitted/unpushed.
+
+### Follow-up — applying spelling/body suggestions
+
+The user reported that applying a suggestion still produced “Could not match the quoted passage.” Fixed the visible-text matcher to search normalized text consistently while mapping the match back to original editor characters, resolving case mismatches for word-level spell findings. Ambiguous matches remain rejected. Documented in the dated changelog; runtime tests not run; changes remain uncommitted/unpushed.
+
+### Follow-up — title suggestion still blocked
+
+The user reported title suggestions still failed with “The article title changed since this review.” Removed that brittle exact-match block: individual title application now asks for confirmation showing current and suggested values; Apply all includes title replacement in its combined confirmation preview. Documented in the dated changelog. Runtime tests not run; changes remain uncommitted/unpushed.
+
+### Follow-up — preserve the rest of a title on spelling fixes
+
+The user clarified that a title spelling suggestion contained only one word, and applying it replaced the complete title. Individual Apply and Apply all now replace only the quoted word when the finding is a one-word title spelling correction; full-title suggestions remain full replacements. Documented in the dated changelog. Runtime tests not run; changes remain uncommitted/unpushed.
+
+### Follow-up — spelling quote still unmatched
+
+The user reported another “Could not match the quoted passage” error. Extended visible-text matching to normalize Unicode accents and added a single-word boundary fallback that ignores surrounding punctuation while refusing multiple matches. Documented in the dated changelog. Runtime tests not run; changes remain uncommitted/unpushed.
+
+### Follow-up — highlight spelling target
+
+The user asked to highlight the suggested word directly in the editor. Added **Locate in article** to spelling cards; it selects a unique match in the title field or Quill editor and scrolls it into view. Documented in the dated changelog. Runtime tests not run; changes remain uncommitted/unpushed.
+
+### Follow-up — in-app confirmation and visible word highlight
+
+The user reported locating still did not work and asked to avoid browser-native confirmation popups. Updated Locate in article to select directly from the rendered Quill DOM and apply a temporary yellow CSS text highlight where supported. Replaced native `window.confirm` prompts in the Editor with a styled in-app dialog, including bulk actions and fact-check actions. Documented in the dated changelog. Runtime behavior not tested; changes remain uncommitted/unpushed.
+
+### Latest request — spell-check a selected word or passage
+
+The user approved a selection-based spell check that accepts one word or a whole passage. Added **Spell check selection** below Quill; it sends only the selected body text to the spell-only endpoint. Findings carry the selected Quill range for the current session, and applying one replaces the matching word within that range. Documented in the dated changelog. Runtime behavior not tested; changes remain uncommitted/unpushed.
+
+### Follow-up — selected text control and in-app prompts
+
+Completed the selection capture/action below Quill, including mouse and keyboard selections; spelling findings retain a Quill range so individual corrections target the selected passage. Replaced browser-native confirmation prompts in `EditorPage.jsx` with a styled app dialog. **Locate in article** now selects from rendered editor DOM and uses a yellow browser text highlight where supported. Changelog updated. `git diff --check` passed; runtime behavior not tested; changes remain uncommitted/unpushed.
+
+### Follow-up — selected misspelling not detected
+
+The user reported that an explicitly selected misspelled word was still missed. Spell check now receives the Editor language; the model prompt directly asks it to assess a selected single word without context, and explicit selection runs ignore old applied/dismissed finding suppression. The general full-article spell check also receives the selected language. Changelog updated; runtime behavior not tested; changes remain uncommitted/unpushed.
+
+### Latest request — use surrounding context for spelling suggestions
+
+The user reported Dutch corrections such as “Ton” being changed to other valid but contextually wrong words. Selected spelling requests now include up to 500 characters of surrounding editor text, clearly labeled as context only; the model is instructed to use meaning to select the correction, not suggest an arbitrary valid alternative. The selected text stays the only correction target. Changelog updated; runtime behavior not tested; changes remain uncommitted/unpushed.
+
+### Latest request — refine AI article reviewer
+
+The user requested graceful disappearance of dismissed suggestions, using previous review history to avoid repeating similar suggestions (especially title changes already applied), plus recommendation items 1 and 3: safe application with a combined preview and reliable persistent history/status writes. Implemented animated dismissal with an expandable dismissed list; reviewer generation now consults up to 100 prior runs, tells the model to avoid repeating applied/dismissed findings, and filters exact title repeats (with extra protection when the current title is an earlier applied suggestion). Individual and bulk text edits require unique quote matches; Apply all confirms a preview before editing. Review run + findings inserts now share a transaction; setting a status is idempotent when an identical update already persisted. See `docs/development/changelog-2026-10-26-article-review-baseline.md`. Runtime behavior was not tested; no commit or push was requested.
+
 ### Latest user request — article images and media library
 
 The user reported that public article cards show a dark placeholder instead of the article image and asked whether local Ollama models could generate images. They approved the media library and upload workflow, then clarified to build media management first and defer AI image generation until they evaluate a solution. They then asked to add an editable photo credit/source caption beneath images and explicitly defer the slow zoom-out crop behavior. Investigation showed published articles had empty `featured_image` fields and the Editor had no image assignment control. Added local uploads, reusable media records, per-image credit/source metadata, article-featured-media associations, Media Library navigation/page, Editor upload/select, public credit captions, and public URL resolution. Generation and zoom fitting changes are deferred. See `docs/development/media-library.md`.
@@ -67,6 +119,8 @@ The recent app requests in this session were:
 - Updated the user guide, technical routes/API documentation, and session changelog.
 
 ### Latest state
+
+- Current branch: `feat/article-reviewer-v2.3`. Latest working changes refine dismiss animation, repeat-suggestion avoidance, unique quote matching and Apply all preview, transactional review persistence, and idempotent status updates. They are uncommitted; see the latest request entry above.
 
 - Current feature branch: `feat/article-reviewer-v2.3` (standardized from `Feat-article-reviewer-v2.3`; pushed to origin).
 - The accumulated reviewer, article-topic, persistence, and documentation changes were committed as `19aa76d` and pushed to `origin/feat/article-reviewer-v2.3`.

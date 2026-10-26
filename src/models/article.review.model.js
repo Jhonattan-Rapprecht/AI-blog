@@ -46,20 +46,29 @@ class ArticleReviewModel {
         if (!articles.length) return null;
 
         const reviewId = uuidv4();
-        await db.query(`INSERT INTO article_reviews (id, article_id, model, category, reviewed_at)
-            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`, [reviewId, articleId, review.model || null, review.category || null]);
         const findings = [];
-        for (const finding of review.findings || []) {
-            const id = uuidv4();
-            const status = ['dismissed', 'applied'].includes(finding.status) ? finding.status : 'pending';
-            await db.query(`INSERT INTO article_review_findings
-                (id, review_id, field_name, finding_type, severity, quote, sentence_quote, neutral_rewrite, explanation, suggestion, status, action)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-                id, reviewId, finding.field || 'content', finding.type || 'clarity', finding.severity || 'low',
-                finding.quote || '', finding.sentenceQuote || null, finding.neutralRewrite || null,
-                finding.explanation || '', finding.suggestion || '', status, finding.action || null
-            ]);
-            findings.push({ ...finding, id, status });
+        const connection = await db.transaction();
+        try {
+            await connection.execute(`INSERT INTO article_reviews (id, article_id, model, category, reviewed_at)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`, [reviewId, articleId, review.model || null, review.category || null]);
+            for (const finding of review.findings || []) {
+                const id = uuidv4();
+                const status = ['dismissed', 'applied'].includes(finding.status) ? finding.status : 'pending';
+                await connection.execute(`INSERT INTO article_review_findings
+                    (id, review_id, field_name, finding_type, severity, quote, sentence_quote, neutral_rewrite, explanation, suggestion, status, action)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+                    id, reviewId, finding.field || 'content', finding.type || 'clarity', finding.severity || 'low',
+                    finding.quote || '', finding.sentenceQuote || null, finding.neutralRewrite || null,
+                    finding.explanation || '', finding.suggestion || '', status, finding.action || null
+                ]);
+                findings.push({ ...finding, id, status });
+            }
+            await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
         }
         return { ...review, id: reviewId, findings };
     }
@@ -98,7 +107,11 @@ class ArticleReviewModel {
             INNER JOIN article_reviews r ON r.id = f.review_id
             SET f.status = ?, f.action = ?
             WHERE f.id = ? AND r.article_id = ?`, [status, action, findingId, articleId]);
-        return result.affectedRows > 0;
+        if (result.affectedRows > 0) return true;
+        const rows = await db.query(`SELECT f.status, f.action FROM article_review_findings f
+            INNER JOIN article_reviews r ON r.id = f.review_id
+            WHERE f.id = ? AND r.article_id = ? LIMIT 1`, [findingId, articleId]);
+        return rows.length > 0 && rows[0].status === status && (rows[0].action || null) === (action || null);
     }
 }
 

@@ -6,11 +6,11 @@ This document tracks confirmed problems and product decisions that still need wo
 
 ### Applied suggestion status was not saved
 
-- **Status:** Fixed in the current working changes.
+- **Status:** Fixed.
 - **Reported:** 2026-10-26.
 - **Area:** Editor → AI article review history.
 - **Cause:** The browser sends `PATCH /api/ai/review-findings/:findingId` to persist an applied/dismissed status, but the API's CORS allowlist omitted `PATCH`. The browser blocked the preflight and showed a generic Network Error after the editor text had already changed.
-- **Resolution:** Added `PATCH` to the CORS methods and added a **Retry saving status** action for transient status-save failures. If a title replacement already reached the editor before the status request failed, clicking Apply again now recognizes the replacement and retries only the history update.
+- **Resolution:** Added `PATCH` to the CORS methods and added a **Retry saving status** action for transient status-save failures. Identical status updates are idempotent, so retries now succeed even if the first request reached the server. If a title replacement already reached the editor before the status request failed, clicking Apply again recognizes the replacement and retries only the history update.
 
 ### Article review failed while saving its review timestamp
 
