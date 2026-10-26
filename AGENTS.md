@@ -30,6 +30,9 @@ The recent app requests in this session were:
 16. The user reported that sorting the dashboard Articles Overview by status sometimes glitches. Found that status values were sorted alphabetically in both SQL and JavaScript, which conflicts with their workflow order and made the order seem inconsistent. Updated server pagination and client-side sorting to consistently use Draft, Review, Scheduled, Published, Archived, and corrected the routes guide and dated changelog.
 17. The user asked: “make the table and grid buttons consistent with the artifcle overview buttons and icons on the blog frontend overview page”. Aligned the dashboard Table/Grid segmented controls' active colors, spacing, and typography with the public `/blog` layout buttons, while retaining the dashboard's Table/Grid labels and icons. Added matching Grid/List icons to the public buttons and updated the changelog.
 18. The user requested: “push commit docs”. Corrected the user guide to describe the dashboard's current automatic scroll loading, updated historical handoff text, and committed/pushed the accumulated Articles Overview and public blog layout work with documentation on `v2.1`.
+19. The user noticed literal `` `r`n `` text at the bottom-left of the public `/blog` page. Removed the stray text from `site/src/pages/blog/index.astro`; this was literal template text, not HTML escaping.
+20. The user asked how filtering and sorting work, then requested an explanation of the underlying code for both the dashboard and public blog. Explained the React state/API/controller/model/SQL flow, public URL-backed category/search filters, and pagination. No code changes for this explanation.
+21. The user asked about adding AI article review for inaccurate/inconsistent content, spelling, and other writing issues, including review of published articles. Recommended one review workflow in the Editor, which loads both drafts and published articles. Explained that Ollama alone cannot verify current facts or provide a dependable cutoff; source-backed checks would need an external search integration. User asked to first commit/push/document existing changes, then proceed with the review feature. At the start of that work, the only pending application change was removal of the stray `` `r`n `` text; review implementation has not started yet.
 
 ### App work completed in this session
 
@@ -54,6 +57,7 @@ The recent app requests in this session were:
 - The admin sidebar footer labels the existing provider/model indicator **Connection status**.
 - Articles Overview supports Table/Grid views with automatic infinite scroll and paginated API results sorted by an allowlisted field; the selected view persists in local storage. Status sort uses Draft, Review, Scheduled, Published, Archived order.
 - The dashboard Table/Grid controls share the public layout buttons' selected-state styling; public Grid/List buttons have matching icons.
+- The literal `` `r`n `` formerly rendered at the bottom of `/blog` was removed and is included in the baseline commit before AI article-review work.
 
 ### Main files for this work
 
