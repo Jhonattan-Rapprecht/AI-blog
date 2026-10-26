@@ -65,3 +65,42 @@
   --tw-prose-hr: var(--border);
   --tw-prose-code: var(--foreground);
 }
+
+/* Public blog article card layout controls */
+#blog-articles[data-layout='list'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#blog-articles[data-layout='list'] > a {
+  flex-direction: row;
+  min-height: 190px;
+}
+
+#blog-articles[data-layout='list'] .article-card-image {
+  width: 34%;
+  min-width: 180px;
+  min-height: 190px;
+  height: auto;
+  flex: 0 0 34%;
+  aspect-ratio: auto;
+  align-self: stretch;
+  object-fit: cover;
+}
+
+#blog-articles[data-layout='list'] .article-card-body {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  #blog-articles[data-layout='list'] > a {
+    flex-direction: column;
+  }
+
+  #blog-articles[data-layout='list'] .article-card-image {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    flex-basis: auto;
+    aspect-ratio: 16 / 9;
+  }
+}

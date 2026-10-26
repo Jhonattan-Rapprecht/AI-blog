@@ -18,7 +18,7 @@ For recent user prompt history and the latest app handoff, see the repository-ro
 | Route | Component | Purpose |
 |-------|-----------|---------|
 | `/` | `pages/EditorPage.jsx` | New article: editor, AI generation, publishing, SEO metadata. Includes an Articles overview button. After AI generation saves an article, the admin returns to `/articles` and highlights the new row. |
-| `/articles` | `pages/ArticlesPage.jsx` | Articles Overview table, sortable by title, status, category, or creation date; unpublished statuses and uncategorized rows support inline editing; only article titles open the editor |
+| `/articles` | `pages/ArticlesPage.jsx` | Articles Overview table or responsive grid, sortable by title, workflow status, category, or creation date, with automatic infinite scroll; unpublished statuses and uncategorized rows support inline editing; only article titles open the editor |
 | `/articles/analytics` | `pages/ArticlesAnalyticsPage.jsx` | Publishing and category charts, saved topics/SEO keywords, estimated reading time, and tracked reader views/active time |
 | `/articles/:id` | `pages/EditorPage.jsx` | Edit an existing article (`PUT` on save instead of `POST`); includes an Articles overview button |
 | `/media` | `pages/MediaPage.jsx` | Upload, browse, and remove reusable article images |
@@ -77,7 +77,7 @@ All admin endpoints (including article publish/schedule and `/api/automation`) r
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| GET | `/api/articles` | List all articles |
+| GET | `/api/articles` | List articles with `limit`, `offset`, `sortBy` (`title`, `status`, `category_name`, `created_at`), and `direction` (`asc`, `desc`) options |
 | GET | `/api/articles/:id` | Get one article |
 | POST | `/api/articles` | Create article |
 | PUT | `/api/articles/:id` | Update article (auto-stamps `published_at` when status becomes `published`) |

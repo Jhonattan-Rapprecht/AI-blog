@@ -96,7 +96,16 @@ class ArticleModel {
             sql += ' WHERE ' + whereClauses.join(' AND ');
         }
 
-        sql += ' ORDER BY a.created_at DESC LIMIT ? OFFSET ?';
+        const sortColumns = {
+            title: 'a.title',
+            category_name: 'c.name',
+            created_at: 'a.created_at'
+        };
+        const sortDirection = pagination.direction === 'asc' ? 'ASC' : 'DESC';
+        const sortOrder = pagination.sortBy === 'status'
+            ? `CASE a.status WHEN 'draft' THEN 0 WHEN 'review' THEN 1 WHEN 'scheduled' THEN 2 WHEN 'published' THEN 3 WHEN 'archived' THEN 4 ELSE 5 END ${sortDirection}`
+            : `${sortColumns[pagination.sortBy] || 'a.created_at'} ${sortDirection}`;
+        sql += ` ORDER BY ${sortOrder}, a.id ASC LIMIT ? OFFSET ?`;
         params.push(parseInt(pagination.limit), parseInt(pagination.offset));
 
         return await db.query(sql, params);

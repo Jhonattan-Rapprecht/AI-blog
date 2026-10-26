@@ -21,7 +21,9 @@ class ArticleController {
             const filters = req.query;
             const pagination = {
                 limit: req.query.limit || 20,
-                offset: req.query.offset || 0
+                offset: req.query.offset || 0,
+                sortBy: req.query.sortBy,
+                direction: req.query.direction
             };
             const articles = await ArticleModel.findAll(filters, pagination);
             res.json(articles);

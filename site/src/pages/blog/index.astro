@@ -41,12 +41,28 @@ if (q) filterQuery.set('q', q);
         <span id="blog-count" class="px-1 text-xs text-muted-foreground">{result.total} {result.total === 1 ? 'article' : 'articles'}</span>
     </div>
 
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <span class="text-xs font-medium text-muted-foreground">Article display</span>
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-1 rounded-lg border p-1" role="group" aria-label="Article card layout">
+          <button type="button" class="blog-control inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition hover:bg-accent" data-layout-choice="grid" aria-pressed="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>Grid</button>
+          <button type="button" class="blog-control inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition hover:bg-accent" data-layout-choice="list" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>List</button>
+        </div>
+        <div class="flex items-center gap-1 rounded-lg border p-1" role="group" aria-label="Article loading mode">
+          <button type="button" class="blog-control rounded-md px-3 py-1.5 text-xs font-medium transition hover:bg-accent" data-load-mode="pages" aria-pressed="true">Pages</button>
+          <button type="button" class="blog-control rounded-md px-3 py-1.5 text-xs font-medium transition hover:bg-accent" data-load-mode="infinite" aria-pressed="false">Infinite scroll</button>
+        </div>
+      </div>
+    </div>
+
     <p id="blog-loading" class="sr-only" role="status" aria-live="polite"></p>
     <p id="blog-empty" class="rounded-md border p-6 text-sm text-muted-foreground" hidden={!failed && result.articles.length > 0}>{failed ? 'The blog is temporarily unavailable.' : 'No articles found.'}</p>
 
-    <div id="blog-articles" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="false">
+    <div id="blog-articles" data-layout="grid" data-page={result.page} data-pages={result.pages} class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="false">
       {result.articles.map((a) => <ArticleCard article={a} />)}
     </div>
+
+    <div id="blog-infinite-status" class="flex min-h-10 items-center justify-center gap-2 py-2 text-sm text-muted-foreground" aria-live="polite" hidden></div>
 
     <div id="blog-pagination">
       <Pagination page={page} pages={result.pages} base="/blog" query={filterQuery.toString()} />
@@ -64,9 +80,57 @@ if (q) filterQuery.set('q', q);
   const pagination = document.querySelector('#blog-pagination');
   const filters = document.querySelector('#blog-filters');
   const searchForm = document.querySelector('#blog-search');
+  const infiniteStatus = document.querySelector('#blog-infinite-status');
+  const layoutButtons = [...document.querySelectorAll('[data-layout-choice]')];
+  const loadModeButtons = [...document.querySelectorAll('[data-load-mode]')];
   let requestId = 0;
+  let appendRequestId = 0;
+  let loadingNextPage = false;
+  let appendFailed = false;
+  let nextPage = Number(grid.dataset.page || 1) + 1;
+  let totalPages = Number(grid.dataset.pages || 1);
+  let layout = localStorage.getItem('blog-card-layout') === 'list' ? 'list' : 'grid';
+  let loadMode = localStorage.getItem('blog-load-mode') === 'infinite' ? 'infinite' : 'pages';
+  let observer;
 
   const currentParams = () => new URLSearchParams(window.location.search);
+
+  function setButtonState(buttons, attribute, selected) {
+    for (const button of buttons) {
+      const active = button.dataset[attribute] === selected;
+      button.setAttribute('aria-pressed', String(active));
+      button.classList.toggle('bg-primary', active);
+      button.classList.toggle('text-primary-foreground', active);
+    }
+  }
+
+  function observeInfiniteSentinel() {
+    observer?.disconnect();
+    infiniteStatus.hidden = loadMode !== 'infinite';
+    pagination.hidden = loadMode === 'infinite';
+    if (loadMode !== 'infinite') return;
+    if (nextPage > totalPages) {
+      infiniteStatus.textContent = `${count.textContent.split(' ')[0]} articles shown`;
+      return;
+    }
+    if (loadingNextPage || appendFailed || !('IntersectionObserver' in window)) return;
+    observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) loadNextPage();
+    }, { rootMargin: '320px' });
+    observer.observe(infiniteStatus);
+  }
+
+  function applyDisplayPreferences() {
+    grid.dataset.layout = layout;
+    setButtonState(layoutButtons, 'layoutChoice', layout);
+    setButtonState(loadModeButtons, 'loadMode', loadMode);
+    observeInfiniteSentinel();
+  }
+
+  function updateCount(result, query, category) {
+    const categoryName = category ? filters?.querySelector(`[data-category="${CSS.escape(category)}"]`)?.textContent || 'this category' : '';
+    count.textContent = `${result.total} ${result.total === 1 ? 'article' : 'articles'}${query ? ` matching “${query}”` : ''}${category ? ` in ${categoryName}` : ''}`;
+  }
 
   function setFilterState(category) {
     for (const link of filters?.querySelectorAll('.category-filter') || []) {
@@ -110,16 +174,16 @@ if (q) filterQuery.set('q', q);
       image.src = imageUrl(article.featured_image);
       image.alt = '';
       image.loading = 'lazy';
-      image.className = 'aspect-[16/9] w-full object-cover';
+      image.className = 'article-card-image aspect-[16/9] w-full object-cover';
       link.append(image);
     } else {
       const placeholder = document.createElement('div');
-      placeholder.className = 'aspect-[16/9] w-full bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]';
+      placeholder.className = 'article-card-image aspect-[16/9] w-full bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]';
       link.append(placeholder);
     }
 
     const body = document.createElement('div');
-    body.className = 'flex flex-1 flex-col gap-2 p-5';
+    body.className = 'article-card-body flex flex-1 flex-col gap-2 p-5';
     const meta = document.createElement('div');
     meta.className = 'flex items-center gap-2 text-xs text-muted-foreground';
     const badge = document.createElement('span');
@@ -172,6 +236,9 @@ if (q) filterQuery.set('q', q);
 
   async function loadArticles(params, { updateUrl = true } = {}) {
     const id = ++requestId;
+    appendRequestId += 1;
+    loadingNextPage = false;
+    appendFailed = false;
     const category = params.get('category') || '';
     const query = params.get('q') || '';
     const page = Number(params.get('page')) || 1;
@@ -184,11 +251,16 @@ if (q) filterQuery.set('q', q);
       if (id !== requestId) return;
       grid.replaceChildren(...result.articles.map(articleCard));
       grid.setAttribute('aria-busy', 'false');
+      grid.dataset.page = String(result.page);
+      grid.dataset.pages = String(result.pages);
+      nextPage = result.page + 1;
+      totalPages = result.pages;
       loading.textContent = '';
       empty.hidden = result.articles.length > 0;
       empty.textContent = result.articles.length ? '' : 'No articles found.';
-      count.textContent = `${result.total} ${result.total === 1 ? 'article' : 'articles'}${query ? ` matching “${query}”` : ''}${category ? ` in ${filters?.querySelector(`[data-category="${CSS.escape(category)}"]`)?.textContent || 'this category'}` : ''}`;
+      updateCount(result, query, category);
       renderPagination(result.page, result.pages, params);
+      applyDisplayPreferences();
     } catch (error) {
       if (id !== requestId) return;
       console.error(error);
@@ -199,6 +271,65 @@ if (q) filterQuery.set('q', q);
       empty.hidden = false;
     }
   }
+
+  async function loadNextPage() {
+    if (loadingNextPage || appendFailed || nextPage > totalPages || loadMode !== 'infinite') return;
+    loadingNextPage = true;
+    const operationId = ++appendRequestId;
+    const activeRequestId = requestId;
+    const params = currentParams();
+    const category = params.get('category') || '';
+    const query = params.get('q') || '';
+    infiniteStatus.hidden = false;
+    infiniteStatus.innerHTML = '<span class="size-4 animate-spin rounded-full border-2 border-current border-r-transparent"></span><span>Loading more articles…</span>';
+    grid.setAttribute('aria-busy', 'true');
+    try {
+      const result = await listArticles({ category, q: query, page: nextPage });
+      if (activeRequestId !== requestId || operationId !== appendRequestId) return;
+      grid.append(...result.articles.map(articleCard));
+      nextPage = result.page + 1;
+      totalPages = result.pages;
+      grid.dataset.page = String(result.page);
+      grid.dataset.pages = String(result.pages);
+      updateCount(result, query, category);
+      infiniteStatus.textContent = nextPage > totalPages
+        ? `${result.total} ${result.total === 1 ? 'article' : 'articles'} shown`
+        : 'Scroll to load more articles';
+    } catch (error) {
+      if (activeRequestId !== requestId || operationId !== appendRequestId) return;
+      console.error(error);
+      appendFailed = true;
+      infiniteStatus.replaceChildren();
+      const message = document.createElement('span');
+      message.textContent = 'Could not load more articles.';
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'rounded-md border px-3 py-1 text-xs hover:bg-accent';
+      retry.textContent = 'Retry';
+      retry.addEventListener('click', () => { appendFailed = false; loadNextPage() }, { once: true });
+      infiniteStatus.append(message, retry);
+    } finally {
+      if (activeRequestId === requestId && operationId === appendRequestId) {
+        loadingNextPage = false;
+        grid.setAttribute('aria-busy', 'false');
+        if (!appendFailed) observeInfiniteSentinel();
+      }
+    }
+  }
+
+  layoutButtons.forEach((button) => button.addEventListener('click', () => {
+    layout = button.dataset.layoutChoice;
+    localStorage.setItem('blog-card-layout', layout);
+    applyDisplayPreferences();
+  }));
+
+  loadModeButtons.forEach((button) => button.addEventListener('click', () => {
+    loadMode = button.dataset.loadMode;
+    localStorage.setItem('blog-load-mode', loadMode);
+    const params = currentParams();
+    params.delete('page');
+    loadArticles(params);
+  }));
 
   filters?.addEventListener('click', (event) => {
     const link = event.target.closest('.category-filter');
@@ -230,4 +361,6 @@ if (q) filterQuery.set('q', q);
   });
 
   window.addEventListener('popstate', () => loadArticles(currentParams(), { updateUrl: false }));
+  applyDisplayPreferences();
 </script>
+`r`n

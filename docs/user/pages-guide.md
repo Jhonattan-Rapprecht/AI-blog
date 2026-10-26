@@ -38,7 +38,7 @@ Click **Save draft** to save the article.
 
 **URL:** http://localhost:5173/articles
 
-The Articles section of the sidebar contains **Articles Overview** and **Articles Analytics**. The overview lists all articles with status, category, and creation date. Click a sortable column heading to change the order. Unpublished statuses and uncategorized rows can be edited inline; only the article title opens the editor. Use the trash icon to delete an article, or **New article** to start one.
+The Articles section of the sidebar contains **Articles Overview** and **Articles Analytics**. In the overview, switch between a sortable table and a responsive card grid; more articles load automatically as you scroll. Your selected layout is remembered in this browser. Unpublished statuses and uncategorized rows can be edited inline; only article titles open the editor. Use the trash icon to delete an article, or **New article** to start one.
 
 ![Articles list](screenshots/admin-articles.png)
 
