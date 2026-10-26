@@ -13,6 +13,7 @@ class AutomationService {
             // 2. Create article
             const articleId = await ArticleModel.create({
                 ...result.data,
+                topic: config.topic,
                 status: config.auto_publish ? 'published' : 'draft'
             });
 

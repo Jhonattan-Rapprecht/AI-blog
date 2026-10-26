@@ -1,9 +1,91 @@
 const db = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const MediaModel = require('./media.model');
 
 class ArticleModel {
-    constructor() { this.mediaColumnReady = null; }
+    constructor() { this.mediaColumnReady = null; this.topicSchemaReady = null; }
+
+    async getOrCreateTopicId(value) {
+        const name = String(value || '').trim().replace(/\s+/g, ' ').slice(0, 500);
+        if (!name) throw new Error('An article topic is required.');
+        const normalizedHash = crypto.createHash('sha256').update(name.toLowerCase()).digest('hex');
+        await db.query('INSERT IGNORE INTO topics (id, name, normalized_hash) VALUES (?, ?, ?)', [uuidv4(), name, normalizedHash]);
+        const rows = await db.query('SELECT id FROM topics WHERE normalized_hash = ? LIMIT 1', [normalizedHash]);
+        if (!rows[0]) throw new Error('Could not save the article topic.');
+        return rows[0].id;
+    }
+
+    async ensureTopicSchema() {
+        if (!this.topicSchemaReady) {
+            this.topicSchemaReady = (async () => {
+                await db.query(`CREATE TABLE IF NOT EXISTS topics (
+                    id CHAR(36) PRIMARY KEY,
+                    name VARCHAR(500) NOT NULL,
+                    normalized_hash CHAR(64) NOT NULL UNIQUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`);
+                let topicIdColumn = await db.query(`
+                    SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'topic_id'
+                `);
+                if (!topicIdColumn.length) {
+                    await db.query('ALTER TABLE articles ADD COLUMN topic_id CHAR(36) NULL');
+                    topicIdColumn = [{ IS_NULLABLE: 'YES' }];
+                }
+                const directTopicColumn = await db.query(`
+                    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'topic'
+                `);
+                const legacyRows = await db.query(`
+                    SELECT a.id, ${directTopicColumn.length ? 'a.topic' : 'NULL AS topic'},
+                        (SELECT CASE WHEN JSON_VALID(g.prompt) THEN NULLIF(JSON_UNQUOTE(JSON_EXTRACT(g.prompt, '$.topic')), '') ELSE NULL END
+                         FROM ai_generations g WHERE g.article_id = a.id AND g.status = 'completed'
+                         ORDER BY g.created_at DESC, g.id DESC LIMIT 1) AS generated_topic
+                    FROM articles a WHERE a.topic_id IS NULL
+                `);
+                for (const row of legacyRows) {
+                    const topic = row.topic?.trim() || row.generated_topic?.trim();
+                    if (!topic) continue;
+                    const topicId = await this.getOrCreateTopicId(topic);
+                    await db.query('UPDATE articles SET topic_id = ? WHERE id = ? AND topic_id IS NULL', [topicId, row.id]);
+                }
+
+                if (directTopicColumn.length) await db.query('ALTER TABLE articles DROP COLUMN topic');
+
+                const indexes = await db.query(`
+                    SELECT DISTINCT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'topic_id'
+                `);
+                if (!indexes.length) await db.query('CREATE INDEX idx_articles_topic_id ON articles(topic_id)');
+
+                const constraints = await db.query(`
+                    SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles'
+                      AND COLUMN_NAME = 'topic_id' AND REFERENCED_TABLE_NAME = 'topics'
+                `);
+                if (!constraints.length) {
+                    await db.query('ALTER TABLE articles ADD CONSTRAINT fk_articles_topic FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE RESTRICT');
+                }
+
+                const [{ missingTopics }] = await db.query('SELECT COUNT(*) AS missingTopics FROM articles WHERE topic_id IS NULL');
+                if (topicIdColumn[0]?.IS_NULLABLE === 'YES' && Number(missingTopics) === 0) {
+                    await db.query('ALTER TABLE articles MODIFY topic_id CHAR(36) NOT NULL');
+                }
+            })().catch((error) => { this.topicSchemaReady = null; throw error; });
+        }
+        return this.topicSchemaReady;
+    }
+
+    async enforceTopicRequiredWhenComplete() {
+        const columns = await db.query(`
+            SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'topic_id'
+        `);
+        if (columns[0]?.IS_NULLABLE !== 'YES') return;
+        const [{ missingTopics }] = await db.query('SELECT COUNT(*) AS missingTopics FROM articles WHERE topic_id IS NULL');
+        if (Number(missingTopics) === 0) await db.query('ALTER TABLE articles MODIFY topic_id CHAR(36) NOT NULL');
+    }
 
     async ensureMediaColumn() {
         if (!this.mediaColumnReady) {
@@ -32,6 +114,7 @@ class ArticleModel {
 
     async create(data) {
         await this.ensureMediaColumn();
+        await this.ensureTopicSchema();
         const {
             title = null,
             slug = null,
@@ -41,6 +124,7 @@ class ArticleModel {
             featured_media_id = null,
             status = 'draft',
             category_id = null,
+            topic = '',
             author_id = null,
             seo_title = null,
             seo_description = null,
@@ -49,11 +133,12 @@ class ArticleModel {
             scheduled_at = null
         } = data;
 
+        const topic_id = await this.getOrCreateTopicId(topic);
         const id = uuidv4();
         const sql = `
             INSERT INTO articles
-            (id, title, slug, excerpt, content, featured_image, featured_media_id, status, category_id, author_id, seo_title, seo_description, seo_keywords, published_at, scheduled_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, title, slug, excerpt, content, featured_image, featured_media_id, status, category_id, topic_id, author_id, seo_title, seo_description, seo_keywords, published_at, scheduled_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         await db.query(sql, [
@@ -66,6 +151,7 @@ class ArticleModel {
             featured_media_id ?? null,
             status ?? 'draft',
             category_id ?? null,
+            topic_id,
             author_id ?? null,
             seo_title ?? null,
             seo_description ?? null,
@@ -79,6 +165,7 @@ class ArticleModel {
 
     async findAll(filters = {}, pagination = { limit: 20, offset: 0 }) {
         await this.ensureMediaColumn();
+        await this.ensureTopicSchema();
         let sql = 'SELECT a.*, c.name AS category_name, m.filepath AS featured_media_path, m.credit AS featured_image_credit FROM articles a LEFT JOIN categories c ON c.id = a.category_id LEFT JOIN media m ON m.id = a.featured_media_id';
         const params = [];
         const whereClauses = [];
@@ -113,22 +200,29 @@ class ArticleModel {
 
     async findById(id) {
         await this.ensureMediaColumn();
-        const sql = `SELECT a.*, m.filepath AS featured_media_path, m.credit AS featured_image_credit
-                     FROM articles a LEFT JOIN media m ON m.id = a.featured_media_id WHERE a.id = ?`;
+        await this.ensureTopicSchema();
+        const sql = `SELECT a.*, t.name AS topic, m.filepath AS featured_media_path, m.credit AS featured_image_credit
+                     FROM articles a LEFT JOIN topics t ON t.id = a.topic_id LEFT JOIN media m ON m.id = a.featured_media_id WHERE a.id = ?`;
         const results = await db.query(sql, [id]);
         return results[0];
     }
 
     async update(id, data) {
         await this.ensureMediaColumn();
+        await this.ensureTopicSchema();
         const fields = [];
         const params = [];
 
-        const allowed = ['title', 'slug', 'excerpt', 'content', 'featured_image', 'featured_media_id', 'status', 'category_id',
+        const allowed = ['title', 'slug', 'excerpt', 'content', 'featured_image', 'featured_media_id', 'status', 'category_id', 'topic',
             'seo_title', 'seo_description', 'seo_keywords', 'published_at', 'scheduled_at'];
 
         for (const [key, value] of Object.entries(data)) {
             if (!allowed.includes(key)) continue;
+            if (key === 'topic') {
+                fields.push('topic_id = ?');
+                params.push(await this.getOrCreateTopicId(value));
+                continue;
+            }
             fields.push(`${key} = ?`);
             params.push(value ?? null);
         }
@@ -143,6 +237,7 @@ class ArticleModel {
         params.push(id);
         const sql = `UPDATE articles SET ${fields.join(', ')} WHERE id = ?`;
         await db.query(sql, params);
+        if (Object.hasOwn(data, 'topic')) await this.enforceTopicRequiredWhenComplete();
         return true;
     }
 

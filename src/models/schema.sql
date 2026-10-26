@@ -23,6 +23,14 @@ CREATE TABLE IF NOT EXISTS media (
     INDEX idx_media_created_at (created_at)
 );
 
+-- Reusable topics shared by articles.
+CREATE TABLE IF NOT EXISTS topics (
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(500) NOT NULL,
+    normalized_hash CHAR(64) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Articles Table
 CREATE TABLE IF NOT EXISTS articles (
     id CHAR(36) PRIMARY KEY,
@@ -34,6 +42,7 @@ CREATE TABLE IF NOT EXISTS articles (
     featured_media_id CHAR(36) NULL,
     status ENUM('draft', 'review', 'scheduled', 'published', 'archived') DEFAULT 'draft',
     category_id CHAR(36),
+    topic_id CHAR(36) NOT NULL,
     author_id CHAR(36),
     seo_title VARCHAR(255),
     seo_description TEXT,
@@ -43,6 +52,7 @@ CREATE TABLE IF NOT EXISTS articles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE RESTRICT,
     FOREIGN KEY (featured_media_id) REFERENCES media(id) ON DELETE SET NULL
 );
 
@@ -94,6 +104,7 @@ CREATE INDEX idx_articles_status ON articles(status);
 CREATE INDEX idx_articles_scheduled_at ON articles(scheduled_at);
 CREATE INDEX idx_articles_published_at ON articles(published_at);
 CREATE INDEX idx_articles_category_id ON articles(category_id);
+CREATE INDEX idx_articles_topic_id ON articles(topic_id);
 CREATE INDEX idx_ai_generations_article_id ON ai_generations(article_id);
 
 -- Anonymous public article visits and accumulated visible read time.

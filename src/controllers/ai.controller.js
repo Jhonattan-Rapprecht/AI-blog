@@ -105,6 +105,7 @@ class AIController {
 
             const articleId = await ArticleModel.create({
                 ...result.data,
+                topic: config.topic,
                 status: 'review'
             });
 

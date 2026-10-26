@@ -5,8 +5,8 @@ class ArticleController {
     async create(req, res) {
         try {
             const data = req.body;
-            if (!data.title || !data.slug || !data.content) {
-                return res.status(400).json({ error: 'Title, slug and content are required' });
+            if (!data.title || typeof data.topic !== 'string' || !data.topic.trim() || !data.slug || !data.content) {
+                return res.status(400).json({ error: 'Title, topic, slug and content are required' });
             }
             if (data.featured_media_id && !await MediaModel.findById(data.featured_media_id)) return res.status(400).json({ error: 'Selected media item was not found.' });
             const id = await ArticleModel.create(data);
@@ -48,6 +48,7 @@ class ArticleController {
         try {
             const { id } = req.params;
             const data = req.body;
+            if (Object.hasOwn(data, 'topic') && (typeof data.topic !== 'string' || !data.topic.trim())) return res.status(400).json({ error: 'Article topic cannot be blank.' });
             if (Object.hasOwn(data, 'featured_media_id') && data.featured_media_id && !await MediaModel.findById(data.featured_media_id)) return res.status(400).json({ error: 'Selected media item was not found.' });
             await ArticleModel.update(id, data);
             res.json({ message: 'Article updated successfully' });

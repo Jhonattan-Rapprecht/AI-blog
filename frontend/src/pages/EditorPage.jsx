@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { NativeSelect } from '@/components/ui/native-select'
 
 const EMPTY = {
-  title: '', slug: '', excerpt: '', content: '', featured_image: '', featured_media_id: null, featured_media_path: '', featured_image_credit: '', status: 'draft', category_id: '',
+  title: '', topic: '', slug: '', excerpt: '', content: '', featured_image: '', featured_media_id: null, featured_media_path: '', featured_image_credit: '', status: 'draft', category_id: '',
   seo_title: '', seo_description: '', seo_keywords: '',
 }
 const FIELDS = Object.keys(EMPTY)
@@ -136,8 +136,8 @@ export default function EditorPage() {
   }, [])
 
   const save = async () => {
-    if (!article.title || !article.slug || !article.content) {
-      return toast.error('Title, slug and content are required')
+    if (!article.title || !article.topic.trim() || !article.slug || !article.content) {
+      return toast.error('Title, topic, slug and content are required')
     }
     setSaving(true)
     try {
@@ -200,7 +200,7 @@ export default function EditorPage() {
     setReview(null)
     setAppliedFindings([])
     try {
-      setReview(await api.reviewArticle({ articleId, topic: ai.topic, category: selectedCategory?.name || '', title: article.title, excerpt: article.excerpt, content: article.content }))
+      setReview(await api.reviewArticle({ articleId, topic: article.topic, category: selectedCategory?.name || '', title: article.title, excerpt: article.excerpt, content: article.content }))
     } catch (e) { toast.error(errorMessage(e)) }
     finally { setReviewing(false) }
   }
@@ -265,6 +265,9 @@ export default function EditorPage() {
           </Button>
         </div>
         <Input value={article.title} onChange={set('title')} placeholder="Article title" className="h-11 text-base" />
+        <Field label="Article topic" hint={<p className="text-xs text-muted-foreground">Every article needs one topic. AI-generated articles use the generation topic; you can edit it here.</p>}>
+          <Input value={article.topic} onChange={set('topic')} placeholder="e.g. AI-assisted software development" maxLength={500} required />
+        </Field>
         <div className="editor-quill">
           <ReactQuill theme="snow" value={article.content} onChange={(content) => { setArticle((a) => ({ ...a, content })); setReview(null); setAppliedFindings([]) }} />
         </div>

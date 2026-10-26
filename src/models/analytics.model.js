@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
+const ArticleModel = require('./article.model');
 
 const PUBLIC_ARTICLE = `a.status = 'published' AND a.published_at IS NOT NULL AND a.published_at <= CURRENT_TIMESTAMP`;
 const toCount = (value) => Number(value || 0);
@@ -20,16 +21,6 @@ function parseKeywords(value) {
         if (typeof parsed === 'string') return parsed.split(/[,;\n]/).map((item) => item.trim()).filter(Boolean);
     } catch { /* Keywords may be stored as a comma-separated string. */ }
     return String(value).split(/[,;\n]/).map((item) => item.trim()).filter(Boolean);
-}
-
-function parseTopic(prompt) {
-    if (!prompt) return '';
-    try {
-        const parsed = JSON.parse(prompt);
-        return typeof parsed.topic === 'string' ? parsed.topic.trim() : '';
-    } catch {
-        return '';
-    }
 }
 
 class AnalyticsModel {
@@ -80,6 +71,7 @@ class AnalyticsModel {
 
     async getOverview(days = 30) {
         await this.ensureTable();
+        await ArticleModel.ensureTopicSchema();
         const period = Math.min(90, Math.max(7, Number.parseInt(days, 10) || 30));
 
         const [totals] = await db.query(`
@@ -155,9 +147,9 @@ class AnalyticsModel {
         `);
 
         const topicRows = await db.query(`
-            SELECT a.id, a.title, a.seo_keywords, g.prompt
+            SELECT a.id, a.seo_keywords, t.name AS topic
             FROM articles a
-            LEFT JOIN ai_generations g ON g.article_id = a.id AND g.status = 'completed'
+            JOIN topics t ON t.id = a.topic_id
             WHERE ${PUBLIC_ARTICLE}
             ORDER BY a.published_at DESC
         `);
@@ -166,10 +158,12 @@ class AnalyticsModel {
         const articleTopicsSeen = new Set();
         for (const row of topicRows) {
             if (!articleTopicsSeen.has(row.id)) {
-                const topic = parseTopic(row.prompt) || row.title;
-                const normalized = topic.toLocaleLowerCase();
-                if (topicMap.has(normalized)) topicMap.get(normalized).article_count += 1;
-                else topicMap.set(normalized, { topic, article_count: 1 });
+                const topic = row.topic || '';
+                if (topic) {
+                    const normalized = topic.toLocaleLowerCase();
+                    if (topicMap.has(normalized)) topicMap.get(normalized).article_count += 1;
+                    else topicMap.set(normalized, { topic, article_count: 1 });
+                }
                 for (const keyword of new Set(parseKeywords(row.seo_keywords))) {
                     const normalizedKeyword = keyword.toLocaleLowerCase();
                     if (keywordMap.has(normalizedKeyword)) keywordMap.get(normalizedKeyword).article_count += 1;
