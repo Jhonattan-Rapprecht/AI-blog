@@ -54,6 +54,8 @@ View article totals, publishing activity for the last six months, published cont
 
 Opens an existing article in the editor. Make your changes and click **Save changes**.
 
+Use **AI article review** to check spelling, grammar, clarity, consistency, alignment with the article's topic/category, and claims that may need fact checking. For AI-generated articles, the topic is read from that article's saved generation history; manually written articles may have no recorded topic. The current category is taken from Publishing. Review each finding and apply writing suggestions individually; applying a suggestion changes the editor content but does not save the article. Fact-check findings require manual verification. The selected Ollama model does not check live web sources or provide a dependable knowledge-cutoff date, so review results are advisory. This works for published articles too; save your changes when ready to update the published version.
+
 In **Featured image**, upload a JPG, PNG, WebP, or GIF (up to 12 MB), or select an existing library image. Enter a photo credit/source, such as the photographer's name, below the preview. It appears in a small caption beneath the image on the full article page after you save the article, not on article cards. AI image generation will be added later.
 
 ![Editing an existing article](screenshots/admin-edit-article.png)

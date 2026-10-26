@@ -7,5 +7,6 @@ router.get('/status', AIController.getStatus);
 router.get('/history/:articleId', AIController.getHistory);
 router.post('/suggest-slug', AIController.suggestSlug);
 router.post('/suggest-topic', AIController.suggestTopic);
+router.post('/review-article', AIController.reviewArticle);
 
 module.exports = router;

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
 import { toast } from 'sonner'
-import { ArrowLeft, ImagePlus, Images, Loader2, Plus, Save, Sparkles, Trash2, Upload, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Check, ImagePlus, Images, Loader2, Plus, Save, Sparkles, Trash2, Upload, X } from 'lucide-react'
 import { api, errorMessage, mediaUrl, socket } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -60,6 +60,9 @@ export default function EditorPage() {
   const [generating, setGenerating] = useState(false)
   const [suggestingTopics, setSuggestingTopics] = useState(false)
   const [suggestingSlugs, setSuggestingSlugs] = useState(false)
+  const [reviewing, setReviewing] = useState(false)
+  const [review, setReview] = useState(null)
+  const [appliedFindings, setAppliedFindings] = useState([])
   const [media, setMedia] = useState([])
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
@@ -70,7 +73,11 @@ export default function EditorPage() {
   const selectedCategory = categories.find((category) => String(category.id) === String(article.category_id))
   const imageSrc = mediaUrl(article.featured_media_path || article.featured_image)
 
-  const set = (name) => (e) => setArticle((a) => ({ ...a, [name]: e.target.value }))
+  const set = (name) => (e) => {
+    setArticle((a) => ({ ...a, [name]: e.target.value }))
+    setReview(null)
+    setAppliedFindings([])
+  }
   const setAI = (name) => (e) => setAi((a) => ({ ...a, [name]: e.target.value }))
   const setCategory = (e) => {
     setArticle((current) => ({ ...current, category_id: e.target.value }))
@@ -187,6 +194,33 @@ export default function EditorPage() {
     finally { setSuggestingSlugs(false) }
   }
 
+  const reviewCurrentArticle = async () => {
+    if (!article.title.trim() || !article.content.trim()) return toast.error('Add an article title and content before reviewing.')
+    setReviewing(true)
+    setReview(null)
+    setAppliedFindings([])
+    try {
+      setReview(await api.reviewArticle({ articleId, topic: ai.topic, category: selectedCategory?.name || '', title: article.title, excerpt: article.excerpt, content: article.content }))
+    } catch (e) { toast.error(errorMessage(e)) }
+    finally { setReviewing(false) }
+  }
+
+  const applyFinding = (finding, index) => {
+    if (finding.type === 'fact_check') return
+    const doc = new DOMParser().parseFromString(article.content || '', 'text/html')
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT)
+    let node
+    while ((node = walker.nextNode())) {
+      const at = node.nodeValue.indexOf(finding.quote)
+      if (at < 0) continue
+      node.nodeValue = `${node.nodeValue.slice(0, at)}${finding.suggestion}${node.nodeValue.slice(at + finding.quote.length)}`
+      setArticle((current) => ({ ...current, content: doc.body.innerHTML }))
+      setAppliedFindings((current) => [...current, index])
+      return
+    }
+    toast.error('The quoted text could not be matched exactly. Please edit it manually.')
+  }
+
   const addCategory = async () => {
     if (!newCategory?.trim()) return
     try {
@@ -232,8 +266,29 @@ export default function EditorPage() {
         </div>
         <Input value={article.title} onChange={set('title')} placeholder="Article title" className="h-11 text-base" />
         <div className="editor-quill">
-          <ReactQuill theme="snow" value={article.content} onChange={(content) => setArticle((a) => ({ ...a, content }))} />
+          <ReactQuill theme="snow" value={article.content} onChange={(content) => { setArticle((a) => ({ ...a, content })); setReview(null); setAppliedFindings([]) }} />
         </div>
+        <Card className="gap-4 py-4">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 px-4">
+            <div><CardTitle className="text-sm">AI article review</CardTitle><p className="mt-1 text-xs text-muted-foreground">Proofreading, clarity, consistency, and claims to verify</p></div>
+            <Button type="button" variant="outline" size="sm" onClick={reviewCurrentArticle} disabled={reviewing || saving || !article.title || !article.content}>
+              {reviewing ? <Loader2 className="animate-spin" /> : <Sparkles />} {reviewing ? 'Reviewing…' : 'Review article'}
+            </Button>
+          </CardHeader>
+          {review && <CardContent className="grid gap-3 px-4">
+            <p className="text-xs text-muted-foreground">Reviewed with {review.model || 'the selected AI model'} on {new Date(review.reviewedAt).toLocaleString()}. Topic: {review.topic || 'not recorded'} · Category: {review.category || 'not assigned'}. No live sources were checked; factual findings need your verification.</p>
+            {!review.findings.length && <p className="rounded-md bg-muted p-3 text-sm">No actionable findings returned. This does not guarantee the article is error-free.</p>}
+            {review.findings.map((finding, index) => {
+              const applied = appliedFindings.includes(index)
+              return <div key={`${index}-${finding.quote}`} className="grid gap-2 rounded-md border p-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium"><span className="rounded-full bg-muted px-2 py-1">{finding.type.replace('_', ' ')}</span><span className="text-muted-foreground">{finding.severity} priority</span></div>
+                <p className="text-sm"><span className="font-medium">“{finding.quote}”</span> — {finding.explanation}</p>
+                <p className="text-sm text-muted-foreground"><span className="font-medium">Suggestion:</span> {finding.suggestion}</p>
+                {finding.type !== 'fact_check' && <Button type="button" variant="secondary" size="sm" className="w-fit" disabled={applied} onClick={() => applyFinding(finding, index)}>{applied ? <Check /> : <AlertTriangle />}{applied ? 'Applied to editor' : 'Apply suggestion'}</Button>}
+              </div>
+            })}
+          </CardContent>}
+        </Card>
       </div>
 
       <div className="grid min-w-0 content-start gap-4">

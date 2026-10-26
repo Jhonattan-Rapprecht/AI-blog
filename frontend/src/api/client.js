@@ -52,6 +52,7 @@ export const api = {
   generate: (config) => http.post('/ai/generate-article', config).then((r) => r.data),
   suggestTopics: (context) => http.post('/ai/suggest-topic', context).then((r) => strings(r.data.suggestions)),
   suggestSlugs: (title) => http.post('/ai/suggest-slug', { title }).then((r) => strings(r.data.suggestions)),
+  reviewArticle: (article) => http.post('/ai/review-article', article, { timeout: 120000 }).then((r) => r.data),
 }
 
 export const mediaUrl = (filepath) => {
