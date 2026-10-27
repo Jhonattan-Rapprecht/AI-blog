@@ -36,7 +36,33 @@ function isValidImage(buffer, mime) {
 function isValidVideo(buffer, mime) {
     if (!Buffer.isBuffer(buffer) || !VIDEO_MIME[mime]) return false;
     if (mime === 'video/webm') return buffer.length > 4 && buffer.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
-    return buffer.length > 12 && buffer.toString('ascii', 4, 8) === 'ftyp';
+    if (buffer.length < 16 || buffer.toString('ascii', 4, 8) !== 'ftyp') return false;
+
+    // A valid ISO-BMFF/QuickTime header alone is not playable. Require an
+    // actual media-data box containing bytes, so empty placeholder MP4/MOV
+    // files are rejected instead of appearing as broken players in the UI.
+    let offset = 0;
+    let hasFileType = false;
+    let hasMediaData = false;
+    while (offset + 8 <= buffer.length) {
+        let boxSize = buffer.readUInt32BE(offset);
+        const boxType = buffer.toString('ascii', offset + 4, offset + 8);
+        let headerSize = 8;
+        if (boxSize === 1) {
+            if (offset + 16 > buffer.length) return false;
+            const extendedSize = buffer.readBigUInt64BE(offset + 8);
+            if (extendedSize > BigInt(Number.MAX_SAFE_INTEGER)) return false;
+            boxSize = Number(extendedSize);
+            headerSize = 16;
+        } else if (boxSize === 0) {
+            boxSize = buffer.length - offset;
+        }
+        if (boxSize < headerSize || offset + boxSize > buffer.length) return false;
+        if (boxType === 'ftyp') hasFileType = true;
+        if (boxType === 'mdat' && boxSize > headerSize) hasMediaData = true;
+        offset += boxSize;
+    }
+    return hasFileType && hasMediaData && offset === buffer.length;
 }
 
 function secureExternalUrl(value) {

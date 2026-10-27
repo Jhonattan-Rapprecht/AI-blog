@@ -11,6 +11,7 @@
 - The System Activity Logs page is a placeholder under the **System** sidebar section. It does not record events yet. The **Developer** section remains for developer tooling.
 - Media Library now has separate Images and Videos tabs. The image UI retains its existing layout and photo-credit controls. Video uploads and hosted links have matching preview cards.
 - The frontend production build passed during the prior session. The `/media` page returned HTTP 200. An unauthenticated media API request returned HTTP 401 as expected. Authenticated media upload, deletion, and database behavior have not been tested yet.
+- A reported uploaded MP4 was inspected: the file had an MP4 header but an empty `mdat` box, so it contained no media payload. The upload validator now rejects empty MP4/MOV media-data boxes, and the video card shows a helpful error when browser playback fails. The already uploaded broken file remains in the library; delete it and re-upload the complete source file. Continue the broader Media Library functional checks below.
 - Existing build warnings include the editor's CSS highlight pseudo-element and a large JavaScript bundle. Those warnings were not introduced by the Media Library work.
 
 ## Next-session priorities

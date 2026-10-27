@@ -10,10 +10,11 @@ The backend serves files at `/uploads/media/:filename`. The public Astro site re
 
 ## Admin workflow
 
-- **Media Library** (`/media`) has separate Images and Videos tabs. The Images tab preserves the existing image grid and photo-credit controls. The Videos tab uses matching cards for uploaded MP4/WebM/MOV clips and hosted HTTPS links; uploaded clips have native playback controls, while link cards show a supplied thumbnail or a provider placeholder. Videos up to 200 MB can be uploaded, and HTTPS video links can be saved with an optional title and thumbnail URL. Video insertion into article bodies is not implemented yet.
+- **Media Library** (`/media`) has separate Images and Videos tabs. The Images tab preserves the existing image grid and photo-credit controls. The Videos tab uses matching cards for uploaded MP4/WebM/MOV clips and hosted HTTPS links; uploaded clips have native playback controls, while link cards show a supplied thumbnail or a provider placeholder. Videos up to 200 MB can be uploaded, and HTTPS video links can be saved with an optional title and thumbnail URL. ISO-BMFF MP4/MOV uploads must contain media data; the dashboard explains browser playback errors such as unsupported codecs. Video insertion into article bodies is not implemented yet.
 - The Editor's **Featured image** card previews the selected image, supports upload or selection from the library, and lets the user save its photo credit/source. The article association is persisted when the article is saved.
 - Full article pages show a small **Photo credit/source** caption beneath the featured image. Article cards, blog overview/filter cards, and the homepage feature do not show the caption. An image without an attribution value displays **Not provided** on its article page.
 - Media in use by an article cannot be deleted until unassigned.
+- Deletion uses an in-app confirmation dialog that explains the effect before removing an uploaded file or hosted link.
 - AI image generation is intentionally deferred while an image-generation solution is evaluated. The media record includes provider and prompt metadata so a future provider can be added without changing article associations.
 
 ## API

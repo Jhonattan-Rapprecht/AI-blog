@@ -136,6 +136,8 @@ export default function ArticlesPage() {
   const [hasMore, setHasMore] = useState(true)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [confirmArticle, setConfirmArticle] = useState(null)
+  const [deletingArticle, setDeletingArticle] = useState(false)
   const sentinelRef = useRef(null)
   const requestVersion = useRef(0)
   const appendLock = useRef(false)
@@ -218,12 +220,17 @@ export default function ArticlesPage() {
     return () => window.clearTimeout(timer)
   }, [articles, highlightedId])
 
-  const remove = async (a) => {
-    if (!window.confirm(`Delete "${a.title}"?`)) return
+  const remove = async () => {
+    if (!confirmArticle || deletingArticle) return
+    const article = confirmArticle
+    setDeletingArticle(true)
     try {
-      await api.deleteArticle(a.id)
-      setArticles((list) => list.filter((x) => x.id !== a.id))
+      await api.deleteArticle(article.id)
+      setArticles((list) => list.filter((item) => item.id !== article.id))
+      setConfirmArticle(null)
+      toast.success('Article deleted')
     } catch (e) { toast.error(errorMessage(e)) }
+    finally { setDeletingArticle(false) }
   }
 
   const updateStatus = async (article, status) => {
@@ -293,7 +300,7 @@ export default function ArticlesPage() {
                   <td className="px-4 py-3"><ArticleStatus article={a} onSave={updateStatus} /></td>
                   <td className="px-4 py-3"><ArticleCategory article={a} categories={categories} onSave={updateCategory} /></td>
                   <td className="px-4 py-3 text-muted-foreground">{a.created_at ? new Date(a.created_at).toLocaleDateString() : ''}</td>
-                  <td className="px-2"><Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); remove(a) }} title="Delete"><Trash2 /></Button></td>
+                  <td className="px-2"><Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setConfirmArticle(a) }} title="Delete"><Trash2 /></Button></td>
                 </tr>
               ))}
             </tbody>
@@ -307,7 +314,7 @@ export default function ArticlesPage() {
               <Link to={`/articles/${article.id}`} className="line-clamp-2 font-semibold leading-snug hover:underline">{article.title}</Link>
               <div className="mt-1 truncate text-xs text-muted-foreground">/{article.slug}</div>
             </div>
-            <Button variant="ghost" size="icon" className="-mr-2 -mt-2 shrink-0" onClick={() => remove(article)} title="Delete article" aria-label={`Delete ${article.title}`}><Trash2 /></Button>
+            <Button variant="ghost" size="icon" className="-mr-2 -mt-2 shrink-0" onClick={() => setConfirmArticle(article)} title="Delete article" aria-label={`Delete ${article.title}`}><Trash2 /></Button>
           </div>
           {highlightedId === article.id && <Badge variant="secondary" className="w-fit">Just created</Badge>}
           <div className="flex flex-wrap items-center gap-2">
@@ -320,6 +327,22 @@ export default function ArticlesPage() {
       {articles?.length > 0 && <div ref={sentinelRef} className="flex min-h-12 items-center justify-center py-2 text-sm text-muted-foreground">
         {loadingMore ? <><Loader2 className="mr-2 size-4 animate-spin" /> Loading articles…</>
           : hasMore ? <span>Scroll to load more</span> : <span>All {articles.length} articles loaded</span>}
+      </div>}
+
+      {confirmArticle && <div className="fixed inset-0 z-[80] grid place-items-center bg-black/60 p-4 backdrop-blur-[2px]" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deletingArticle) setConfirmArticle(null) }}>
+        <section role="alertdialog" aria-modal="true" aria-labelledby="article-delete-title" aria-describedby="article-delete-description" className="grid w-full max-w-md gap-5 rounded-xl border bg-background p-5 text-foreground shadow-2xl">
+          <div className="flex items-start gap-3">
+            <div className="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive"><Trash2 className="size-5" /></div>
+            <div className="grid min-w-0 gap-1.5">
+              <h2 id="article-delete-title" className="font-semibold">Delete article?</h2>
+              <p id="article-delete-description" className="text-sm text-muted-foreground">This will permanently delete <span className="font-medium text-foreground">{confirmArticle.title}</span>, including its saved review history and media associations. This action cannot be undone.</p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setConfirmArticle(null)} disabled={deletingArticle}>Cancel</Button>
+            <Button type="button" variant="destructive" onClick={remove} disabled={deletingArticle}>{deletingArticle ? <Loader2 className="animate-spin" /> : <Trash2 />} Delete article</Button>
+          </div>
+        </section>
       </div>}
     </div>
   )

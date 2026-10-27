@@ -239,3 +239,15 @@ The user asked for suggestion cards to fade away once applied because no further
 
 - See `docs/development/next-session-handover-2026-10-27.md` for the prioritized next-session plan: improve System Activity Logs, functionally test Media Library, brainstorm editor font/typeface controls, and explore selectable/custom article layouts using Components.
 - The handover records current branch/commits, verification state, risks, and design questions. Update it as work progresses.
+### Media Library playback bug follow-up - 2026-10-27
+
+- Diagnosed a newly uploaded MP4 with an empty `mdat` box (no video payload). The API served the file correctly as `video/mp4` with byte ranges; the file content itself was incomplete.
+- Added validation rejecting MP4/MOV files without non-empty media data and a dashboard playback error message for files/codecs the browser cannot play. The bad existing upload was not deleted. Frontend build and backend syntax check passed; authenticated upload testing is still pending.
+### Media Library delete confirmation UI - 2026-10-27
+
+- Replaced the native browser confirmation with a styled in-app alert dialog for image/video removal. The dialog summarizes deletion consequences and the article usage constraint.
+- Frontend production build and `git diff --check` passed. No item was deleted as part of verification.
+### Consistent in-app confirmation style - 2026-10-27
+
+- User asked to keep the new Media Library confirmation style for all prompts previously shown outside the app. Replaced the remaining native delete confirmation in Articles Overview. Editor prompts already used an in-app dialog.
+- Source scan found no remaining native browser confirm/alert/prompt calls. Frontend build and `git diff --check` passed. Changes remain uncommitted/unpushed.

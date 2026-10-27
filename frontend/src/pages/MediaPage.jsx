@@ -20,6 +20,9 @@ export default function MediaPage() {
   const [linkTitle, setLinkTitle] = useState('')
   const [linkUrl, setLinkUrl] = useState('')
   const [thumbnailUrl, setThumbnailUrl] = useState('')
+  const [failedVideos, setFailedVideos] = useState({})
+  const [confirmItem, setConfirmItem] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const input = useRef(null)
 
   const load = useCallback((type) => api.media(type).then(setItems).catch((e) => toast.error(errorMessage(e))).finally(() => setLoading(false)), [])
@@ -64,13 +67,17 @@ export default function MediaPage() {
     finally { setSavingLink(false) }
   }
 
-  const remove = async (item) => {
-    if (!window.confirm(`Delete ${item.filename}?`)) return
+  const remove = async () => {
+    if (!confirmItem || deleting) return
+    const item = confirmItem
+    setDeleting(true)
     try {
       await api.deleteMedia(item.id)
       setItems((current) => current.filter((media) => media.id !== item.id))
-      toast.success(`${section === 'image' ? 'Image' : 'Video'} deleted`)
+      toast.success(`${item.media_type === 'video' ? 'Video' : 'Image'} deleted`)
+      setConfirmItem(null)
     } catch (e) { toast.error(errorMessage(e)) }
+    finally { setDeleting(false) }
   }
 
   const setCredit = (id, credit) => setItems((current) => current.map((item) => item.id === id ? { ...item, credit } : item))
@@ -122,9 +129,11 @@ export default function MediaPage() {
                 ? item.thumbnail_url
                   ? <div className="relative"><img src={item.thumbnail_url} alt={item.filename} className="aspect-[16/10] w-full bg-muted object-cover" loading="lazy" /><span className="absolute inset-0 grid place-items-center bg-black/15"><Play className="size-10 fill-white text-white drop-shadow" /></span></div>
                   : <div className="grid aspect-[16/10] place-items-center gap-2 bg-muted text-muted-foreground"><Play className="size-10" /><span className="text-xs">{item.provider || 'Hosted video'}</span></div>
-                : <video src={mediaUrl(item.filepath)} controls preload="metadata" playsInline className="aspect-[16/10] w-full bg-black object-contain" />}
+                : failedVideos[item.id]
+                  ? <div className="grid aspect-[16/10] place-items-center bg-muted px-5 text-center text-sm text-muted-foreground"><div><Video className="mx-auto mb-2 size-8" /><p className="font-medium text-foreground">Video could not be played</p><p className="mt-1">The file may be incomplete or use a codec this browser does not support. Try MP4 with H.264 video or WebM.</p></div></div>
+                  : <video src={mediaUrl(item.filepath)} controls preload="metadata" playsInline className="aspect-[16/10] w-full bg-black object-contain" onError={() => setFailedVideos((current) => ({ ...current, [item.id]: true }))} />}
             <CardContent className="grid gap-2 p-3">
-              <div className="flex min-w-0 items-center justify-between gap-2"><div className="min-w-0"><p className="truncate text-sm font-medium" title={item.filename}>{item.filename}</p><p className="text-xs text-muted-foreground">{item.source_type === 'link' ? 'Video link' : `Uploaded � ${(item.file_size / 1024 / 1024).toFixed(1)} MB`}</p></div><Button variant="ghost" size="icon-sm" onClick={() => remove(item)} title={`Delete ${section}`}><Trash2 className="text-muted-foreground" /></Button></div>
+              <div className="flex min-w-0 items-center justify-between gap-2"><div className="min-w-0"><p className="truncate text-sm font-medium" title={item.filename}>{item.filename}</p><p className="text-xs text-muted-foreground">{item.source_type === 'link' ? 'Video link' : `Uploaded � ${(item.file_size / 1024 / 1024).toFixed(1)} MB`}</p></div><Button variant="ghost" size="icon-sm" onClick={() => setConfirmItem(item)} title={`Delete ${section}`}><Trash2 className="text-muted-foreground" /></Button></div>
               {section === 'image' && <>
                 <label className="grid gap-1 text-xs text-muted-foreground">Photo credit/source<Input value={item.credit || ''} onChange={(event) => setCredit(item.id, event.target.value)} placeholder="e.g. Michael Henniway" maxLength={500} /></label>
                 <Button variant="outline" size="sm" onClick={() => saveCredit(item)} disabled={savingCredit === item.id}>{savingCredit === item.id ? <Loader2 className="animate-spin" /> : <Save />} Save credit</Button>
@@ -138,6 +147,23 @@ export default function MediaPage() {
       ) : (
         <div className="grid justify-items-center gap-3 rounded-xl border border-dashed px-6 py-16 text-center"><Video className="size-8 text-muted-foreground" /><p className="font-medium">Your video library is empty</p><p className="text-sm text-muted-foreground">Upload a video file or add a link to a hosted video.</p><div className="flex gap-2"><Button variant="outline" onClick={() => input.current?.click()}><Upload /> Upload video</Button><Button variant="outline" onClick={() => setLinkFormOpen(true)}><Link2 /> Add video link</Button></div></div>
       )}
+
+      {confirmItem && <div className="fixed inset-0 z-[80] grid place-items-center bg-black/60 p-4 backdrop-blur-[2px]" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deleting) setConfirmItem(null) }}>
+        <section role="alertdialog" aria-modal="true" aria-labelledby="media-delete-title" aria-describedby="media-delete-description" className="grid w-full max-w-md gap-5 rounded-xl border bg-background p-5 text-foreground shadow-2xl">
+          <div className="flex items-start gap-3">
+            <div className="grid size-10 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive"><Trash2 className="size-5" /></div>
+            <div className="grid min-w-0 gap-1.5">
+              <h2 id="media-delete-title" className="font-semibold">Delete {confirmItem.media_type === 'video' ? 'video' : 'image'}?</h2>
+              <p id="media-delete-description" className="text-sm text-muted-foreground">This will remove <span className="font-medium text-foreground">{confirmItem.filename}</span> from your Media Library{confirmItem.source_type === 'upload' ? ' and delete its uploaded file' : ''}. This action cannot be undone.</p>
+              <p className="text-xs text-muted-foreground">Media currently used in an article cannot be deleted.</p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setConfirmItem(null)} disabled={deleting}>Cancel</Button>
+            <Button type="button" variant="destructive" onClick={remove} disabled={deleting}>{deleting ? <Loader2 className="animate-spin" /> : <Trash2 />} Delete {confirmItem.media_type === 'video' ? 'video' : 'image'}</Button>
+          </div>
+        </section>
+      </div>}
     </div>
   )
 }

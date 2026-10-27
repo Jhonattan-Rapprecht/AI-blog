@@ -214,3 +214,18 @@
 
 - Moved **System Activity Logs** from Developer to the System sidebar section per user clarification. Developer remains for development tools.
 - No activity capture or persistence behavior changed.
+
+## Media Library video playback error - 2026-10-27
+
+- Investigated an uploaded MP4 that would not play. The stored file had a valid container header but an empty `mdat` box, so it contained no media payload. Static serving correctly returned `video/mp4` with byte-range support.
+- MP4/MOV upload validation now requires a non-empty media-data box. Video cards show a clear message when playback fails in the browser, including a reminder about supported codecs.
+- The existing broken upload was left untouched; the user can delete that library entry and upload the complete source. `node --check src/controllers/media.controller.js` and the frontend production build passed; authenticated upload testing remains pending.
+## Media Library in-app delete confirmation - 2026-10-27
+
+- Replaced the browser-native delete popup with an accessible, styled in-app confirmation dialog. It names the item, explains uploaded-file deletion, notes the article usage restriction, and provides Cancel/Delete actions.
+- Verification: frontend production build passed; `git diff --check` passed. No deletion was executed during verification.
+## Consistent in-app delete confirmations - 2026-10-27
+
+- Replaced the remaining browser-native confirmation in Articles Overview with the same styled, accessible alert dialog used by Media Library. Article deletion now names the article, explains that saved review history and media associations are deleted, and provides Cancel/Delete actions.
+- Repository-wide source search found no remaining native `window.confirm`, `window.alert`, or `window.prompt` calls. Editor confirmations were already in-app.
+- Verification: frontend production build passed; `git diff --check` passed.
