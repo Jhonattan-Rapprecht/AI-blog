@@ -34,6 +34,8 @@ class ArticleReviewModel {
                     FOREIGN KEY (review_id) REFERENCES article_reviews(id) ON DELETE CASCADE,
                     INDEX idx_review_findings_review (review_id, created_at)
                 )`);
+                const checkTypeColumn = await db.query(`SHOW COLUMNS FROM article_reviews LIKE 'check_type'`);
+                if (!checkTypeColumn.length) await db.query(`ALTER TABLE article_reviews ADD COLUMN check_type VARCHAR(50) NULL AFTER category`);
             })().catch((error) => { this.ready = null; throw error; });
         }
         return this.ready;
@@ -49,8 +51,8 @@ class ArticleReviewModel {
         const findings = [];
         const connection = await db.transaction();
         try {
-            await connection.execute(`INSERT INTO article_reviews (id, article_id, model, category, reviewed_at)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`, [reviewId, articleId, review.model || null, review.category || null]);
+            await connection.execute(`INSERT INTO article_reviews (id, article_id, model, category, check_type, reviewed_at)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, [reviewId, articleId, review.model || null, review.category || null, review.checkType || null]);
             for (const finding of review.findings || []) {
                 const id = uuidv4();
                 const status = ['dismissed', 'applied'].includes(finding.status) ? finding.status : 'pending';
@@ -75,7 +77,7 @@ class ArticleReviewModel {
 
     async findHistory(articleId, limit = 20) {
         await this.ensureTables();
-        const rows = await db.query(`SELECT r.id AS review_id, r.model, r.category, r.reviewed_at,
+        const rows = await db.query(`SELECT r.id AS review_id, r.model, r.category, r.check_type, r.reviewed_at,
                 f.id AS finding_id, f.field_name AS field, f.finding_type AS type, f.severity, f.quote,
                 f.sentence_quote AS sentenceQuote, f.neutral_rewrite AS neutralRewrite,
                 f.explanation, f.suggestion, f.status, f.action
@@ -88,7 +90,7 @@ class ArticleReviewModel {
         const reviews = new Map();
         for (const row of rows) {
             if (!reviews.has(row.review_id)) reviews.set(row.review_id, {
-                id: row.review_id, model: row.model, category: row.category,
+                id: row.review_id, model: row.model, category: row.category, checkType: row.check_type,
                 reviewedAt: row.reviewed_at, titleReviewNote: null, liveSourcesChecked: false, findings: []
             });
             if (row.finding_id) reviews.get(row.review_id).findings.push({

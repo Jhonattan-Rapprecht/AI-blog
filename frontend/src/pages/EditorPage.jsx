@@ -19,6 +19,18 @@ const EMPTY = {
 const FIELDS = Object.keys(EMPTY)
 const STATUSES = ['draft', 'review', 'scheduled', 'published', 'archived']
 
+const reviewSourceLabel = (checkType) => ({
+  full_review: 'Full article review',
+  spelling: 'Full-article spell check',
+  grammar: 'Full-article grammar check',
+  fact_check: 'Full-article fact-check',
+  selection_spelling: 'Selected-text spell check',
+  selection_grammar: 'Selected-text grammar check',
+  selection_fact_check: 'Selected-text fact-check',
+  title_review: 'Check title',
+  excerpt_review: 'Check excerpt',
+}[checkType] || 'Article check')
+
 // Quill 2 serializes spaces as &nbsp;, which breaks line wrapping on the public site.
 const payload = (a) => ({ ...a, content: (a.content || '').replace(/&nbsp;/g, ' '), category_id: a.category_id || null })
 const pick = (src) => Object.fromEntries(FIELDS.map((k) => [k, src?.[k] ?? EMPTY[k]]))
@@ -573,6 +585,28 @@ export default function EditorPage() {
     finally { setActiveReviewCheck('') }
   }
 
+  const runTitleCheck = async () => {
+    const title = String(article.title || '').trim()
+    if (!title) return toast.info('Add an article title before checking it.')
+    setActiveReviewCheck('title_review')
+    try {
+      const result = await api.checkTitle({ articleId, title, excerpt: article.excerpt, category: selectedCategory?.name || '', content: article.content })
+      if (articleId && result.id) {
+        const history = await api.articleReviewHistory(articleId)
+        setReviewHistory(history.slice(1))
+        setReview(history[0] || result)
+      } else {
+        if (review) setReviewHistory((current) => [review, ...current])
+        setReview(result)
+      }
+      setAppliedFindings([])
+      setDismissedFindings([])
+      setFindingStatusSaveErrors({})
+      toast.success(result.findings.length ? `Found ${result.findings.length} title finding${result.findings.length === 1 ? '' : 's'}.` : 'No spelling, grammar, or clarity findings in the title.')
+    } catch (e) { toast.error(errorMessage(e)) }
+    finally { setActiveReviewCheck('') }
+  }
+
   const dismissAllFindings = async () => {
     if (!review) return
     const pending = review.findings.map((finding, index) => ({ finding, index }))
@@ -864,6 +898,21 @@ export default function EditorPage() {
           <ReactQuill ref={editorRef} theme="snow" value={article.content} onChange={onArticleContentChange} />
         </div>
         <div className="grid gap-2 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
+          <p className="text-sm font-medium">Title &amp; excerpt checks</p>
+          <div className="grid gap-2 border-t pt-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Check title:</span> review spelling, grammar, and clarity in the article title.</p>
+            <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onClick={runTitleCheck} disabled={checksBusy || saving || !String(article.title || '').trim()}>
+              {activeReviewCheck === 'title_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'title_review' ? 'Checking title…' : 'Check title'}
+            </Button>
+          </div>
+          <div className="grid gap-2 border-t pt-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Check excerpt:</span> review spelling, grammar, and factual claims in the Excerpt field under SEO &amp; metadata.</p>
+            <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onClick={runExcerptCheck} disabled={checksBusy || saving || !String(article.excerpt || '').trim()}>
+              {activeReviewCheck === 'excerpt_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'excerpt_review' ? 'Checking excerpt…' : 'Check excerpt'}
+            </Button>
+          </div>
+        </div>
+        <div className="grid gap-2 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
           <button type="button" aria-expanded={partialChecksExpanded} aria-controls="partial-article-checks-content" onClick={() => setPartialChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium">
             <span>Partial-article checks</span><span className="flex items-center gap-2 text-xs text-muted-foreground">{partialChecksExpanded ? 'Hide' : 'Show'}<ChevronDown className={`size-4 transition-transform ${partialChecksExpanded ? 'rotate-180' : ''}`} /></span>
           </button>
@@ -887,12 +936,6 @@ export default function EditorPage() {
               {activeReviewCheck === `selection_${option.kind}` ? <Loader2 className="animate-spin" /> : option.kind === 'grammar' ? <Check /> : <AlertTriangle />} {activeReviewCheck === `selection_${option.kind}` ? 'Checking…' : option.button}
             </Button>}
           </div>)}
-          <div className="grid gap-2 border-t pt-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-            <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Check excerpt:</span> review spelling, grammar, and factual claims in the Excerpt field under SEO &amp; metadata.</p>
-            <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onClick={runExcerptCheck} disabled={checksBusy || saving || !String(article.excerpt || '').trim()}>
-              {activeReviewCheck === 'excerpt_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'excerpt_review' ? 'Checking excerpt…' : 'Check excerpt'}
-            </Button>
-          </div>
               </div>
             </div>
           </div>
@@ -923,7 +966,16 @@ export default function EditorPage() {
               </Button>
             </div>
             </div>
-          {review && <CardContent className="grid gap-3 px-4">
+              </div>
+            </div>
+          </div>
+        </Card>
+        {(review || reviewHistory.length > 0) && <Card className="overflow-hidden py-0">
+          {review && <CardContent className="grid gap-3 px-4 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+              <h3 className="text-sm font-semibold">Review results</h3>
+              <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">From: {reviewSourceLabel(review.checkType)}</span>
+            </div>
             {review.findings.length > 0 && <p className="text-xs text-muted-foreground">AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</p>}
             {review.findings.some((finding) => finding.type === 'fact_check') && <p className="text-xs text-muted-foreground">Fact-check suggestions need manual verification; no live sources were checked.</p>}
             {review.titleReviewNote && <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{review.titleReviewNote}</p>}
@@ -943,7 +995,7 @@ export default function EditorPage() {
                   ? 'bg-orange-500 text-white hover:bg-orange-600 focus-visible:ring-orange-500'
                   : 'bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500'
               return <div key={`${index}-${finding.quote}`} className={`grid overflow-hidden transition-[opacity,max-height,margin,padding] duration-300 ease-out ${handled ? 'max-h-0 -my-2 border-0 p-0 opacity-0' : 'max-h-[1000px] gap-2 rounded-md border p-3 opacity-100'} ${factCheck && !handled ? 'border-yellow-500 bg-yellow-200/90 dark:border-yellow-600 dark:bg-yellow-900/50' : ''}`} aria-hidden={handled}>
-                <div className="flex flex-wrap items-center gap-2 text-xs font-medium"><span className="rounded-full bg-muted px-2 py-1">{finding.field} · {finding.type.replace('_', ' ')}</span><span className="text-muted-foreground">{finding.severity} priority</span></div>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium"><span className="rounded-full bg-muted px-2 py-1">From: {reviewSourceLabel(review.checkType)}</span><span className="rounded-full bg-muted px-2 py-1">{finding.field} · {finding.type.replace('_', ' ')}</span><span className="text-muted-foreground">{finding.severity} priority</span></div>
                 <p className="text-sm"><span className="font-medium">“{finding.quote}”</span> — {finding.explanation}</p>
                 <p className="text-sm text-muted-foreground"><span className="font-medium">Suggestion:</span> {finding.suggestion}</p>
                 {finding.type === 'spelling' && finding.field !== 'excerpt' && <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => locateSpellingFinding(finding)}>Locate in article</Button>}
@@ -973,12 +1025,8 @@ export default function EditorPage() {
               })}</div>
             </details>}
           </CardContent>}
-              </div>
-            </div>
-          </div>
-        </Card>
-        {reviewHistory.length > 0 && <Card className="overflow-hidden py-0">
-          <button type="button" aria-expanded={reviewHistoryExpanded} onClick={() => setReviewHistoryExpanded((current) => !current)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted/40">
+          {reviewHistory.length > 0 && <>
+          <button type="button" aria-expanded={reviewHistoryExpanded} onClick={() => setReviewHistoryExpanded((current) => !current)} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted/40 ${review ? 'border-t' : ''}`}>
             <span>Previous review history <span className="text-muted-foreground">({reviewHistory.length})</span></span>
             <span className="text-xs text-muted-foreground">{reviewHistoryExpanded ? 'Hide' : 'Show'}</span>
           </button>
@@ -1000,6 +1048,7 @@ export default function EditorPage() {
               </CardContent>
             </div>
           </div>
+          </>}
         </Card>}
       </div>
 

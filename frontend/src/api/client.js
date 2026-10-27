@@ -83,6 +83,7 @@ export const api = {
   factCheckSelection: (selection) => http.post('/ai/fact-check-selection', selection, { timeout: 120000 }).then((r) => r.data),
   grammarCheckSelection: (selection) => http.post('/ai/grammar-check-selection', selection, { timeout: 120000 }).then((r) => r.data),
   checkExcerpt: (data) => http.post('/ai/check-excerpt', data, { timeout: 120000 }).then((r) => r.data),
+  checkTitle: (data) => http.post('/ai/check-title', data, { timeout: 120000 }).then((r) => r.data),
   spellcheckArticle: (article) => http.post('/ai/spellcheck-article', article, { timeout: 120000 }).then((r) => r.data),
   articleReviewHistory: (articleId) => http.get(`/ai/review-history/${articleId}`).then((r) => r.data),
   saveArticleReviewHistory: (articleId, review) => http.post(`/ai/review-history/${articleId}`, review).then((r) => r.data),

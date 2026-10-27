@@ -17,6 +17,12 @@ Read this file before continuing work when the repository history or the latest 
 - The CSS and public-blog redesign documentation passed `git diff --check` and are ready to commit on `milestone/blogstudio-stable-v2.5`.
 - The milestone branch starts from `feat/public-blog-redesign` and includes the locally committed database-configuration remediation (`af2b4b2`), whose earlier push attempt was blocked by approval-service usage limits.
 
+### Review result provenance — 2026-10-27
+
+- The shared Review results panel now sits after the two check panels and labels the originating check for each suggestion.
+- Review runs now persist `check_type` so saved title, excerpt, selection, and full-article checks retain that label after history reload. Existing historic runs have no recoverable source and continue to display the generic fallback label.
+- Detailed implementation and the current-session prompt history are recorded in `docs/development/milestone-blogstudio-stable-v2.5-2026-10-27.md`.
+
 ### Milestone handoff — 2026-10-27
 
 - Current branch: `feat/media-library-v2.4`, renamed to reflect the next Media Library improvement milestone.

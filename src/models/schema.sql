@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS article_reviews (
     article_id CHAR(36) NOT NULL,
     model VARCHAR(100) NULL,
     category VARCHAR(500) NULL,
+    check_type VARCHAR(50) NULL,
     reviewed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
     INDEX idx_article_reviews_article_date (article_id, reviewed_at)

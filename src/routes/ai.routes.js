@@ -13,6 +13,7 @@ router.post('/grammar-check-article', AIController.grammarCheckArticle.bind(AICo
 router.post('/fact-check-selection', AIController.factCheckArticle.bind(AIController));
 router.post('/grammar-check-selection', AIController.grammarCheckArticle.bind(AIController));
 router.post('/check-excerpt', AIController.checkExcerpt.bind(AIController));
+router.post('/check-title', AIController.checkTitle.bind(AIController));
 router.post('/spellcheck-article', AIController.spellcheckArticle.bind(AIController));
 router.post('/review-history/:articleId', AIController.saveArticleReviewHistory);
 router.get('/review-history/:articleId', AIController.getArticleReviewHistory);
