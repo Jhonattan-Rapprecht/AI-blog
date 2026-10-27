@@ -234,3 +234,8 @@ The user asked for suggestion cards to fade away once applied because no further
 
 - User clarified that **System Activity Logs** belongs under the **System** sidebar section, not **Developer**. Moved the navigation entry; the separate Developer section remains for developer tools such as Components.
 - The logs page is a placeholder only. No event tracking or persistence has been implemented.
+
+### Next-session handover - 2026-10-27
+
+- See `docs/development/next-session-handover-2026-10-27.md` for the prioritized next-session plan: improve System Activity Logs, functionally test Media Library, brainstorm editor font/typeface controls, and explore selectable/custom article layouts using Components.
+- The handover records current branch/commits, verification state, risks, and design questions. Update it as work progresses.
