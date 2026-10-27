@@ -1,0 +1,17 @@
+---
+const { categories = [], className = '' } = Astro.props;
+---
+
+{categories.length > 0 && (
+  <details class:list={['nav-category-menu', className]}>
+    <summary aria-haspopup="true">Categories <span aria-hidden="true">⌄</span></summary>
+    <div class="nav-category-menu__panel">
+      {categories.map((category) => (
+        <a href={`/category/${encodeURIComponent(category.slug)}`}>
+          {category.name}<span>{Number(category.article_count).toLocaleString()}</span>
+        </a>
+      ))}
+      <a class="nav-category-menu__all" href="/blog">Explore all articles <span aria-hidden="true">→</span></a>
+    </div>
+  </details>
+)}

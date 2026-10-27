@@ -6,29 +6,38 @@ import { listArticles, listCategories } from '../../lib/api.js';
 
 const { slug } = Astro.params;
 const page = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10) || 1);
-
 const categories = await listCategories();
-const category = categories?.find((c) => c.slug === slug);
+const category = categories?.find((item) => item.slug === slug);
 if (!category) return Astro.rewrite('/404');
-
-const result = await listArticles({ page, category: slug });
+const listOptions = { page };
+listOptions.category = slug;
+const result = await listArticles(listOptions);
+const topics = categories.filter((item) => Number(item.article_count) > 0);
 ---
 
-<BaseLayout title={category.name} description={category.description || `Articles about ${category.name}.`}>
-  <div class="mx-auto grid max-w-5xl gap-8 px-6 py-12">
-    <div>
-      <a href="/blog" class="text-sm text-muted-foreground hover:text-foreground">← All articles</a>
-      <h1 class="mt-6 text-3xl font-semibold tracking-tight">{category.name}</h1>
-      {category.description && <p class="mt-2 text-muted-foreground">{category.description}</p>}
-      <p class="mt-1 text-sm text-muted-foreground">{result.total} {result.total === 1 ? 'article' : 'articles'}</p>
+<BaseLayout title={category.name} description={category.description || `Articles about ${category.name}.`} categories={categories}>
+  <div class="blog-page">
+    <header class="blog-intro" aria-labelledby="category-title">
+      <div>
+        <a href="/blog" class="category-back"><span aria-hidden="true">←</span> All stories</a>
+        <p class="eyebrow">Explore a topic</p>
+        <h1 id="category-title" class="blog-title">{category.name}</h1>
+        <p class="blog-description">{category.description || `Perspectives and stories about ${category.name}.`}</p>
+      </div>
+      <div class="category-count-card"><span class="category-count-card__number">{result.total}</span><span>{result.total === 1 ? 'published story' : 'published stories'}</span></div>
+    </header>
+    <section class="blog-filter-row" aria-label="Browse topics">
+      <span class="blog-filter-label">More topics</span>
+      <div id="blog-filters" aria-label="Browse categories">
+        <a href="/blog" class="category-filter">All topics</a>
+        {topics.filter((item) => item.slug !== category.slug).map((item) => <a href={`/category/${encodeURIComponent(item.slug)}`} class="category-filter">{item.name}</a>)}
+      </div>
+    </section>
+    <div class="category-feed-heading"><h2>Latest in {category.name}</h2><span>{result.total} {result.total === 1 ? 'article' : 'articles'}</span></div>
+    {result.articles.length === 0 && <p id="blog-empty">No articles in this category yet.</p>}
+    <div id="blog-articles" data-layout="grid" class="grid">
+      {result.articles.map((article, index) => <ArticleCard article={article} featured={index === 0} />)}
     </div>
-
-    {result.articles.length === 0 && <p class="rounded-md border p-6 text-sm text-muted-foreground">No articles in this category yet.</p>}
-
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {result.articles.map((a) => <ArticleCard article={a} />)}
-    </div>
-
-    <Pagination page={page} pages={result.pages} base={`/category/${slug}`} />
+    <div id="blog-pagination"><Pagination page={page} pages={result.pages} base={`/category/${encodeURIComponent(slug)}`} /></div>
   </div>
 </BaseLayout>

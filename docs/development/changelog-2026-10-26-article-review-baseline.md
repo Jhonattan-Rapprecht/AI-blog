@@ -251,3 +251,9 @@ ode --check and git diff --check passed.
 
 - While the export menu is open, the page behind it is softly dimmed and blurred. Clicking an underlying element closes the menu and still activates that element; Escape closes the menu as well.
 - Frontend production build and git diff --check passed.
+
+### Public article front-end redesign - 2026-10-27
+
+- Redesigned the public Blog listing and article reading pages in the existing Astro site, plus shared shell, reusable article cards, and category archives. Added responsive navy/blue/violet styling, dynamic category navigation, mobile menu, and search access.
+- Preserved existing API data and behavior for search, filters, Grid/List, Pages/Infinite scroll, theme preference, article routes, read tracking, photo credits, and related articles. Added generated table of contents, reading progress, and social share/copy actions.
+- Site production build and local HTTP route/query checks passed. Exact viewport screenshot review remains pending because browser automation could not connect. No backend/API/database changes. Work remains uncommitted/unpushed on feat/public-blog-redesign.

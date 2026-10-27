@@ -1,19 +1,24 @@
 ---
-import { formatDate, imageUrl } from '../lib/api.js';
+import { formatDate, imageUrl, readingTime } from '../lib/api.js';
 
-const { article } = Astro.props;
+const { article, featured = false } = Astro.props;
+const estimatedReadingTime = article.content ? readingTime(article.content) : null;
 ---
 
-<a href={`/blog/${article.slug}`} class="group flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-foreground/30">
-  {article.featured_image
-    ? <img src={imageUrl(article.featured_image)} alt="" loading="lazy" class="article-card-image aspect-[16/9] w-full object-cover" />
-    : <div class="article-card-image aspect-[16/9] w-full bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]" />}
-  <div class="article-card-body flex flex-1 flex-col gap-2 p-5">
-    <div class="flex items-center gap-2 text-xs text-muted-foreground">
-      <span class="rounded-full border px-2 py-0.5">{article.category_name || 'Uncategorized'}</span>
-      <time datetime={article.published_at}>{formatDate(article.published_at)}</time>
-    </div>
-    <h3 class="font-semibold leading-snug group-hover:underline">{article.title}</h3>
-    {article.excerpt && <p class="line-clamp-3 text-sm text-muted-foreground">{article.excerpt}</p>}
-  </div>
+<a href={`/blog/${encodeURIComponent(article.slug)}`} class:list={['story-card', featured && 'story-card--lead']}>
+  <span class="story-card__media" aria-hidden="true">
+    {article.featured_image
+      ? <img src={imageUrl(article.featured_image)} alt="" loading={featured ? 'eager' : 'lazy'} fetchpriority={featured ? 'high' : undefined} class="story-card__image" />
+      : <span class="story-card__image--missing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span>}
+  </span>
+  <span class="story-card__body">
+    <span class="story-card__meta">
+      <span class="story-card__category">{article.category_name || 'Uncategorized'}</span>
+      {article.published_at && <time datetime={article.published_at}>{formatDate(article.published_at)}</time>}
+      {estimatedReadingTime && <span>{estimatedReadingTime} min read</span>}
+    </span>
+    <span class="story-card__title">{article.title}</span>
+    {article.excerpt && <span class="story-card__excerpt">{article.excerpt}</span>}
+    <span class="story-card__footer"><span>Read story</span><span class="story-card__arrow" aria-hidden="true">→</span></span>
+  </span>
 </a>

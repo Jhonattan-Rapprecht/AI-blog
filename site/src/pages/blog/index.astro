@@ -24,49 +24,54 @@ if (category) filterQuery.set('category', category);
 if (q) filterQuery.set('q', q);
 ---
 
-<BaseLayout title="Blog" description="All published articles.">
-  <div class="mx-auto grid max-w-5xl gap-8 px-6 py-12">
-    <div class="flex flex-wrap items-end justify-between gap-4">
+<BaseLayout title={selectedCategory?.name || 'Blog'} description={selectedCategory?.description || 'Fresh perspectives on AI, technology, business, and the ideas shaping what comes next.'} categories={topics}>
+  <div class="blog-page">
+    <section class="blog-intro" aria-labelledby="blog-title">
       <div>
-        <h1 class="text-3xl font-semibold tracking-tight">Blog</h1>
+        <p class="eyebrow">The AI Blogstudio journal</p>
+        <h1 id="blog-title" class="blog-title">{selectedCategory?.name || 'Ideas shaping what’s next.'}</h1>
+        <p class="blog-description">{selectedCategory?.description || 'Explore thoughtful perspectives on artificial intelligence, technology, business, and the people navigating change.'}</p>
       </div>
-      <form id="blog-search" method="get" action="/blog" role="search">
-        <input name="q" value={q} placeholder="Search articles..." class="h-9 w-64 rounded-md border bg-transparent px-3 text-sm outline-none focus:border-foreground/40" />
+      <form id="blog-search" method="get" action="/blog" role="search" class="site-search blog-intro__search">
+        {category && <input type="hidden" name="category" value={category} />}
+        <label class="sr-only" for="blog-search-query">Search articles</label>
+        <input id="blog-search-query" name="q" type="search" value={q} placeholder="Search articles and ideas..." class="site-search__input" />
+        <button class="site-search__button" type="submit" aria-label="Search articles"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button>
       </form>
-    </div>
+    </section>
 
-    <div id="blog-filters" class="flex flex-wrap items-center gap-2" aria-label="Filter articles by category">
-        <a href="/blog" data-category="" aria-current={!category ? 'page' : undefined} class:list={['category-filter rounded-full border px-3 py-1 text-xs hover:bg-accent', !category && 'bg-primary text-primary-foreground']}>All</a>
-        {topics.map((c) => <a href={`/blog?category=${encodeURIComponent(c.slug)}${q ? `&q=${encodeURIComponent(q)}` : ''}`} data-category={c.slug} aria-current={category === c.slug ? 'page' : undefined} class:list={['category-filter rounded-full border px-3 py-1 text-xs hover:bg-accent', category === c.slug && 'bg-primary text-primary-foreground']}>{c.name}</a>)}
-        <span id="blog-count" class="px-1 text-xs text-muted-foreground">{result.total} {result.total === 1 ? 'article' : 'articles'}</span>
-    </div>
+    <section class="blog-filter-row" aria-label="Article topics">
+      <span class="blog-filter-label">Explore topics</span>
+      <div id="blog-filters" aria-label="Filter articles by category">
+        <a href={`/blog${q ? `?q=${encodeURIComponent(q)}` : ''}`} data-category="" aria-current={!category ? 'page' : undefined} class="category-filter">All topics</a>
+        {topics.map((c) => <a href={`/blog?category=${encodeURIComponent(c.slug)}${q ? `&q=${encodeURIComponent(q)}` : ''}`} data-category={c.slug} aria-current={category === c.slug ? 'page' : undefined} class="category-filter">{c.name}</a>)}
+        <span id="blog-count">{result.total} {result.total === 1 ? 'story' : 'stories'}{selectedCategory ? ` in ${selectedCategory.name}` : ''}</span>
+      </div>
+    </section>
 
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <span class="text-xs font-medium text-muted-foreground">Article display</span>
-      <div class="flex flex-wrap items-center gap-2">
-        <div class="flex items-center gap-1 rounded-lg border p-1" role="group" aria-label="Article card layout">
-          <button type="button" class="blog-control inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition hover:bg-accent" data-layout-choice="grid" aria-pressed="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>Grid</button>
-          <button type="button" class="blog-control inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition hover:bg-accent" data-layout-choice="list" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>List</button>
-        </div>
-        <div class="flex items-center gap-1 rounded-lg border p-1" role="group" aria-label="Article loading mode">
-          <button type="button" class="blog-control rounded-md px-3 py-1.5 text-xs font-medium transition hover:bg-accent" data-load-mode="pages" aria-pressed="true">Pages</button>
-          <button type="button" class="blog-control rounded-md px-3 py-1.5 text-xs font-medium transition hover:bg-accent" data-load-mode="infinite" aria-pressed="false">Infinite scroll</button>
+    <section aria-label="Article feed">
+      <div class="blog-feed-toolbar">
+        <span class="blog-feed-toolbar__label"><span id="blog-feed-label">{q ? `Search results for “${q}”` : selectedCategory ? `Stories in ${selectedCategory.name}` : 'Latest stories'}</span> <span aria-hidden="true">·</span> <span id="blog-feed-total">{result.total} {result.total === 1 ? 'article' : 'articles'}</span></span>
+        <div class="blog-controls">
+          <div class="blog-control-group" role="group" aria-label="Article card layout">
+            <button type="button" class="blog-control" data-layout-choice="grid" aria-pressed="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>Grid</button>
+            <button type="button" class="blog-control" data-layout-choice="list" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>List</button>
+          </div>
+          <div class="blog-control-group" role="group" aria-label="Article loading mode">
+            <button type="button" class="blog-control" data-load-mode="pages" aria-pressed="true">Pages</button>
+            <button type="button" class="blog-control" data-load-mode="infinite" aria-pressed="false">Infinite scroll</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <p id="blog-loading" class="sr-only" role="status" aria-live="polite"></p>
-    <p id="blog-empty" class="rounded-md border p-6 text-sm text-muted-foreground" hidden={!failed && result.articles.length > 0}>{failed ? 'The blog is temporarily unavailable.' : 'No articles found.'}</p>
-
-    <div id="blog-articles" data-layout="grid" data-page={result.page} data-pages={result.pages} class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="false">
-      {result.articles.map((a) => <ArticleCard article={a} />)}
-    </div>
-
-    <div id="blog-infinite-status" class="flex min-h-10 items-center justify-center gap-2 py-2 text-sm text-muted-foreground" aria-live="polite" hidden></div>
-
-    <div id="blog-pagination">
-      <Pagination page={page} pages={result.pages} base="/blog" query={filterQuery.toString()} />
-    </div>
+      <p id="blog-loading" class="sr-only" role="status" aria-live="polite"></p>
+      <p id="blog-empty" hidden={!failed && result.articles.length > 0}>{failed ? 'The blog is temporarily unavailable.' : 'No articles match your search yet. Try another phrase or topic.'}</p>
+      <div id="blog-articles" data-layout="grid" data-page={result.page} data-pages={result.pages} class="grid" aria-busy="false">
+        {result.articles.map((a, index) => <ArticleCard article={a} featured={index === 0} />)}
+      </div>
+      <div id="blog-infinite-status" aria-live="polite" hidden></div>
+      <div id="blog-pagination"><Pagination page={page} pages={result.pages} base="/blog" query={filterQuery.toString()} /></div>
+    </section>
   </div>
 </BaseLayout>
 
@@ -75,6 +80,8 @@ if (q) filterQuery.set('q', q);
 
   const grid = document.querySelector('#blog-articles');
   const count = document.querySelector('#blog-count');
+  const feedLabel = document.querySelector('#blog-feed-label');
+  const feedTotal = document.querySelector('#blog-feed-total');
   const empty = document.querySelector('#blog-empty');
   const loading = document.querySelector('#blog-loading');
   const pagination = document.querySelector('#blog-pagination');
@@ -130,6 +137,8 @@ if (q) filterQuery.set('q', q);
   function updateCount(result, query, category) {
     const categoryName = category ? filters?.querySelector(`[data-category="${CSS.escape(category)}"]`)?.textContent || 'this category' : '';
     count.textContent = `${result.total} ${result.total === 1 ? 'article' : 'articles'}${query ? ` matching “${query}”` : ''}${category ? ` in ${categoryName}` : ''}`;
+    feedLabel.textContent = query ? `Search results for “${query}”${category ? ` in ${categoryName}` : ''}` : category ? `Stories in ${categoryName}` : 'Latest stories';
+    feedTotal.textContent = `${result.total} ${result.total === 1 ? 'article' : 'articles'}`;
   }
 
   function setFilterState(category) {
@@ -164,46 +173,64 @@ if (q) filterQuery.set('q', q);
     }));
   }
 
-  function articleCard(article) {
+  function articleCard(article, featured = false) {
     const link = document.createElement('a');
     link.href = `/blog/${encodeURIComponent(article.slug)}`;
-    link.className = 'group flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-foreground/30';
+    link.className = `story-card${featured ? ' story-card--lead' : ''}`;
 
+    const media = document.createElement('span');
+    media.className = 'story-card__media';
+    media.setAttribute('aria-hidden', 'true');
     if (article.featured_image) {
       const image = document.createElement('img');
       image.src = imageUrl(article.featured_image);
       image.alt = '';
-      image.loading = 'lazy';
-      image.className = 'article-card-image aspect-[16/9] w-full object-cover';
-      link.append(image);
+      image.loading = featured ? 'eager' : 'lazy';
+      if (featured) image.fetchPriority = 'high';
+      image.className = 'story-card__image';
+      media.append(image);
     } else {
       const placeholder = document.createElement('div');
-      placeholder.className = 'article-card-image aspect-[16/9] w-full bg-muted bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px]';
-      link.append(placeholder);
+      placeholder.className = 'story-card__image--missing';
+      placeholder.textContent = 'AI';
+      media.append(placeholder);
     }
+    link.append(media);
 
-    const body = document.createElement('div');
-    body.className = 'article-card-body flex flex-1 flex-col gap-2 p-5';
-    const meta = document.createElement('div');
-    meta.className = 'flex items-center gap-2 text-xs text-muted-foreground';
+    const body = document.createElement('span');
+    body.className = 'story-card__body';
+    const meta = document.createElement('span');
+    meta.className = 'story-card__meta';
     const badge = document.createElement('span');
-    badge.className = 'rounded-full border px-2 py-0.5';
+    badge.className = 'story-card__category';
     badge.textContent = article.category_name || 'Uncategorized';
     meta.append(badge);
-    const date = document.createElement('time');
-    date.dateTime = article.published_at || '';
-    date.textContent = formatDate(article.published_at);
-    meta.append(date);
-    const title = document.createElement('h3');
-    title.className = 'font-semibold leading-snug group-hover:underline';
+    if (article.published_at) {
+      const date = document.createElement('time');
+      date.dateTime = article.published_at;
+      date.textContent = formatDate(article.published_at);
+      meta.append(date);
+    }
+    const title = document.createElement('span');
+    title.className = 'story-card__title';
     title.textContent = article.title;
     body.append(meta, title);
     if (article.excerpt) {
-      const excerpt = document.createElement('p');
-      excerpt.className = 'line-clamp-3 text-sm text-muted-foreground';
+      const excerpt = document.createElement('span');
+      excerpt.className = 'story-card__excerpt';
       excerpt.textContent = article.excerpt;
       body.append(excerpt);
     }
+    const footer = document.createElement('span');
+    footer.className = 'story-card__footer';
+    const readLabel = document.createElement('span');
+    readLabel.textContent = 'Read story';
+    const arrow = document.createElement('span');
+    arrow.className = 'story-card__arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '→';
+    footer.append(readLabel, arrow);
+    body.append(footer);
     link.append(body);
     return link;
   }
@@ -249,7 +276,7 @@ if (q) filterQuery.set('q', q);
     try {
       const result = await listArticles({ category, q: query, page });
       if (id !== requestId) return;
-      grid.replaceChildren(...result.articles.map(articleCard));
+      grid.replaceChildren(...result.articles.map((article, index) => articleCard(article, index === 0)));
       grid.setAttribute('aria-busy', 'false');
       grid.dataset.page = String(result.page);
       grid.dataset.pages = String(result.pages);

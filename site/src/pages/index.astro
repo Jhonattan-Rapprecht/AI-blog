@@ -14,7 +14,7 @@ const [featured, ...latest] = articles;
 const topics = categories.filter((c) => c.article_count > 0);
 ---
 
-<BaseLayout>
+<BaseLayout categories={topics}>
   <section class="border-b">
     <div class="mx-auto max-w-5xl px-6 py-20 sm:py-28">
       <p class="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">AI-assisted publishing</p>

@@ -1,3 +1,5 @@
+> Current handoff: docs/development/public-blog-redesign-2026-10-27.md on feat/public-blog-redesign. This older session record below predates the current redesign work.
+
 # Next Session Handover — 2026-10-27
 
 ## Current repository state

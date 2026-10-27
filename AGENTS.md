@@ -267,3 +267,18 @@ The user asked for suggestion cards to fade away once applied because no further
 
 - Added a temporary dim/blur behind the export format menu. An outside click closes the menu while allowing the clicked page control to activate; Escape also closes it.
 - Frontend production build and git diff --check passed. This UI follow-up is uncommitted.
+
+### Public article front-end redesign - 2026-10-27
+
+- Current branch is feat/public-blog-redesign, based on commit d45b44d; public listing, article reading, category archive, shared layout, and styling were redesigned using existing Astro and API data.
+- Preserved server search, dynamic category filtering, Grid/List, Pages/Infinite scroll, theme persistence, article routes, read tracking, and related articles. Added mobile navigation, TOC, share/copy controls, and reading progress.
+- Build and local route/query checks passed. Visual checks at the requested viewport widths remain pending because the Windows browser automation bridge could not connect. See docs/development/public-blog-redesign-2026-10-27.md for files, data limitations, verification, and current work state.
+- Changes are uncommitted and unpushed.
+
+### Public blog redesign handoff - 2026-10-27
+
+- Redesigned the public blog listing, article pages, and category archives on `feat/public-blog-redesign`; restored and preserved the browser tab title `Blogstudio | AI`.
+- The handover is `docs/development/handover-public-blog-redesign-2026-10-27.md`; implementation and verification details are in `docs/development/public-blog-redesign-2026-10-27.md`.
+- Production Astro build and local route/query checks passed. Browser automation was unavailable, so manual responsive screenshots and interaction checks remain for the next session.
+- This work and its documentation are being committed and pushed for the user handoff.
+- Handoff complete: commit `8aeb9a6` (`feat(blog): redesign public listing and article pages`) is pushed to `origin/feat/public-blog-redesign`. Worktree should be clean.

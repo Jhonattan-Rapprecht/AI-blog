@@ -1,16 +1,22 @@
 ---
 import '../styles/global.css';
+import NavCategoryMenu from '../components/NavCategoryMenu.astro';
+import SearchForm from '../components/SearchForm.astro';
 
-const { title, description = 'AI-assisted articles on technology, business and more.', image, type = 'website' } = Astro.props;
+const props = Astro.props;
+const description = props.description || 'AI-assisted articles on technology, business and more.';
+const image = props.image;
+const type = props.type || 'website';
+const categories = props.categories || [];
 const siteName = 'Blogstudio | AI';
 const fullTitle = siteName;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const path = Astro.url.pathname;
-const nav = [
-  { href: '/', label: 'Home' },
-  { href: '/blog', label: 'Blog' },
-];
-const isActive = (href) => (href === '/' ? path === '/' : path.startsWith(href));
+const isBlogIndex = path === '/blog';
+const showHeaderSearch = !isBlogIndex;
+const currentQuery = Astro.url.searchParams.get('q') || '';
+const active = (href) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`));
+const visibleCategories = Array.isArray(categories) ? categories.filter((category) => Number(category.article_count) > 0) : [];
 ---
 
 <!doctype html>
@@ -18,6 +24,7 @@ const isActive = (href) => (href === '/' ? path === '/' : path.startsWith(href))
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -30,48 +37,91 @@ const isActive = (href) => (href === '/' ? path === '/' : path.startsWith(href))
     {image && <meta property="og:image" content={image} />}
     <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
     <script is:inline>
-      // Applied before paint to avoid a theme flash
-      const t = localStorage.getItem('theme') || 'dark';
-      document.documentElement.classList.toggle('dark', t === 'dark');
+      try {
+        const theme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+      } catch { document.documentElement.classList.add('dark'); }
     </script>
   </head>
   <body class="flex min-h-screen flex-col">
-    <header class="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-      <div class="mx-auto flex h-14 max-w-5xl items-center gap-6 px-6">
-        <a href="/" class="flex items-center gap-2 text-sm font-semibold">
-          <span class="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
-          </span>
-          {siteName}
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header sticky top-0 z-40">
+      <div class="site-header__inner">
+        <a href="/" class="site-brand" aria-label="AI Blogstudio home">
+          <span class="site-brand__mark" aria-hidden="true">AI</span>
+          <span class="site-brand__name">BLOGSTUDIO</span>
         </a>
-        <nav class="flex gap-4 text-sm">
-          {nav.map((n) => (
-            <a href={n.href} class={isActive(n.href) ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}>{n.label}</a>
-          ))}
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="/" aria-current={active('/') ? 'page' : undefined}>Home</a>
+          <a href="/blog" aria-current={active('/blog') ? 'page' : undefined}>Blog</a>
+          <NavCategoryMenu categories={visibleCategories} />
         </nav>
-        <button id="theme-toggle" class="ml-auto rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Toggle theme">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden size-4 dark:block"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4 dark:hidden"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-        </button>
+        <div class="site-header__actions">
+          {showHeaderSearch && <SearchForm id="header-search" query={currentQuery} className="site-search site-search--header" />}
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
+            <svg class="theme-toggle__sun" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+            <svg class="theme-toggle__moon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20.5 14.2A8.6 8.6 0 0 1 9.8 3.5 8.7 8.7 0 1 0 20.5 14.2Z"/></svg>
+          </button>
+          <button id="mobile-menu-toggle" class="mobile-menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-navigation">
+            <svg class="menu-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            <svg class="close-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
+          </button>
+        </div>
       </div>
+      <nav id="mobile-navigation" class="mobile-nav" aria-label="Mobile navigation" hidden>
+        <a href="/" aria-current={active('/') ? 'page' : undefined}>Home</a>
+        <a href="/blog" aria-current={active('/blog') ? 'page' : undefined}>Blog</a>
+        <NavCategoryMenu categories={visibleCategories} className="nav-category-menu--mobile" />
+        <SearchForm id="mobile-search" query={currentQuery} className="site-search site-search--mobile" />
+      </nav>
     </header>
 
-    <main class="flex-1">
+    <main id="main-content" class="flex-1">
       <slot />
     </main>
 
-    <footer class="border-t">
-      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-6 py-6 text-xs text-muted-foreground">
-        <span>&copy; {new Date().getFullYear()} {siteName}</span>
-        <span>Written with AI assistance, reviewed by humans.</span>
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <a href="/" class="site-brand site-brand--footer"><span class="site-brand__mark" aria-hidden="true">AI</span><span class="site-brand__name">BLOGSTUDIO</span></a>
+        <span>Ideas, tools, and perspectives on what comes next.</span>
+        <span class="site-footer__copyright">© {new Date().getFullYear()} {siteName}</span>
       </div>
     </footer>
 
     <script>
-      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+      const themeButton = document.getElementById('theme-toggle');
+      const menuButton = document.getElementById('mobile-menu-toggle');
+      const mobileNav = document.getElementById('mobile-navigation');
+
+      function updateThemeLabel() {
+        const isDark = document.documentElement.classList.contains('dark');
+        themeButton?.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+      }
+
+      themeButton?.addEventListener('click', () => {
         const dark = document.documentElement.classList.toggle('dark');
-        localStorage.setItem('theme', dark ? 'dark' : 'light');
+        try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch { /* The current page theme still changes. */ }
+        updateThemeLabel();
       });
+      updateThemeLabel();
+
+      const closeMobileMenu = () => {
+        if (!mobileNav || !menuButton) return;
+        mobileNav.hidden = true;
+        menuButton.setAttribute('aria-expanded', 'false');
+        menuButton.setAttribute('aria-label', 'Open navigation menu');
+      };
+
+      menuButton?.addEventListener('click', () => {
+        if (!mobileNav) return;
+        const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
+        mobileNav.hidden = isOpen;
+        menuButton.setAttribute('aria-expanded', String(!isOpen));
+        menuButton.setAttribute('aria-label', isOpen ? 'Open navigation menu' : 'Close navigation menu');
+      });
+      mobileNav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMobileMenu));
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeMobileMenu(); });
+      window.matchMedia('(min-width: 768px)').addEventListener('change', closeMobileMenu);
     </script>
   </body>
 </html>
