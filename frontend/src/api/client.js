@@ -77,6 +77,7 @@ export const api = {
   generate: (config) => http.post('/ai/generate-article', config).then((r) => r.data),
   suggestTopics: (context) => http.post('/ai/suggest-topic', context).then((r) => strings(r.data.suggestions)),
   suggestSlugs: (title) => http.post('/ai/suggest-slug', { title }).then((r) => strings(r.data.suggestions)),
+  suggestTitles: (context) => http.post('/ai/suggest-title', context, { timeout: 120000 }).then((r) => strings(r.data.suggestions)),
   reviewArticle: (article) => http.post('/ai/review-article', article, { timeout: 300000 }).then((r) => r.data),
   factCheckArticle: (article) => http.post('/ai/fact-check-article', article, { timeout: 120000 }).then((r) => r.data),
   grammarCheckArticle: (article) => http.post('/ai/grammar-check-article', article, { timeout: 120000 }).then((r) => r.data),

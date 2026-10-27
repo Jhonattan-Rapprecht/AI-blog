@@ -411,6 +411,32 @@ class AIController {
         }
     }
 
+    async suggestTitle(req, res) {
+        try {
+            const title = typeof req.body?.title === 'string' ? req.body.title.trim().slice(0, 500) : '';
+            const excerpt = typeof req.body?.excerpt === 'string' ? req.body.excerpt.trim().slice(0, 5000) : '';
+            const content = typeof req.body?.content === 'string' ? req.body.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 12000) : '';
+            const category = typeof req.body?.category === 'string' ? req.body.category.trim().slice(0, 500) : '';
+            const language = typeof req.body?.language === 'string' ? req.body.language.trim().slice(0, 100) : SettingsService.read().language;
+            if (!title) return res.status(400).json({ error: 'A title is required.' });
+            const provider = require('../providers/ai.provider').ProviderFactory.getProvider();
+            const result = await provider.generate({
+                systemPrompt: `You are a careful ${language} editor. Return ONLY a JSON array of exactly 3 concise alternative article titles. Preserve the article's meaning and factual scope. Improve clarity, natural phrasing, and semantic accuracy, but do not use clickbait or invent facts.`,
+                userPrompt: `Current title: ${title}\nCategory: ${category || '(not assigned)'}\nExcerpt: ${excerpt || '(none)'}\nArticle context: ${content || '(none)'}`,
+                temperature: 0.3,
+                maxTokens: 500,
+                responseFormat: 'json'
+            });
+            const raw = String(result.content || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+            const parsed = JSON.parse(raw);
+            const titles = Array.isArray(parsed) ? parsed : (parsed.titles || parsed.suggestions || []);
+            res.json({ suggestions: toTextList(titles, 3) });
+        } catch (error) {
+            console.error('[AI Controller] suggestTitle failed:', error.message);
+            res.status(502).json({ error: `Title suggestions failed with ${SettingsService.read().model}: ${error.message}` });
+        }
+    }
+
     async suggestTopic(req, res) {
         const WANTED = 3;
         try {

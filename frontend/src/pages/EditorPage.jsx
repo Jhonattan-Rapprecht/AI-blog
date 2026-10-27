@@ -645,11 +645,23 @@ export default function EditorPage() {
   }
 
   const requestConfirmation = (title, message, onConfirm, confirmLabel = 'Confirm', options = {}) => {
-    setConfirmation({ title, message, onConfirm, confirmLabel, emphasize: options.emphasize === true })
+    setConfirmation({ title, message, onConfirm, confirmLabel, emphasize: options.emphasize === true, ...options })
   }
 
-  const requestEditorChangeConfirmation = (title, message, onConfirm, confirmLabel = 'Apply change') => {
-    requestConfirmation(title, message, onConfirm, confirmLabel, { emphasize: true })
+  const requestEditorChangeConfirmation = (title, message, onConfirm, confirmLabel = 'Apply change', options = {}) => {
+    requestConfirmation(title, message, onConfirm, confirmLabel, { emphasize: true, ...options })
+  }
+
+  const suggestConfirmationTitles = async () => {
+    if (!confirmation?.titleEditor) return
+    setConfirmation((current) => ({ ...current, titleSuggestionsLoading: true }))
+    try {
+      const suggestions = await api.suggestTitles(confirmation.titleEditor)
+      setConfirmation((current) => current ? { ...current, titleSuggestions: suggestions, titleSuggestionsLoading: false } : current)
+    } catch (e) {
+      setConfirmation((current) => current ? { ...current, titleSuggestionsLoading: false } : current)
+      toast.error(errorMessage(e))
+    }
   }
 
   const markFindingStatus = (finding, index, status, action = null) => {
@@ -725,10 +737,17 @@ export default function EditorPage() {
       const preview = wordLevelSpelling
         ? `Replace this word in the title?\n\nBEFORE:\n${currentValue}\n\nAFTER:\n${updatedTitle}`
         : `Replace the current title with this suggestion?\n\nCURRENT TITLE:\n${currentValue}\n\nSUGGESTED TITLE:\n${updatedTitle}`
-      requestEditorChangeConfirmation(wordLevelSpelling ? 'Apply spelling correction?' : 'Apply title suggestion?', preview, () => {
-        setArticle((current) => ({ ...current, [finding.field]: updatedTitle }))
+      requestEditorChangeConfirmation(wordLevelSpelling ? 'Apply spelling correction?' : 'Apply title suggestion?', preview, (reviewedTitle) => {
+        const finalTitle = String(reviewedTitle || updatedTitle).trim()
+        if (!finalTitle) return toast.error('Enter a title before applying the change.')
+        setArticle((current) => ({ ...current, [finding.field]: finalTitle }))
         markFindingStatus(finding, index, 'applied', 'replace_field')
-      }, 'Apply change')
+      }, 'Apply change', {
+        editableValue: updatedTitle,
+        titleEditor: { title: updatedTitle, excerpt: article.excerpt, content: article.content, category: selectedCategory?.name || '', language: ai.language },
+        titleSuggestions: [],
+        titleSuggestionsLoading: false,
+      })
       return
     }
     const doc = new DOMParser().parseFromString(article.content || '', 'text/html')
@@ -1188,8 +1207,15 @@ export default function EditorPage() {
       </div>
       {confirmation && <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4 backdrop-blur-[2px]" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setConfirmation(null) }}>
         <div role="alertdialog" aria-modal="true" aria-labelledby="editor-confirmation-title" className={`grid max-h-[85vh] w-full max-w-xl gap-4 rounded-xl border bg-background p-5 text-foreground shadow-xl ${confirmation.emphasize ? 'relative overflow-visible before:pointer-events-none before:absolute before:inset-0 before:rounded-xl before:shadow-[0_0_2rem_rgba(255,255,255,0.32)] before:animate-pulse' : 'overflow-hidden'}`}>
-          <div className="grid gap-2"><h2 id="editor-confirmation-title" className="font-semibold">{confirmation.title}</h2><pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-3 font-sans text-sm text-muted-foreground">{confirmation.message}</pre></div>
-          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setConfirmation(null)}>Cancel</Button><Button type="button" onClick={() => { const current = confirmation; setConfirmation(null); current.onConfirm() }}>{confirmation.confirmLabel}</Button></div>
+          <div className="grid gap-3"><h2 id="editor-confirmation-title" className="font-semibold">{confirmation.title}</h2><pre className="max-h-[45vh] overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-3 font-sans text-sm text-muted-foreground">{confirmation.message}</pre>
+            {confirmation.titleEditor && <div className="grid gap-2 rounded-md border p-3">
+              <Label htmlFor="reviewed-title">Review suggested title</Label>
+              <div className="flex gap-1.5"><Input id="reviewed-title" value={confirmation.editableValue || ''} onChange={(event) => setConfirmation((current) => ({ ...current, editableValue: event.target.value }))} /><Button type="button" variant="outline" size="icon" onClick={suggestConfirmationTitles} disabled={confirmation.titleSuggestionsLoading} title="Suggest title alternatives" aria-label="Suggest title alternatives">{confirmation.titleSuggestionsLoading ? <Loader2 className="animate-spin" /> : <Sparkles />}</Button></div>
+              <p className="text-xs text-muted-foreground">Edit the suggestion manually, or ask AI for alternatives.</p>
+              {confirmation.titleSuggestions?.length > 0 && <div className="grid gap-1">{confirmation.titleSuggestions.map((suggestion) => <Button key={suggestion} type="button" variant="ghost" size="sm" className="h-auto justify-start whitespace-normal px-2 py-1.5 text-left text-xs" onClick={() => setConfirmation((current) => ({ ...current, editableValue: suggestion }))}>{suggestion}</Button>)}</div>}
+            </div>}
+          </div>
+          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setConfirmation(null)}>Cancel</Button><Button type="button" disabled={Boolean(confirmation.titleEditor && !String(confirmation.editableValue || '').trim())} onClick={() => { const current = confirmation; setConfirmation(null); current.onConfirm(current.editableValue) }}>{confirmation.confirmLabel}</Button></div>
         </div>
       </div>}
       {mediaPickerOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setMediaPickerOpen(false) }}>

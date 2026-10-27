@@ -10,6 +10,7 @@
 - After a reported Dutch title was not flagged despite an unnatural final phrase, strengthened the title-only prompt to receive the configured language explicitly and require a semantic-readability pass. It now flags dictionary-valid words used with the wrong sense, incomplete constructions, unnatural word combinations or idioms, and literal translations that a typical native reader would not understand.
 - Excerpt checks now send only previously handled excerpt findings back to the model. Earlier title, body, and selected-text findings no longer crowd or suppress excerpt-focused suggestions.
 - Every text-changing suggestion now uses one shared confirmation flow with a before/after preview, dimmed and blurred backdrop, and a soft white pulsing halo. It covers individual title, excerpt, article-body, selected-text, and fact-check actions, plus Apply all. Dismissal and unrelated confirmations keep their existing treatment.
+- Title-suggestion confirmations now include an editable **Review suggested title** field. Editors can revise the proposed title manually or use an in-dialog sparkle action to request three context-aware AI alternatives, then apply the selected or edited value.
 
 ## Public favicon consistency
 
@@ -49,3 +50,5 @@ This concise log captures the latest user request and the corresponding implemen
 | An excerpt suggestion failed after its replacement was already present. | Added safe handling for a uniquely present replacement: it marks the suggestion as already applied instead of reporting an unmatched original phrase. |
 | The excerpt reviewer became less useful. | Found that it was receiving unrelated handled findings from all article fields; narrowed its history context to excerpt findings only. |
 | Every text-changing suggestion should show the same focused confirmation dialog. | Refactored suggestion application behind a shared editor-change confirmation helper and added previews for body and selected-text corrections. |
+| Title suggestions need both manual revision and AI alternatives inside the confirmation dialog. | Added one editable field plus an adjacent sparkle action and a new local title-suggestion endpoint; no mode toggle was needed. |
+| Confirm whether Check excerpt includes fact checking. | Confirmed that the focused excerpt prompt reviews spelling, grammar, punctuation, and potentially unsupported or outdated factual claims. |

@@ -6,6 +6,7 @@ router.post('/generate-article', AIController.generateArticle);
 router.get('/status', AIController.getStatus);
 router.get('/history/:articleId', AIController.getHistory);
 router.post('/suggest-slug', AIController.suggestSlug);
+router.post('/suggest-title', AIController.suggestTitle);
 router.post('/suggest-topic', AIController.suggestTopic);
 router.post('/review-article', AIController.reviewArticle.bind(AIController));
 router.post('/fact-check-article', AIController.factCheckArticle.bind(AIController));
