@@ -5,6 +5,7 @@ const ArticleModel = require('../models/article.model');
 
 const MEDIA_DIR = path.resolve(__dirname, '../../uploads/media');
 const MIME = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif' };
+const VIDEO_MIME = { 'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov' };
 
 function dimensions(buffer, mime) {
     try {
@@ -32,29 +33,73 @@ function isValidImage(buffer, mime) {
     return buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP';
 }
 
+function isValidVideo(buffer, mime) {
+    if (!Buffer.isBuffer(buffer) || !VIDEO_MIME[mime]) return false;
+    if (mime === 'video/webm') return buffer.length > 4 && buffer.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
+    return buffer.length > 12 && buffer.toString('ascii', 4, 8) === 'ftyp';
+}
+
+function secureExternalUrl(value) {
+    if (typeof value !== 'string' || value.length > 2048) return null;
+    try {
+        const url = new URL(value);
+        if (url.protocol !== 'https:' || !url.hostname.includes('.') || url.username || url.password) return null;
+        return url;
+    } catch { return null; }
+}
+
 class MediaController {
     async list(req, res) {
-        try { return res.json(await MediaModel.findAll()); }
+        try { return res.json(await MediaModel.findAll(req.query.type || 'image')); }
         catch (error) { console.error('[Media] List failed:', error.message); return res.status(500).json({ error: 'Could not load media library.' }); }
     }
 
     async upload(req, res) {
         const buffer = req.body;
         const mime = req.headers['content-type']?.split(';')[0];
-        if (!isValidImage(buffer, mime)) return res.status(400).json({ error: 'Upload a valid JPG, PNG, WebP, or GIF image.' });
+        const imageUpload = isValidImage(buffer, mime);
+        const videoUpload = isValidVideo(buffer, mime);
+        if (!imageUpload && !videoUpload) return res.status(400).json({ error: 'Upload a valid JPG, PNG, WebP, GIF, MP4, WebM, or MOV file.' });
+        if (imageUpload && buffer.length > 12 * 1024 * 1024) return res.status(413).json({ error: 'Images must be 12 MB or smaller.' });
         try {
             await fs.mkdir(MEDIA_DIR, { recursive: true });
-            const ext = MIME[mime];
+            const ext = imageUpload ? MIME[mime] : VIDEO_MIME[mime];
             const diskName = `${require('crypto').randomUUID()}${ext}`;
-            const original = String(req.query.filename || `image${ext}`).replace(/[\\/\0-\x1f]/g, '').slice(0, 255) || `image${ext}`;
+            const fallbackName = `${imageUpload ? 'image' : 'video'}${ext}`;
+            const original = String(req.query.filename || fallbackName).replace(/[\\/\0-\x1f]/g, '').slice(0, 255) || fallbackName;
             await fs.writeFile(path.join(MEDIA_DIR, diskName), buffer, { flag: 'wx' });
             let media;
-            try { media = await MediaModel.create({ filename: original, filepath: `/uploads/media/${diskName}`, mime_type: mime, file_size: buffer.length, ...dimensions(buffer, mime), provider: 'upload' }); }
+            try { media = await MediaModel.create({ filename: original, filepath: `/uploads/media/${diskName}`, mime_type: mime, file_size: buffer.length, media_type: imageUpload ? 'image' : 'video', source_type: 'upload', ...(imageUpload ? dimensions(buffer, mime) : {}), provider: 'upload' }); }
             catch (error) { await fs.unlink(path.join(MEDIA_DIR, diskName)).catch(() => {}); throw error; }
             return res.status(201).json(media);
         } catch (error) {
             console.error('[Media] Upload failed:', error.message);
-            return res.status(500).json({ error: 'Could not save uploaded image.' });
+            return res.status(500).json({ error: 'Could not save the uploaded media.' });
+        }
+    }
+
+    async addVideoLink(req, res) {
+        const url = secureExternalUrl(req.body?.url);
+        if (!url) return res.status(400).json({ error: 'Enter a valid HTTPS video URL.' });
+        const thumbnail = req.body?.thumbnailUrl ? secureExternalUrl(req.body.thumbnailUrl) : null;
+        if (req.body?.thumbnailUrl && !thumbnail) return res.status(400).json({ error: 'Thumbnail URL must be a valid HTTPS URL.' });
+        const filename = typeof req.body?.title === 'string' ? req.body.title.trim().slice(0, 255) : '';
+        try {
+            const media = await MediaModel.create({
+                filename: filename || url.hostname,
+                filepath: null,
+                mime_type: 'video/link',
+                file_size: 0,
+                media_type: 'video',
+                source_type: 'link',
+                source_url: url.toString(),
+                thumbnail_url: thumbnail?.toString() || null,
+                provider: url.hostname,
+            });
+            return res.status(201).json(media);
+        } catch (error) {
+            console.error('[Media] Video link save failed:', error.message);
+            return res.status(500).json({ error: 'Could not save the video link.' });
         }
     }
 
@@ -75,8 +120,8 @@ class MediaController {
             await ArticleModel.ensureMediaColumn();
             const result = await MediaModel.delete(req.params.id);
             if (!result) return res.status(404).json({ error: 'Media item not found.' });
-            if (result.inUse) return res.status(409).json({ error: 'This image is assigned to an article. Remove it from the article before deleting.' });
-            await fs.unlink(path.resolve(MEDIA_DIR, path.basename(result.filepath))).catch((error) => { if (error.code !== 'ENOENT') throw error; });
+            if (result.inUse) return res.status(409).json({ error: 'This media item is used in an article. Remove it from the article before deleting.' });
+            if (result.filepath) await fs.unlink(path.resolve(MEDIA_DIR, path.basename(result.filepath))).catch((error) => { if (error.code !== 'ENOENT') throw error; });
             return res.status(204).end();
         } catch (error) {
             console.error('[Media] Delete failed:', error.message);

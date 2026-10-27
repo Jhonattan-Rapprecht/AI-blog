@@ -11,6 +11,10 @@ Read this file before continuing work when the repository history or the latest 
 - The v2.4 branch is ready for Media Library improvements. No v2.4 product changes have started yet.
 - Unrelated untracked `docs/product/` and `temp.txt` were left untouched.
 
+### Latest request — prepare video support in the media backend
+
+The user wants separate Images and Videos areas in the Media Library while retaining the current card-grid style. Prepared the backend foundation by extending the existing `media` table (rather than adding a videos table): `media_type`, `source_type`, `source_url`, `thumbnail_url`, and nullable `filepath`; existing images default to image. Added typed media listing, signature-checked MP4/WebM/MOV uploads, HTTPS video link records, deletion protection for content references, and image-only validation for featured images. Updated `docs/development/media-library.md`. The Media Library Videos UI and article-body embed insertion/rendering are not implemented yet. Syntax and diff checks passed; DB/runtime integration was not run. These changes are uncommitted on `feat/media-library-v2.4`; unrelated untracked `docs/product/` and `temp.txt` remain untouched.
+
 ### Latest request — bulk dismiss and focused spelling check
 
 The user requested a **Dismiss all suggestions** control next to **Apply all suggestions**, plus a dedicated spelling check because the general review misses misspelled words; spelling findings should isolate a specific word for review and correction. Added a confirmed bulk dismissal that persists each pending finding's status, and a separate AI spell-check endpoint/button returning single-word title/body findings that use the existing individual apply flow and article review history. The user also asked to commit/push/document preceding changes first; documentation has been updated, but the Git commit attempt was blocked when Git could not create `.git/index.lock` (permission denied). No commit or push has succeeded. `git diff --check` passed; runtime tests not run.
@@ -101,7 +105,8 @@ The recent app requests in this session were:
 16. The user reported that sorting the dashboard Articles Overview by status sometimes glitches. Found that status values were sorted alphabetically in both SQL and JavaScript, which conflicts with their workflow order and made the order seem inconsistent. Updated server pagination and client-side sorting to consistently use Draft, Review, Scheduled, Published, Archived, and corrected the routes guide and dated changelog.
 17. The user asked: “make the table and grid buttons consistent with the artifcle overview buttons and icons on the blog frontend overview page”. Aligned the dashboard Table/Grid segmented controls' active colors, spacing, and typography with the public `/blog` layout buttons, while retaining the dashboard's Table/Grid labels and icons. Added matching Grid/List icons to the public buttons and updated the changelog.
 18. The user requested: “push commit docs”. Corrected the user guide to describe the dashboard's current automatic scroll loading, updated historical handoff text, and committed/pushed the accumulated Articles Overview and public blog layout work with documentation on `v2.1`.
-19. The user noticed literal `` `r`n `` text at the bottom-left of the public `/blog` page. Removed the stray text from `site/src/pages/blog/index.astro`; this was literal template text, not HTML escaping.
+19. The user noticed literal `` `r
+ `` text at the bottom-left of the public `/blog` page. Removed the stray text from `site/src/pages/blog/index.astro`; this was literal template text, not HTML escaping.
 20. The user asked how filtering and sorting work, then requested an explanation of the underlying code for both the dashboard and public blog. Explained the React state/API/controller/model/SQL flow, public URL-backed category/search filters, and pagination. No code changes for this explanation.
 21. The user asked about adding AI article review for inaccurate/inconsistent content, spelling, and other writing issues, including review of published articles. Recommended one review workflow in the Editor, which loads both drafts and published articles. Explained that Ollama alone cannot verify current facts or provide a dependable cutoff; source-backed checks would need an external search integration. User asked to first commit/push/document existing changes, then proceed. Committed and pushed the stray blog-template text cleanup and documentation first as `9f39106` on `v2.1`, then started the review feature.
 22. Added the Editor's AI article-review panel and authenticated `POST /api/ai/review-article`. It checks spelling, grammar, clarity, consistency, and claims that may need fact verification. Draft and published articles share the Editor workflow. Results are advisory, no live sources are checked, and the model supplies no dependable cutoff date. Non-factual suggestions can be applied one at a time when the quoted phrase matches; factual findings cannot be auto-applied. Review never saves automatically. Editing the title/body clears stale findings. Updated the user guide, API/routes docs, and dated changelog. These feature changes are not yet committed or pushed.
@@ -152,7 +157,8 @@ The recent app requests in this session were:
 - The admin sidebar footer labels the existing provider/model indicator **Connection status**.
 - Articles Overview supports Table/Grid views with automatic infinite scroll and paginated API results sorted by an allowlisted field; the selected view persists in local storage. Status sort uses Draft, Review, Scheduled, Published, Archived order.
 - The dashboard Table/Grid controls share the public layout buttons' selected-state styling; public Grid/List buttons have matching icons.
-- The literal `` `r`n `` formerly rendered at the bottom of `/blog` was removed and is included in the baseline commit before AI article-review work.
+- The literal `` `r
+ `` formerly rendered at the bottom of `/blog` was removed and is included in the baseline commit before AI article-review work.
 - AI article review is available in the Editor for drafts and published articles. It returns advisory proofreading, clarity, consistency, title spelling/grammar, and fact-check findings from the selected Ollama model. It does not use live sources or provide a dependable cutoff date; fact findings require manual verification. Findings can be applied, dismissed, or handled with sentence removal/neutral rewrite; review history is stored per article. Commit `19aa76d` is pushed; see `docs/development/changelog-2026-10-26-article-review-baseline.md`.
 - Legacy articles may retain `topic_id` references, but the column is now nullable. New article saves do not set it; topic is an input to AI generation and is kept in the linked generation prompt.
 - AI review suggestions can replace quoted text across rich-text inline formatting and tolerate common whitespace or quote-style differences. Editable buttons use green/orange/red for low/medium/high priority; fact-check cards are yellow and remain manual verification. Apply all skips fact checks and does not save automatically.
@@ -205,3 +211,15 @@ The user asked whether hover explanations could be added to the rich-text toolba
 ### Latest request — hide applied suggestion cards
 
 The user asked for suggestion cards to fade away once applied because no further action is available. Applied and dismissed cards now collapse from the active list; both remain available in the **Handled suggestions** disclosure with their status. Review data/action behavior is unchanged. Changelog updated; runtime visual check not run; changes remain uncommitted/unpushed.
+
+### Latest request � Media Library dashboard Images/Videos UI
+
+- User asked to implement the Media Library dashboard UI after the video backend foundation, while postponing testing.
+- Added distinct Images and Videos tabs. Preserved the current image grid and credit editor; the Videos tab provides matching preview cards, native playback for uploads, hosted video link entry, optional thumbnail, and delete controls.
+- Updated docs/development/media-library.md and the dated changelog. Video insertion/rendering inside article content remains unimplemented. No runtime tests were run at the user's request; review git diff --check only.
+
+### Media Library UI verification follow-up � 2026-10-27
+
+- Fixed invalid source encoding in `frontend/src/pages/MediaPage.jsx`; Vite had been unable to scan the page. The page now compiles.
+- Verification: frontend production build passed; `/media` returned HTTP 200, and unauthenticated `/api/media?type=image` returned 401 as expected. Build emits existing CSS highlight pseudo-element and chunk-size warnings. No authenticated uploads or DB mutation testing performed.
+- The latest Media Library UI work is ready for the requested commit/push. Next user-requested branch is for system activity/audit logging, including a Developer navigation item.

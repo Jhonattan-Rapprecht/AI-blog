@@ -8,7 +8,10 @@ class ArticleController {
             if (!data.title || !data.slug || !data.content) {
                 return res.status(400).json({ error: 'Title, slug and content are required' });
             }
-            if (data.featured_media_id && !await MediaModel.findById(data.featured_media_id)) return res.status(400).json({ error: 'Selected media item was not found.' });
+            if (data.featured_media_id) {
+                const media = await MediaModel.findById(data.featured_media_id);
+                if (!media || media.media_type !== 'image') return res.status(400).json({ error: 'Featured media must be an image.' });
+            }
             const id = await ArticleModel.create(data);
             res.status(201).json({ id, message: 'Article created successfully' });
         } catch (error) {
@@ -48,7 +51,10 @@ class ArticleController {
         try {
             const { id } = req.params;
             const data = req.body;
-            if (Object.hasOwn(data, 'featured_media_id') && data.featured_media_id && !await MediaModel.findById(data.featured_media_id)) return res.status(400).json({ error: 'Selected media item was not found.' });
+            if (Object.hasOwn(data, 'featured_media_id') && data.featured_media_id) {
+                const media = await MediaModel.findById(data.featured_media_id);
+                if (!media || media.media_type !== 'image') return res.status(400).json({ error: 'Featured media must be an image.' });
+            }
             await ArticleModel.update(id, data);
             res.json({ message: 'Article updated successfully' });
         } catch (error) {

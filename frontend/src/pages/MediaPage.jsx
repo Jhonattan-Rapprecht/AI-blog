@@ -1,66 +1,143 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { ImagePlus, Loader2, Save, Trash2, Upload } from 'lucide-react'
+﻿import { useCallback, useEffect, useRef, useState } from 'react'
+import { ImagePlus, Images, Link2, Loader2, Play, Save, Trash2, Upload, Video } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, errorMessage, mediaUrl } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime']
+
 export default function MediaPage() {
+  const [section, setSection] = useState('image')
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [savingCredit, setSavingCredit] = useState(null)
+  const [savingLink, setSavingLink] = useState(false)
+  const [linkFormOpen, setLinkFormOpen] = useState(false)
+  const [linkTitle, setLinkTitle] = useState('')
+  const [linkUrl, setLinkUrl] = useState('')
+  const [thumbnailUrl, setThumbnailUrl] = useState('')
   const input = useRef(null)
 
-  const load = useCallback(() => api.media().then(setItems).catch((e) => toast.error(errorMessage(e))).finally(() => setLoading(false)), [])
-  useEffect(() => { load() }, [load])
+  const load = useCallback((type) => api.media(type).then(setItems).catch((e) => toast.error(errorMessage(e))).finally(() => setLoading(false)), [])
+  useEffect(() => {
+    setLoading(true)
+    load(section)
+  }, [load, section])
 
   const upload = async (event) => {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) return toast.error('Choose a JPG, PNG, WebP, or GIF image.')
-    if (file.size > 12 * 1024 * 1024) return toast.error('Images must be 12 MB or smaller.')
+    if (section === 'image') {
+      if (!IMAGE_TYPES.includes(file.type)) return toast.error('Choose a JPG, PNG, WebP, or GIF image.')
+      if (file.size > 12 * 1024 * 1024) return toast.error('Images must be 12 MB or smaller.')
+    } else {
+      if (!VIDEO_TYPES.includes(file.type)) return toast.error('Choose an MP4, WebM, or MOV video.')
+      if (file.size > 200 * 1024 * 1024) return toast.error('Videos must be 200 MB or smaller.')
+    }
     setUploading(true)
-    try { const item = await api.uploadMedia(file); setItems((current) => [item, ...current]); toast.success('Image added to Media Library') }
-    catch (e) { toast.error(errorMessage(e)) }
+    try {
+      const item = await api.uploadMedia(file)
+      setItems((current) => [item, ...current])
+      toast.success(`${section === 'image' ? 'Image' : 'Video'} added to Media Library`)
+    } catch (e) { toast.error(errorMessage(e)) }
     finally { setUploading(false) }
+  }
+
+  const addVideoLink = async (event) => {
+    event.preventDefault()
+    if (!linkUrl.trim()) return toast.error('Enter a video URL.')
+    setSavingLink(true)
+    try {
+      const item = await api.addVideoLink({ title: linkTitle, url: linkUrl, thumbnailUrl })
+      setItems((current) => [item, ...current])
+      setLinkTitle('')
+      setLinkUrl('')
+      setThumbnailUrl('')
+      setLinkFormOpen(false)
+      toast.success('Video link added to Media Library')
+    } catch (e) { toast.error(errorMessage(e)) }
+    finally { setSavingLink(false) }
   }
 
   const remove = async (item) => {
     if (!window.confirm(`Delete ${item.filename}?`)) return
-    try { await api.deleteMedia(item.id); setItems((current) => current.filter((media) => media.id !== item.id)); toast.success('Image deleted') }
-    catch (e) { toast.error(errorMessage(e)) }
+    try {
+      await api.deleteMedia(item.id)
+      setItems((current) => current.filter((media) => media.id !== item.id))
+      toast.success(`${section === 'image' ? 'Image' : 'Video'} deleted`)
+    } catch (e) { toast.error(errorMessage(e)) }
   }
 
   const setCredit = (id, credit) => setItems((current) => current.map((item) => item.id === id ? { ...item, credit } : item))
   const saveCredit = async (item) => {
     setSavingCredit(item.id)
-    try { const updated = await api.updateMedia(item.id, { credit: item.credit || '' }); setItems((current) => current.map((media) => media.id === item.id ? updated : media)); toast.success('Photo credit/source saved') }
-    catch (e) { toast.error(errorMessage(e)) }
+    try {
+      const updated = await api.updateMedia(item.id, { credit: item.credit || '' })
+      setItems((current) => current.map((media) => media.id === item.id ? updated : media))
+      toast.success('Photo credit/source saved')
+    } catch (e) { toast.error(errorMessage(e)) }
     finally { setSavingCredit(null) }
+  }
+
+  const selectSection = (next) => {
+    setSection(next)
+    setLinkFormOpen(false)
   }
 
   return (
     <div className="mx-auto grid max-w-7xl gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><h2 className="text-lg font-semibold">Media Library</h2><p className="mt-1 text-sm text-muted-foreground">Upload images to reuse as article featured images. Files are stored locally with Blogstudio.</p></div>
-        <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={upload} />
-        <Button onClick={() => input.current?.click()} disabled={uploading}>{uploading ? <Loader2 className="animate-spin" /> : <Upload />} Upload image</Button>
+        <div><h2 className="text-lg font-semibold">Media Library</h2><p className="mt-1 text-sm text-muted-foreground">Manage reusable images and videos for your articles. Files are stored locally with Blogstudio.</p></div>
+        <input ref={input} type="file" accept={section === 'image' ? 'image/jpeg,image/png,image/webp,image/gif' : 'video/mp4,video/webm,video/quicktime'} className="hidden" onChange={upload} />
+        <div className="flex flex-wrap gap-2">
+          {section === 'video' && <Button type="button" variant="outline" onClick={() => setLinkFormOpen((current) => !current)}><Link2 /> Add video link</Button>}
+          <Button onClick={() => input.current?.click()} disabled={uploading}>{uploading ? <Loader2 className="animate-spin" /> : <Upload />} Upload {section}</Button>
+        </div>
       </div>
+
+      <div className="flex w-fit gap-1 rounded-lg border bg-muted/30 p-1" role="tablist" aria-label="Media type">
+        <button type="button" role="tab" aria-selected={section === 'image'} onClick={() => selectSection('image')} className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${section === 'image' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}><Images className="size-4" /> Images</button>
+        <button type="button" role="tab" aria-selected={section === 'video'} onClick={() => selectSection('video')} className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${section === 'video' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}><Video className="size-4" /> Videos</button>
+      </div>
+
+      {section === 'video' && linkFormOpen && <Card><CardContent className="grid gap-3 p-4 sm:grid-cols-2">
+        <div className="sm:col-span-2"><h3 className="text-sm font-medium">Add a hosted video link</h3><p className="mt-1 text-xs text-muted-foreground">Use an HTTPS video page URL. A thumbnail is optional.</p></div>
+        <Input value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} placeholder="https://example.com/video" aria-label="Video URL" className="sm:col-span-2" />
+        <Input value={linkTitle} onChange={(event) => setLinkTitle(event.target.value)} placeholder="Video title (optional)" aria-label="Video title" />
+        <Input value={thumbnailUrl} onChange={(event) => setThumbnailUrl(event.target.value)} placeholder="Thumbnail URL (optional)" aria-label="Thumbnail URL" />
+        <div className="flex gap-2 sm:col-span-2"><Button type="button" onClick={addVideoLink} disabled={savingLink}>{savingLink ? <Loader2 className="animate-spin" /> : <Link2 />} Save video link</Button><Button type="button" variant="outline" onClick={() => setLinkFormOpen(false)}>Cancel</Button></div>
+      </CardContent></Card>}
+
       {loading ? <div className="flex justify-center py-16"><Loader2 className="animate-spin text-muted-foreground" /></div> : items.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => <Card key={item.id} className="overflow-hidden gap-0 py-0">
-            <img src={mediaUrl(item.filepath)} alt={item.filename} className="aspect-[16/10] w-full bg-muted object-cover" loading="lazy" />
+            {section === 'image'
+              ? <img src={mediaUrl(item.filepath)} alt={item.filename} className="aspect-[16/10] w-full bg-muted object-cover" loading="lazy" />
+              : item.source_type === 'link'
+                ? item.thumbnail_url
+                  ? <div className="relative"><img src={item.thumbnail_url} alt={item.filename} className="aspect-[16/10] w-full bg-muted object-cover" loading="lazy" /><span className="absolute inset-0 grid place-items-center bg-black/15"><Play className="size-10 fill-white text-white drop-shadow" /></span></div>
+                  : <div className="grid aspect-[16/10] place-items-center gap-2 bg-muted text-muted-foreground"><Play className="size-10" /><span className="text-xs">{item.provider || 'Hosted video'}</span></div>
+                : <video src={mediaUrl(item.filepath)} controls preload="metadata" playsInline className="aspect-[16/10] w-full bg-black object-contain" />}
             <CardContent className="grid gap-2 p-3">
-              <div className="flex min-w-0 items-center justify-between gap-2"><div className="min-w-0"><p className="truncate text-sm font-medium" title={item.filename}>{item.filename}</p><p className="text-xs text-muted-foreground">Uploaded · {(item.file_size / 1024 / 1024).toFixed(1)} MB</p></div><Button variant="ghost" size="icon-sm" onClick={() => remove(item)} title="Delete image"><Trash2 className="text-muted-foreground" /></Button></div>
-              <label className="grid gap-1 text-xs text-muted-foreground">Photo credit/source<Input value={item.credit || ''} onChange={(event) => setCredit(item.id, event.target.value)} placeholder="e.g. Michael Henniway" maxLength={500} /></label>
-              <Button variant="outline" size="sm" onClick={() => saveCredit(item)} disabled={savingCredit === item.id}>{savingCredit === item.id ? <Loader2 className="animate-spin" /> : <Save />} Save credit</Button>
+              <div className="flex min-w-0 items-center justify-between gap-2"><div className="min-w-0"><p className="truncate text-sm font-medium" title={item.filename}>{item.filename}</p><p className="text-xs text-muted-foreground">{item.source_type === 'link' ? 'Video link' : `Uploaded � ${(item.file_size / 1024 / 1024).toFixed(1)} MB`}</p></div><Button variant="ghost" size="icon-sm" onClick={() => remove(item)} title={`Delete ${section}`}><Trash2 className="text-muted-foreground" /></Button></div>
+              {section === 'image' && <>
+                <label className="grid gap-1 text-xs text-muted-foreground">Photo credit/source<Input value={item.credit || ''} onChange={(event) => setCredit(item.id, event.target.value)} placeholder="e.g. Michael Henniway" maxLength={500} /></label>
+                <Button variant="outline" size="sm" onClick={() => saveCredit(item)} disabled={savingCredit === item.id}>{savingCredit === item.id ? <Loader2 className="animate-spin" /> : <Save />} Save credit</Button>
+              </>}
+              {section === 'video' && item.source_type === 'link' && <a href={item.source_url} target="_blank" rel="noreferrer" className="truncate text-xs text-primary underline" title={item.source_url}>Open video link</a>}
             </CardContent>
           </Card>)}
         </div>
-      ) : <div className="grid justify-items-center gap-3 rounded-xl border border-dashed px-6 py-16 text-center"><ImagePlus className="size-8 text-muted-foreground" /><p className="font-medium">Your media library is empty</p><p className="text-sm text-muted-foreground">Upload an image here or add one while editing an article.</p><Button variant="outline" onClick={() => input.current?.click()}><Upload /> Upload image</Button></div>}
+      ) : section === 'image' ? (
+        <div className="grid justify-items-center gap-3 rounded-xl border border-dashed px-6 py-16 text-center"><ImagePlus className="size-8 text-muted-foreground" /><p className="font-medium">Your image library is empty</p><p className="text-sm text-muted-foreground">Upload an image here or add one while editing an article.</p><Button variant="outline" onClick={() => input.current?.click()}><Upload /> Upload image</Button></div>
+      ) : (
+        <div className="grid justify-items-center gap-3 rounded-xl border border-dashed px-6 py-16 text-center"><Video className="size-8 text-muted-foreground" /><p className="font-medium">Your video library is empty</p><p className="text-sm text-muted-foreground">Upload a video file or add a link to a hosted video.</p><div className="flex gap-2"><Button variant="outline" onClick={() => input.current?.click()}><Upload /> Upload video</Button><Button variant="outline" onClick={() => setLinkFormOpen(true)}><Link2 /> Add video link</Button></div></div>
+      )}
     </div>
   )
 }

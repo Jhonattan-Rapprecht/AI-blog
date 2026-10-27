@@ -2,7 +2,8 @@
 
 ## Public blog cleanup
 
-- Removed an accidental literal `` `r`n `` string rendered after the `/blog` page script. It was stray template text, not HTML escaping.
+- Removed an accidental literal `` `r
+ `` string rendered after the `/blog` page script. It was stray template text, not HTML escaping.
 - Updated `AGENTS.md` with the recent prompt history and handoff state before beginning the planned AI article-review feature.
 
 ## Verification and release
@@ -175,6 +176,14 @@
 - Applied suggestion cards now fade and collapse out of the active findings list, matching dismissed cards. Applied and dismissed items remain available in a collapsed **Handled suggestions** disclosure with their status and text.
 - Verification: `git diff --check` passed. Runtime visual check not run.
 
+## Media Library video backend foundation â€” 2026-10-27
+
+- Extended the existing `media` table instead of introducing a separate videos table. Added media/source types, external source and thumbnail URL fields, and made the local filepath nullable for links. Existing image rows default to `image` and the API defaults to returning images to preserve the current UI.
+- Added backend handling for MP4, WebM, and MOV uploads (200 MB maximum with signature validation) and HTTPS video links with optional title/thumbnail metadata. Deletion checks article content references as well as featured image associations.
+- Featured-image validation now rejects video media. Added typed media listing and a client API helper for adding video links.
+- Updated `docs/development/media-library.md`. The Media Library Videos UI and video insertion/rendering in article bodies remain future work.
+- Verification: backend JavaScript syntax checks and `git diff --check` passed. No runtime upload/DB integration checks were run.
+
 ## Selected-text check heading spacing
 
 - Matched the selected-text spelling section's heading-to-helper spacing to the Full-article checks section.
@@ -184,3 +193,15 @@
 
 - Completed and pushed the v2.3 reviewer UI refinements as `6095408` (`feat(article-review): polish review and editor interactions`) on `feat/article-reviewer-v2.3`.
 - Created the next milestone branch from that commit. It was initially named `feat/article-reviewer-v2.4`, then renamed to `feat/media-library-v2.4` when the user shifted the next work to Media Library improvements. No v2.4 feature changes have started yet.
+
+## Media Library dashboard: Images and Videos — 2026-10-27
+
+- Added separate Images and Videos tabs to the Media Library dashboard. Existing image cards and photo-credit controls remain in the Images view.
+- Added video upload and hosted-link controls, with preview cards matching the image grid. Uploaded video cards include native playback controls; hosted links use a thumbnail when supplied or a provider placeholder.
+- Updated the Media Library guide. Adding videos inside article content remains future work.
+- Per the user's request, the initial UI pass was not tested; the follow-up verification is recorded below.
+
+## Media Library Images/Videos dashboard verification — 2026-10-27
+
+- Fixed the Media Library page source encoding so Vite can read and compile the new video UI.
+- Verification: frontend production build passed. The admin `/media` page returned HTTP 200; the media API returned HTTP 401 without a token, as expected for its admin-only route. Build reports existing CSS highlight pseudo-element and large-chunk warnings. App runtime upload/DB testing was not performed.

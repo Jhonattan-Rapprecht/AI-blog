@@ -7,13 +7,17 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Uploaded and generated image assets used by article featured images.
+-- Reusable image and video assets or hosted video links used in article content.
 CREATE TABLE IF NOT EXISTS media (
     id CHAR(36) PRIMARY KEY,
     filename VARCHAR(255) NOT NULL,
-    filepath VARCHAR(500) NOT NULL,
+    filepath VARCHAR(500) NULL,
     mime_type VARCHAR(100) NOT NULL,
     file_size BIGINT UNSIGNED NOT NULL,
+    media_type ENUM('image', 'video') NOT NULL DEFAULT 'image',
+    source_type ENUM('upload', 'link') NOT NULL DEFAULT 'upload',
+    source_url VARCHAR(2048) NULL,
+    thumbnail_url VARCHAR(2048) NULL,
     width INT UNSIGNED NULL,
     height INT UNSIGNED NULL,
     provider VARCHAR(50) NOT NULL DEFAULT 'upload',
