@@ -192,6 +192,17 @@ function replaceReviewText(html, quote, replacement, removeSentence = false) {
   return doc.body.innerHTML
 }
 
+function replaceExcerptText(excerpt, quote, replacement) {
+  const doc = new DOMParser().parseFromString('', 'text/html')
+  const text = doc.createTextNode(String(excerpt || ''))
+  const paragraph = doc.createElement('p')
+  paragraph.append(text)
+  doc.body.append(paragraph)
+  const match = findReviewQuoteRange(doc, quote, true)
+  if (!match || match.start.node !== text || match.end.node !== text) return null
+  return `${text.nodeValue.slice(0, match.start.offset)}${replacement}${text.nodeValue.slice(match.end.offset)}`
+}
+
 export default function EditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -206,8 +217,9 @@ export default function EditorPage() {
   const [generating, setGenerating] = useState(false)
   const [suggestingTopics, setSuggestingTopics] = useState(false)
   const [suggestingSlugs, setSuggestingSlugs] = useState(false)
-  const [reviewing, setReviewing] = useState(false)
+  const [activeReviewCheck, setActiveReviewCheck] = useState('')
   const [spellchecking, setSpellchecking] = useState(false)
+  const [selectionSpellchecking, setSelectionSpellchecking] = useState(false)
   const [review, setReview] = useState(null)
   const [showNoSuggestionsNotice, setShowNoSuggestionsNotice] = useState(false)
   const [appliedFindings, setAppliedFindings] = useState([])
@@ -221,6 +233,7 @@ export default function EditorPage() {
   const [showOlderReviewHistory, setShowOlderReviewHistory] = useState(false)
   const [reviewHistoryExpanded, setReviewHistoryExpanded] = useState(false)
   const [media, setMedia] = useState([])
+  const checksBusy = Boolean(activeReviewCheck || spellchecking || selectionSpellchecking)
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
   const mediaInput = useRef(null)
@@ -415,7 +428,7 @@ export default function EditorPage() {
 
   const reviewCurrentArticle = async () => {
     if (!article.title.trim() || !article.content.trim()) return toast.error('Add an article title and content before reviewing.')
-    setReviewing(true)
+    setActiveReviewCheck('full_review')
     try {
       const result = await api.reviewArticle({ articleId, category: selectedCategory?.name || '', title: article.title, excerpt: article.excerpt, content: article.content })
       if (articleId && result.id) {
@@ -430,7 +443,7 @@ export default function EditorPage() {
       setDismissedFindings([])
       setFindingStatusSaveErrors({})
     } catch (e) { toast.error(errorMessage(e)) }
-    finally { setReviewing(false) }
+    finally { setActiveReviewCheck('') }
   }
 
   const spellcheckArticle = async () => {
@@ -454,6 +467,29 @@ export default function EditorPage() {
     finally { setSpellchecking(false) }
   }
 
+  const runFocusedCheck = async (kind) => {
+    if (!article.title.trim() || !article.content.trim()) return toast.error('Add an article title and content before checking.')
+    setActiveReviewCheck(`full_${kind}`)
+    const label = kind === 'fact' ? 'fact-check' : 'grammar check'
+    try {
+      const request = kind === 'fact' ? api.factCheckArticle : api.grammarCheckArticle
+      const result = await request({ articleId, category: selectedCategory?.name || '', title: article.title, excerpt: article.excerpt, content: article.content })
+      if (articleId && result.id) {
+        const history = await api.articleReviewHistory(articleId)
+        setReviewHistory(history.slice(1))
+        setReview(history[0] || result)
+      } else {
+        if (review) setReviewHistory((current) => [review, ...current])
+        setReview(result)
+      }
+      setAppliedFindings([])
+      setDismissedFindings([])
+      setFindingStatusSaveErrors({})
+      toast.success(result.findings.length ? `Found ${result.findings.length} ${label} finding${result.findings.length === 1 ? '' : 's'}.` : `No ${label} findings.`)
+    } catch (e) { toast.error(errorMessage(e)) }
+    finally { setActiveReviewCheck('') }
+  }
+
   const captureSelectedText = () => {
     const editor = editorRef.current?.getEditor()
     const selection = editor?.getSelection()
@@ -469,14 +505,29 @@ export default function EditorPage() {
     const selectedText = selectedTextRef.current.trim()
     if (!selectedText) return toast.info('Select a word or passage in the article first.')
     if (selectedText.length > 12000) return toast.error('Select a passage shorter than 12,000 characters.')
-    setSpellchecking(true)
     try {
       const quill = editorRef.current?.getEditor()
       const range = selectedRangeRef.current
       const fullText = quill?.getText() || ''
       const context = range ? fullText.slice(Math.max(0, range.index - 500), Math.min(fullText.length, range.index + range.length + 500)) : selectedText
-      const result = await api.spellcheckArticle({ articleId, title: '', content: '', selectedText, context, language: ai.language })
-      result.findings = (result.findings || []).map((finding) => ({ ...finding, selectionRange: selectedRangeRef.current }))
+      await runSelectionCheck('spelling', { selectedText, context, range: selectedRangeRef.current })
+    } catch (e) { toast.error(errorMessage(e)) }
+  }
+
+  const runSelectionCheck = async (kind, captured = null) => {
+    const selectedText = (captured?.selectedText ?? selectedTextRef.current).trim()
+    const range = captured?.range ?? selectedRangeRef.current
+    if (!selectedText) return toast.info('Select a word or passage in the article first.')
+    if (selectedText.length > 12000) return toast.error('Select a passage shorter than 12,000 characters.')
+    if (kind === 'spelling') setSelectionSpellchecking(true)
+    else setActiveReviewCheck(`selection_${kind}`)
+    try {
+      const quill = editorRef.current?.getEditor()
+      const fullText = quill?.getText() || ''
+      const context = captured?.context ?? (range ? fullText.slice(Math.max(0, range.index - 500), Math.min(fullText.length, range.index + range.length + 500)) : selectedText)
+      const request = kind === 'spelling' ? api.spellcheckArticle : kind === 'grammar' ? api.grammarCheckSelection : api.factCheckSelection
+      const result = await request({ articleId, title: '', content: '', selectedText, context, language: ai.language })
+      result.findings = (result.findings || []).map((finding) => ({ ...finding, selectionRange: range }))
       if (articleId && result.id) {
         const history = await api.articleReviewHistory(articleId)
         setReviewHistory(history.slice(1))
@@ -489,9 +540,35 @@ export default function EditorPage() {
       setAppliedFindings([])
       setDismissedFindings([])
       setFindingStatusSaveErrors({})
-      toast.success(result.findings.length ? `Found ${result.findings.length} possible spelling issue${result.findings.length === 1 ? '' : 's'} in the selection.` : 'No spelling issues found in the selection.')
+      const checkLabel = kind === 'spelling' ? 'spelling' : kind === 'grammar' ? 'grammar' : 'fact-check'
+      toast.success(result.findings.length ? `Found ${result.findings.length} ${checkLabel} finding${result.findings.length === 1 ? '' : 's'} in the selection.` : `No ${checkLabel} findings in the selection.`)
     } catch (e) { toast.error(errorMessage(e)) }
-    finally { setSpellchecking(false) }
+    finally {
+      if (kind === 'spelling') setSelectionSpellchecking(false)
+      else setActiveReviewCheck('')
+    }
+  }
+
+  const runExcerptCheck = async () => {
+    const excerpt = String(article.excerpt || '').trim()
+    if (!excerpt) return toast.info('Add an excerpt in SEO & metadata before checking it.')
+    setActiveReviewCheck('excerpt_review')
+    try {
+      const result = await api.checkExcerpt({ articleId, title: article.title, excerpt, category: selectedCategory?.name || '', context: (editorRef.current?.getEditor()?.getText() || '').slice(0, 3000) })
+      if (articleId && result.id) {
+        const history = await api.articleReviewHistory(articleId)
+        setReviewHistory(history.slice(1))
+        setReview(history[0] || result)
+      } else {
+        if (review) setReviewHistory((current) => [review, ...current])
+        setReview(result)
+      }
+      setAppliedFindings([])
+      setDismissedFindings([])
+      setFindingStatusSaveErrors({})
+      toast.success(result.findings.length ? `Found ${result.findings.length} excerpt finding${result.findings.length === 1 ? '' : 's'}.` : 'No spelling, grammar, or fact-check findings in the excerpt.')
+    } catch (e) { toast.error(errorMessage(e)) }
+    finally { setActiveReviewCheck('') }
   }
 
   const dismissAllFindings = async () => {
@@ -575,6 +652,17 @@ export default function EditorPage() {
 
   const applyFinding = (finding, index) => {
     if (finding.type === 'fact_check') return
+    if (finding.field === 'excerpt') {
+      const currentExcerpt = String(article.excerpt || '')
+      const updatedExcerpt = replaceExcerptText(currentExcerpt, finding.quote, finding.suggestion.trim())
+      if (updatedExcerpt === null) return toast.error('Could not uniquely match the quoted phrase in the excerpt. Rerun the check and try again.')
+      const preview = `Apply this excerpt correction?\n\nBEFORE:\n${currentExcerpt}\n\nAFTER:\n${updatedExcerpt}`
+      requestConfirmation('Apply excerpt correction?', preview, () => {
+        setArticle((current) => ({ ...current, excerpt: updatedExcerpt }))
+        markFindingStatus(finding, index, 'applied', 'replace_excerpt')
+      }, 'Apply change')
+      return
+    }
     if (finding.field === 'title') {
       const currentValue = String(article[finding.field] || '')
       const suggestion = finding.suggestion.trim()
@@ -638,9 +726,22 @@ export default function EditorPage() {
       ? `Remove this complete sentence from the editor?\n\nBEFORE:\n${sentence}\n\nAFTER:\n[Sentence removed]`
       : `Replace this sentence with the neutral rewrite?\n\nBEFORE:\n${sentence}\n\nAFTER:\n${replacement}`
     requestConfirmation(action === 'remove' ? 'Remove this sentence?' : 'Use the neutral rewrite?', preview, () => {
-      const content = replaceReviewText(article.content, sentence, replacement, action === 'remove')
-      if (content === null) return toast.error('Could not match the reviewed sentence. Rerun the review and try again.')
-      setArticle((current) => ({ ...current, content }))
+      if (finding.field === 'excerpt') {
+        const excerpt = replaceExcerptText(article.excerpt || '', sentence, replacement)
+        if (excerpt === null) return toast.error('Could not match the reviewed sentence in the excerpt. Rerun the check and try again.')
+        setArticle((current) => ({ ...current, excerpt }))
+      } else if (finding.selectionRange) {
+        const quill = editorRef.current?.getEditor()
+        const currentSelection = quill?.getText(finding.selectionRange.index, finding.selectionRange.length) || ''
+        const localIndex = currentSelection.indexOf(sentence)
+        if (!quill || localIndex < 0 || currentSelection.indexOf(sentence, localIndex + sentence.length) >= 0) return toast.error('Could not uniquely match the reviewed sentence within the selected passage. Rerun the check.')
+        quill.deleteText(finding.selectionRange.index + localIndex, sentence.length, 'api')
+        if (replacement) quill.insertText(finding.selectionRange.index + localIndex, replacement, 'api')
+      } else {
+        const content = replaceReviewText(article.content, sentence, replacement, action === 'remove')
+        if (content === null) return toast.error('Could not match the reviewed sentence. Rerun the review and try again.')
+        setArticle((current) => ({ ...current, content }))
+      }
       markFindingStatus(finding, index, 'applied', action === 'remove' ? 'remove_sentence' : 'neutral_rewrite')
       toast.success(action === 'remove' ? 'Sentence removed from the editor.' : 'Neutral rewrite applied to the editor.')
     }, action === 'remove' ? 'Remove sentence' : 'Apply rewrite')
@@ -657,7 +758,7 @@ export default function EditorPage() {
     const skipped = []
     const previewRows = []
     for (const { finding, index } of pending) {
-      const field = finding.field === 'title' ? finding.field : 'content'
+      const field = ['title', 'excerpt'].includes(finding.field) ? finding.field : 'content'
       const suggestion = String(finding.suggestion || '').trim()
       if (!suggestion) { skipped.push(index); continue }
       if (field === 'title') {
@@ -666,6 +767,11 @@ export default function EditorPage() {
         if (!updatedTitle || normalizeReviewTitle(nextArticle[field] || '') === normalizeReviewTitle(updatedTitle)) { skipped.push(index); continue }
         previewRows.push(`Title:\n  ${nextArticle[field]}\n→ ${updatedTitle}`)
         nextArticle[field] = updatedTitle
+      } else if (field === 'excerpt') {
+        const updatedExcerpt = replaceExcerptText(nextArticle.excerpt || '', finding.quote, suggestion)
+        if (updatedExcerpt === null) { skipped.push(index); continue }
+        previewRows.push(`Excerpt:\n  ${finding.quote}\n→ ${suggestion}`)
+        nextArticle.excerpt = updatedExcerpt
       } else {
         const doc = new DOMParser().parseFromString(nextArticle.content || '', 'text/html')
         const match = findReviewQuoteRange(doc, finding.quote, true)
@@ -755,27 +861,47 @@ export default function EditorPage() {
         <div className="editor-quill" onMouseUp={captureSelectedText} onKeyUp={captureSelectedText}>
           <ReactQuill ref={editorRef} theme="snow" value={article.content} onChange={onArticleContentChange} />
         </div>
-        <div className="grid gap-2 rounded-lg border bg-muted/20 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
-          <div className="min-w-0">
-            <p className="text-sm font-medium">Spell-check selected text</p>
-            <p className="mt-2 text-xs text-muted-foreground">Select a word or passage in the editor, then check only that selection.</p>
-            {selectedTextForSpellcheck
-              ? <p className="mt-1 truncate text-xs text-foreground" title={selectedTextForSpellcheck}>Selected: “{selectedTextForSpellcheck}”</p>
-              : <p className="mt-1 text-xs text-muted-foreground">No text selected yet.</p>}
+        <div className="grid gap-2 rounded-lg border bg-muted/20 p-3">
+          <p className="text-sm font-medium">Partial-article checks</p>
+          {[
+            { kind: 'spelling', label: 'Spell check', description: 'Select a word or passage in the editor, then check only that selection.', button: 'Check selection' },
+            { kind: 'grammar', label: 'Grammar check', description: 'Check spelling, grammar, punctuation, and usage in the selection.', button: 'Check selection' },
+            { kind: 'fact_check', label: 'Fact-check', description: 'Review claims in the selection; suggested facts still need source verification.', button: 'Check selection' },
+          ].map((option) => <div key={option.kind} className="grid gap-2 border-t pt-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <div className="min-w-0">
+              <p className="mt-1 text-xs text-muted-foreground"><span className="font-medium text-foreground">{option.label}:</span> {option.description}</p>
+              {option.kind === 'spelling' && (selectedTextForSpellcheck
+                ? <p className="mt-1 truncate text-xs text-foreground" title={selectedTextForSpellcheck}>Selected: “{selectedTextForSpellcheck}”</p>
+                : <p className="mt-1 text-xs text-muted-foreground">No text selected yet.</p>)}
+            </div>
+            {option.kind === 'spelling' ? <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onMouseDown={(event) => { event.preventDefault(); captureSelectedText() }} onClick={spellcheckSelectedText} disabled={checksBusy || saving || !selectedTextForSpellcheck}>
+              {selectionSpellchecking ? <Loader2 className="animate-spin" /> : <Check />} {selectionSpellchecking ? 'Checking…' : option.button}
+            </Button> : <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onClick={() => runSelectionCheck(option.kind)} disabled={checksBusy || saving || !selectedTextForSpellcheck}>
+              {activeReviewCheck === `selection_${option.kind}` ? <Loader2 className="animate-spin" /> : option.kind === 'grammar' ? <Check /> : <AlertTriangle />} {activeReviewCheck === `selection_${option.kind}` ? 'Checking…' : option.button}
+            </Button>}
+          </div>)}
+          <div className="grid gap-2 border-t pt-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Check excerpt:</span> review spelling, grammar, and factual claims in the Excerpt field under SEO &amp; metadata.</p>
+            <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onClick={runExcerptCheck} disabled={checksBusy || saving || !String(article.excerpt || '').trim()}>
+              {activeReviewCheck === 'excerpt_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'excerpt_review' ? 'Checking excerpt…' : 'Check excerpt'}
+            </Button>
           </div>
-          <Button type="button" variant="outline" onMouseDown={(event) => { event.preventDefault(); captureSelectedText() }} onClick={spellcheckSelectedText} disabled={spellchecking || saving || !selectedTextForSpellcheck}>
-            {spellchecking ? <Loader2 className="animate-spin" /> : <Check />} {spellchecking ? 'Checking selection…' : 'Check selection'}
-          </Button>
         </div>
         <Card className="gap-4 py-4">
           <CardHeader className="grid gap-2 px-4">
             <div><CardTitle className="text-sm">Full-article checks</CardTitle><p className="mt-2 text-xs text-muted-foreground">Choose a check:</p></div>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Button type="button" variant="outline" className="w-full" onClick={spellcheckArticle} disabled={reviewing || spellchecking || saving || !article.title || !article.content}>
+              <Button type="button" variant="outline" className="w-full" onClick={() => runFocusedCheck('grammar')} disabled={checksBusy || saving || !article.title || !article.content}>
+                {activeReviewCheck === 'full_grammar' ? <Loader2 className="animate-spin" /> : <Check />} {activeReviewCheck === 'full_grammar' ? 'Checking…' : 'Grammar check'}
+              </Button>
+              <Button type="button" variant="outline" className="w-full" onClick={() => runFocusedCheck('fact')} disabled={checksBusy || saving || !article.title || !article.content}>
+                {activeReviewCheck === 'full_fact' ? <Loader2 className="animate-spin" /> : <AlertTriangle />} {activeReviewCheck === 'full_fact' ? 'Checking…' : 'Fact-check'}
+              </Button>
+              <Button type="button" variant="outline" className="w-full" onClick={spellcheckArticle} disabled={checksBusy || saving || !article.title || !article.content}>
                 {spellchecking ? <Loader2 className="animate-spin" /> : <Check />} {spellchecking ? 'Checking spelling…' : 'Spell check'}
               </Button>
-              <Button type="button" variant="outline" className={`w-full ${reviewing ? 'animate-pulse border-sky-600 bg-sky-600 text-white hover:bg-sky-600 disabled:opacity-100' : ''}`} onClick={reviewCurrentArticle} disabled={reviewing || spellchecking || saving || !article.title || !article.content}>
-                {reviewing ? <Loader2 className="animate-spin" /> : <Sparkles />} {reviewing ? 'Reviewing…' : 'Full article review'}
+              <Button type="button" variant="outline" className={`w-full ${activeReviewCheck === 'full_review' ? 'animate-pulse border-sky-600 bg-sky-600 text-white hover:bg-sky-600 disabled:opacity-100' : ''}`} onClick={reviewCurrentArticle} disabled={checksBusy || saving || !article.title || !article.content}>
+                {activeReviewCheck === 'full_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'full_review' ? 'Reviewing…' : 'Full article review'}
               </Button>
             </div>
           </CardHeader>
@@ -802,7 +928,7 @@ export default function EditorPage() {
                 <div className="flex flex-wrap items-center gap-2 text-xs font-medium"><span className="rounded-full bg-muted px-2 py-1">{finding.field} · {finding.type.replace('_', ' ')}</span><span className="text-muted-foreground">{finding.severity} priority</span></div>
                 <p className="text-sm"><span className="font-medium">“{finding.quote}”</span> — {finding.explanation}</p>
                 <p className="text-sm text-muted-foreground"><span className="font-medium">Suggestion:</span> {finding.suggestion}</p>
-                {finding.type === 'spelling' && <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => locateSpellingFinding(finding)}>Locate in article</Button>}
+                {finding.type === 'spelling' && finding.field !== 'excerpt' && <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => locateSpellingFinding(finding)}>Locate in article</Button>}
                 {factCheck && finding.sentenceQuote && <p className="rounded bg-yellow-100/80 p-2 text-sm dark:bg-yellow-950/40"><span className="font-medium">Sentence in article:</span> “{finding.sentenceQuote}”</p>}
                 {factCheck && finding.neutralRewrite && <p className="text-sm text-muted-foreground"><span className="font-medium">Neutral rewrite:</span> {finding.neutralRewrite}</p>}
                 {finding.type === 'fact_check'

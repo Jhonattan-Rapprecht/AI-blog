@@ -1,4 +1,4 @@
-# Pages & Routes Reference
+﻿# Pages & Routes Reference
 
 The project runs three apps. `npm run dev` in the project root starts all of them concurrently.
 
@@ -91,7 +91,12 @@ All admin endpoints (including article publish/schedule and `/api/automation`) r
 | POST | `/api/ai/generate-article` | Generate an article with AI |
 | POST | `/api/ai/suggest-topic` | Returns three distinct topic suggestions guided by optional `{ category, topic }` values from the Editor |
 | POST | `/api/ai/suggest-slug` | Slug suggestions |
-| POST | `/api/ai/review-article` | Review title, excerpt, content, and optional `articleId` and `category`; saves findings and statuses when an existing `articleId` is supplied, returns advisory findings, and does not check live sources |
+| POST | `/api/ai/review-article` | Runs broad editorial/title review plus dedicated spelling, grammar, and advisory fact-check passes; merges findings into one history run and does not check live sources |
+| POST | /api/ai/grammar-check-article | Focused title and body spelling/grammar check; saves findings to an existing article's review history; no factual/style review |
+| POST | /api/ai/fact-check-article | Focused advisory claim review; saves findings to an existing article's review history; never checks live sources or verifies claims |
+| POST | /api/ai/grammar-check-selection | Focused spelling/grammar check of selectedText; context is for meaning only; findings are limited to the selected passage |
+| POST | /api/ai/fact-check-selection | Focused advisory fact-check of selectedText; context is for meaning only; no live sources are checked |
+| POST | /api/ai/check-excerpt | Focused excerpt spelling, grammar, and advisory fact-check; findings target only the excerpt and are saved to the existing article review history |
 | POST | `/api/ai/review-history/:articleId` | Attach an in-session review (including dismissed/applied statuses) to an article when a new draft is first saved |
 | GET | `/api/ai/review-history/:articleId` | Load the 20 most recent saved review runs and their finding statuses for an article |
 | PATCH | `/api/ai/review-findings/:findingId` | Mark an article review finding `dismissed` or `applied`, with the action recorded |

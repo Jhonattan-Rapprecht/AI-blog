@@ -257,3 +257,83 @@ ode --check and git diff --check passed.
 - Redesigned the public Blog listing and article reading pages in the existing Astro site, plus shared shell, reusable article cards, and category archives. Added responsive navy/blue/violet styling, dynamic category navigation, mobile menu, and search access.
 - Preserved existing API data and behavior for search, filters, Grid/List, Pages/Infinite scroll, theme preference, article routes, read tracking, photo credits, and related articles. Added generated table of contents, reading progress, and social share/copy actions.
 - Site production build and local HTTP route/query checks passed. Exact viewport screenshot review remains pending because browser automation could not connect. No backend/API/database changes. Work remains uncommitted/unpushed on feat/public-blog-redesign.
+
+## Separate article grammar and fact-check actions — 2026-10-27
+
+- Added standalone **Grammar check** and **Fact-check** actions to the Editor's full-article checks, alongside existing spelling and complete review actions.
+- Added focused API endpoints. Grammar checks are limited to spelling, grammar, punctuation, capitalization, and usage. Fact-check review is limited to claims requiring verification and remains advisory because no live sources are queried.
+- Both actions save findings in the existing per-article review history and reuse existing finding cards, dismissal/status persistence, and safe edit flows. Fact-check findings keep sentence quotes and optional neutral rewrites for preview-confirmed actions.
+- Verification: pending.
+
+## Rename selected-text checks section — 2026-10-27
+
+- Renamed the selected-text panel heading to **Partial-article checks** to distinguish it visually from **Full-article checks**. Selection instructions, preview, control, and behavior are unchanged.
+- Verification: git diff --check passed; runtime visual check not run.
+
+## Label selected-text check action — 2026-10-27
+
+- Added a visible **Spell check** label directly above the **Check selection** button in the **Partial-article checks** panel so its purpose is explicit.
+- Verification: git diff --check passed; runtime visual check not run.
+
+## Place partial-check label with its description — 2026-10-27
+
+- Moved **Spell check** from above the action button into the helper text, where it now prefixes the selection instructions. The **Check selection** button remains unchanged.
+- Verification: git diff --check passed; runtime visual check not run.
+
+## Increase partial-check heading spacing — 2026-10-27
+
+- Increased the vertical margin above the **Spell check** helper line in **Partial-article checks** for clearer separation from the section label.
+- Verification: git diff --check passed; runtime visual check not run.
+
+## Align partial-check description with action — 2026-10-27
+
+- Bottom-aligned the description/selection preview column and **Check selection** button at desktop widths so the **Spell check** line aligns with its action. Mobile layout remains stacked.
+- Verification: git diff --check passed; runtime visual check not run.
+
+## Center selected-text action vertically — 2026-10-27
+
+- Vertically centered **Check selection** against the description/preview column on desktop after user feedback that bottom alignment placed it too low. Mobile remains stacked.
+- Verification: git diff --check passed; runtime visual check not run.
+
+## Expand partial-article checks — 2026-10-27
+
+- Added independent selection-only **Grammar check** and **Fact-check** actions alongside spelling. Each checks only the selected passage; up to 500 characters of surrounding editor text are sent as meaning context and are explicitly excluded as finding targets.
+- Reused the existing focused-check endpoints with selection mode and added named selection routes. Findings keep their Quill selection range so text corrections and fact-check sentence actions can target the passage. Fact-check remains advisory with no live-source verification.
+- Positioned the selection action column from the **Spell check** description line; additional selection check actions continue beneath it.
+- Verification: backend syntax checks, frontend production build, and git diff --check passed. Build reports existing CSS highlight pseudo-element and large-bundle warnings. Runtime/model interaction not tested.
+
+## Align partial-check options with their actions — 2026-10-27
+
+- Reorganized **Partial-article checks** into three paired rows: each **Spell check**, **Grammar check**, and **Fact-check** description now sits directly beside its matching selection action. The selected-text preview remains with spelling.
+- Verification: frontend production build and git diff --check passed. Existing CSS highlight and bundle-size build warnings remain; runtime visual check not run.
+
+## Fix selected grammar/fact-check HTTP 500 — 2026-10-27
+
+- Bound the focused grammar and fact-check controller methods when registering Express routes. The handlers call a shared method through this; Express had been invoking them without the controller instance, causing an unhandled TypeError and HTTP 500 before the check ran.
+- Scoped duplicate filtering to the selected check's relevant finding types so selection grammar checks do not get blocked by unrelated handled findings.
+- Verification: Node syntax checks passed for the AI controller and routes; git diff --check passed. The Ollama request was not exercised.
+
+## Separate loading state for article checks — 2026-10-27
+
+- Gave each selection and full-article check its own active/loading indicator. Only the action that was pressed now shows its spinner or checking label; other check buttons are disabled during the request to prevent overlapping requests against the shared findings panel.
+- Separated selected-text spelling loading from full-article spelling loading.
+- Verification: frontend production build and git diff --check passed. Existing CSS highlight and bundle-size warnings remain; runtime interaction check not run.
+
+## Add excerpt proofreading and fact-check action — 2026-10-27
+
+- Added **Check excerpt** to Partial-article checks. It checks only the excerpt for spelling, grammar, punctuation, usage, and claims that may need verification; article body text is context only.
+- Added an authenticated endpoint and saved the findings in existing per-article review history. Findings target the `excerpt` field; individual and Apply all corrections update the excerpt, while fact-check sentence removal/neutral rewrite retain the existing preview confirmation.
+- Verification: backend syntax checks, frontend production build, and `git diff --check` passed. Existing CSS highlight and bundle-size warnings remain; AI runtime behavior not tested.
+## Full article review runs all focused checks — 2026-10-27
+
+- Full article review now runs the broader editorial/title pass plus the dedicated spelling, grammar, and fact-check passes. Findings are combined, deduplicated, and saved as one review-history run.
+- Increased the full-review frontend request timeout to five minutes to accommodate the additional sequential model passes. If one focused pass fails, the other findings are retained and the failure is noted in the review.
+- Verification: backend syntax checks, frontend production build, and `git diff --check` passed. Existing CSS highlight and bundle-size warnings remain; runtime model request not tested.
+## Match partial-check button widths — 2026-10-27
+
+- Set the selection spell, grammar, fact-check, and excerpt actions to a consistent 12rem width on wider screens. Buttons remain full-width on mobile, preserving the stacked responsive layout.
+- Verification: `git diff --check` passed; runtime visual check not run.
+## Consistent dividers in partial-article checks — 2026-10-27
+
+- Added the same top divider and spacing to the spelling, grammar, and fact-check option rows already used for the excerpt row.
+- Verification: `git diff --check` passed; runtime visual check not run.

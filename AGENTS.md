@@ -1,4 +1,4 @@
-# Agent Handoff and Prompt History
+﻿# Agent Handoff and Prompt History
 
 Read this file before continuing work when the repository history or the latest product decisions are unclear. Keep the session record current after substantial app changes: note the user request, the implementation, affected areas, verification, commit/push state, and any unfinished work. The detailed user and developer documentation remains under `docs/`.
 
@@ -212,25 +212,25 @@ The user asked whether hover explanations could be added to the rich-text toolba
 
 The user asked for suggestion cards to fade away once applied because no further action is available. Applied and dismissed cards now collapse from the active list; both remain available in the **Handled suggestions** disclosure with their status. Review data/action behavior is unchanged. Changelog updated; runtime visual check not run; changes remain uncommitted/unpushed.
 
-### Latest request � Media Library dashboard Images/Videos UI
+### Latest request � Media Library dashboard Images/Videos UI
 
 - User asked to implement the Media Library dashboard UI after the video backend foundation, while postponing testing.
 - Added distinct Images and Videos tabs. Preserved the current image grid and credit editor; the Videos tab provides matching preview cards, native playback for uploads, hosted video link entry, optional thumbnail, and delete controls.
 - Updated docs/development/media-library.md and the dated changelog. Video insertion/rendering inside article content remains unimplemented. No runtime tests were run at the user's request; review git diff --check only.
 
-### Media Library UI verification follow-up � 2026-10-27
+### Media Library UI verification follow-up � 2026-10-27
 
 - Fixed invalid source encoding in `frontend/src/pages/MediaPage.jsx`; Vite had been unable to scan the page. The page now compiles.
 - Verification: frontend production build passed; `/media` returned HTTP 200, and unauthenticated `/api/media?type=image` returned 401 as expected. Build emits existing CSS highlight pseudo-element and chunk-size warnings. No authenticated uploads or DB mutation testing performed.
 - The latest Media Library UI work is ready for the requested commit/push. Next user-requested branch is for system activity/audit logging, including a Developer navigation item.
 
-### New feature branch � System Activity Logs
+### New feature branch � System Activity Logs
 
 - Created `feat/system-activity-logs` from the pushed Media Library milestone commit `9f0a8c3`.
 - Added a Developer sidebar item and a placeholder page at `/dev/activity-logs`. It explicitly states logging is not yet configured.
 - No audit events, log storage, filters, or retention policy are implemented. User plans to work on the tracking design and implementation next.
 
-### System Activity Logs navigation adjustment � 2026-10-27
+### System Activity Logs navigation adjustment � 2026-10-27
 
 - User clarified that **System Activity Logs** belongs under the **System** sidebar section, not **Developer**. Moved the navigation entry; the separate Developer section remains for developer tools such as Components.
 - This was the initial navigation-only state. Superseded by the implementation recorded under `System Activity Logs module implementation` below.
@@ -282,3 +282,59 @@ The user asked for suggestion cards to fade away once applied because no further
 - Production Astro build and local route/query checks passed. Browser automation was unavailable, so manual responsive screenshots and interaction checks remain for the next session.
 - This work and its documentation are being committed and pushed for the user handoff.
 - Handoff complete: commit `8aeb9a6` (`feat(blog): redesign public listing and article pages`) is pushed to `origin/feat/public-blog-redesign`. Worktree should be clean.
+### Latest request — separate grammar and fact checks
+
+The user asked for dedicated **Fact-check** and **Grammar check** buttons so either can run independently from the general article review. Added focused endpoints and Editor actions; results continue to use per-article review history and existing finding flows. Fact-check remains advisory without live-source verification. Verification pending; this work is uncommitted on eat/public-blog-redesign. Existing untracked .qwen/ content was left untouched.
+
+### Follow-up — clarify partial-article check section
+
+The user approved a visual-only rename of the selected-text check panel to **Partial-article checks**, paired with the existing **Full-article checks** section. Changed only the displayed heading; selection behavior and controls are unchanged. Changelog updated; visual runtime check not run.
+
+### Follow-up — identify the selected-text action
+
+The user requested a clear label beside the **Check selection** control. Added a **Spell check** label immediately above the button in **Partial-article checks**; behavior is unchanged. Changelog updated; git diff --check passed; runtime visual check not run.
+
+### Follow-up — position spelling label with helper copy
+
+The user clarified the **Spell check** label should precede the descriptive text beneath **Partial-article checks**, rather than sit above the action. Moved the label inline before the selection instructions and removed it above the button. Changelog updated; behavior unchanged.
+
+### Follow-up — space the partial-check helper line
+
+The user asked for more vertical space between **Partial-article checks** and its **Spell check** helper line. Increased the helper's top margin from 2 to 3. Changelog updated; behavior unchanged; visual runtime check not run.
+
+### Follow-up — align selected-text label with button
+
+The user asked to align the **Spell check** helper line with its **Check selection** button. Bottom-aligned the two columns at desktop widths while preserving the stacked mobile layout. Changelog updated; behavior unchanged; visual runtime check not run.
+
+### Follow-up — center selected-text button
+
+The user said bottom alignment placed **Check selection** too low. Changed the desktop row to vertically center the button against the description/preview column; mobile stays stacked. Changelog updated; visual runtime check not run.
+
+### Latest request — expand partial-article checks
+
+The user clarified the panel should provide parallel full-article-style actions limited to selected text, with the action column aligned beside the **Spell check** helper line and more actions below it. Added selection-only **Grammar check** and **Fact-check** alongside spelling, using only the selected passage for findings and surrounding text as meaning context. Selection findings retain their Quill range for correction actions. Added focused API routes and docs. Backend syntax checks, frontend build, and diff check passed; model/runtime behavior not tested. Work remains uncommitted on eat/public-blog-redesign; existing .qwen/ untracked content was left untouched.
+
+### Follow-up — pair partial-check options and buttons
+
+The user clarified each selected-text option needs its own aligned button. Reorganized the panel into paired rows for spelling, grammar, and fact-check; each description aligns with its matching action, with selection preview under spelling. Frontend build and diff check passed; runtime visual check not run.
+
+### Follow-up — selected grammar/fact-check 500
+
+The user reported Internal Server Error when running selected Grammar check or Fact-check. Cause: Express route callbacks were unbound controller methods that call a shared handler through 	his; binding those route methods fixes the TypeError. Also filtered repeat suppression to the relevant selection finding types. Syntax and diff checks passed; live model/API behavior not exercised. Backend restart may be needed if not running in watch mode.
+
+### Latest request — isolate check button activity
+
+The user reported that pressing a Partial-article check made Full-article check buttons look like they responded too. Replaced shared review loading state with per-action IDs and separated selected-text spelling loading from full-article spelling. Only the active action shows progress; other checks are temporarily disabled to prevent overlapping requests in the shared result panel. Frontend build and diff check passed; runtime interaction check not run.
+
+### Latest request — check article excerpt
+
+The user asked for spelling, grammar, and fact-checking of the Excerpt field, accessible under Partial-article checks. Added **Check excerpt**, which reviews only the excerpt and uses article text only as context. Findings target `excerpt` and safe apply actions edit the excerpt field. Added API route/docs. Backend syntax checks, frontend production build, and diff check passed; model/runtime check not run.
+### Follow-up — full review combines focused checks
+
+The user expected **Full article review** to include the dedicated spelling, grammar, and fact-check actions. Previously one broad body pass attempted all types under a single 3,000-token budget, so it returned fewer findings than focused runs. It now runs the broad editorial/title pass plus dedicated spelling, grammar, and fact-check passes sequentially, merges/deduplicates findings, and saves a single history run. Frontend timeout raised to five minutes. Syntax/build/diff checks passed; model runtime not tested.
+### Follow-up — equal widths for partial-check buttons
+
+The user asked to make all Partial-article checks buttons visually consistent and asked about mobile impact. Set each action to 12rem on wider screens and full-width in the mobile stacked layout. Diff check passed; visual runtime check not run.
+### Follow-up — consistent partial-check dividers
+
+The user asked for separators between all options, matching the existing divider before the excerpt check. Added matching top borders and spacing to the spelling, grammar, and fact-check rows. Diff check passed; visual runtime check not run.
