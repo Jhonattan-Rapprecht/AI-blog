@@ -11,6 +11,7 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 
 // Dev-only tooling; excluded from production builds.
 const ComponentsPage = import.meta.env.DEV ? lazy(() => import('@/pages/dev/ComponentsPage')) : null
+const ActivityLogsPage = import.meta.env.DEV ? lazy(() => import('@/pages/dev/ActivityLogsPage')) : null
 
 export default function App() {
   return (
@@ -26,6 +27,9 @@ export default function App() {
           <Route path="settings" element={<SettingsPage />} />
           {ComponentsPage && (
             <Route path="dev/components" element={<Suspense fallback={null}><ComponentsPage /></Suspense>} />
+          )}
+          {ActivityLogsPage && (
+            <Route path="dev/activity-logs" element={<Suspense fallback={null}><ActivityLogsPage /></Suspense>} />
           )}
         </Route>
       </Routes>

@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Blocks, ChartPie, FileText, Images, Moon, PenLine, Settings, Sparkles, Sun } from 'lucide-react'
+import { Blocks, ChartPie, FileText, Images, Moon, PenLine, ScrollText, Settings, Sparkles, Sun } from 'lucide-react'
 import { Toaster } from 'sonner'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -25,7 +25,10 @@ const settingsNav = [{ to: '/settings', label: 'Settings', icon: Settings }]
 
 const titleBranding = 'Blogstudio | AI'
 
-const devNav = import.meta.env.DEV ? [{ to: '/dev/components', label: 'Components', icon: Blocks }] : []
+const devNav = import.meta.env.DEV ? [
+  { to: '/dev/components', label: 'Components', icon: Blocks },
+  { to: '/dev/activity-logs', label: 'System Activity Logs', icon: ScrollText },
+] : []
 
 const groups = [
   { label: 'Content', items: nav },
@@ -34,7 +37,7 @@ const groups = [
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
-const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/media': 'Media Library', '/settings': 'Settings', '/dev/components': 'Components' }
+const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/media': 'Media Library', '/settings': 'Settings', '/dev/components': 'Components', '/dev/activity-logs': 'System Activity Logs' }
 
 export default function AppShell() {
   const { theme, toggle } = useTheme()

@@ -205,3 +205,7 @@
 
 - Fixed the Media Library page source encoding so Vite can read and compile the new video UI.
 - Verification: frontend production build passed. The admin `/media` page returned HTTP 200; the media API returned HTTP 401 without a token, as expected for its admin-only route. Build reports existing CSS highlight pseudo-element and large-chunk warnings. App runtime upload/DB testing was not performed.
+## System activity logs feature kickoff — 2026-10-27
+
+- Created branch `feat/system-activity-logs` from the pushed Media Library milestone.
+- Added a Developer sidebar entry and a placeholder System Activity Logs page to mark the feature location. No event capture, persistence, or audit behavior is implemented yet; that design and implementation are next.

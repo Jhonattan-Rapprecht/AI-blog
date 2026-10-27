@@ -223,3 +223,9 @@ The user asked for suggestion cards to fade away once applied because no further
 - Fixed invalid source encoding in `frontend/src/pages/MediaPage.jsx`; Vite had been unable to scan the page. The page now compiles.
 - Verification: frontend production build passed; `/media` returned HTTP 200, and unauthenticated `/api/media?type=image` returned 401 as expected. Build emits existing CSS highlight pseudo-element and chunk-size warnings. No authenticated uploads or DB mutation testing performed.
 - The latest Media Library UI work is ready for the requested commit/push. Next user-requested branch is for system activity/audit logging, including a Developer navigation item.
+
+### New feature branch — System Activity Logs
+
+- Created `feat/system-activity-logs` from the pushed Media Library milestone commit `9f0a8c3`.
+- Added a Developer sidebar item and a placeholder page at `/dev/activity-logs`. It explicitly states logging is not yet configured.
+- No audit events, log storage, filters, or retention policy are implemented. User plans to work on the tracking design and implementation next.
