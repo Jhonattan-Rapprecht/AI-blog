@@ -262,3 +262,8 @@ The user asked for suggestion cards to fade away once applied because no further
 - Added real XLSX workbook, CSV, and PDF exports for the selected report/date range. XLSX has activity and overview sheets; PDF includes category totals and all filtered events.
 - Export button is now Export report with a format menu and tooltip explaining supported formats and Google Sheets import.
 - Documentation updated in docs/development/system-activity-logs.md and the next-session handover. Frontend build passed; backend syntax checks passed. The user reported an Excel repair warning, so the XLSX generator was hardened against invalid XML controls and worksheet schema ordering corrected. Generated workbook XML parts were parsed successfully with PowerShell; no commit or push requested.
+
+### Export menu focus styling - 2026-10-27
+
+- Added a temporary dim/blur behind the export format menu. An outside click closes the menu while allowing the clicked page control to activate; Escape also closes it.
+- Frontend production build and git diff --check passed. This UI follow-up is uncommitted.

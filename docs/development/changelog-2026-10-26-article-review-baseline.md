@@ -246,3 +246,8 @@
 - Excel reported XML errors while opening exported workbooks. Stripped XML 1.0-invalid control characters, preserved valid Unicode, and limited strings to Excel's cell text limit. Corrected worksheet schema element ordering and selected-tab metadata.
 - Generated a workbook containing control characters and Unicode, opened the ZIP, and parsed all five XML parts successfully.
 ode --check and git diff --check passed.
+
+### Export menu focus styling - 2026-10-27
+
+- While the export menu is open, the page behind it is softly dimmed and blurred. Clicking an underlying element closes the menu and still activates that element; Escape closes the menu as well.
+- Frontend production build and git diff --check passed.

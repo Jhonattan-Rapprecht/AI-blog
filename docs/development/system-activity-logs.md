@@ -10,6 +10,8 @@ The administrator report module is available under **System > System Activity Lo
 
 Exports are limited to 50,000 rows; narrow the date range if that limit is reached. Excel and CSV files can be imported into Google Sheets; direct Google Sheets account integration is not configured.
 
+The export format menu softly dims and blurs the page while open. Clicking elsewhere closes it and lets the selected page control respond; Escape also closes the menu.
+
 The table stores timestamp, category/event, severity, outcome, actor, source, action, target, request method/path/status, IP address, user agent, and safe JSON metadata. It deliberately does not store passwords, tokens, article body text, AI prompts, full external video URLs, or request query strings. Audit writes fail open: a logging/database issue is written to server console and does not block the original application action.
 
 The table is created lazily for existing databases and is also defined in `src/models/schema.sql` for new databases. No historic administrative events can be backfilled. Logs currently have no retention or purge UI; they remain in MySQL until manually removed or a retention policy is added.

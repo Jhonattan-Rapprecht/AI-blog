@@ -55,8 +55,31 @@ export default function ActivityLogsPage() {
   const [report, setReport] = useState({ events: [], total: 0 })
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState('')
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const requestSequence = useRef(0)
   const exportMenu = useRef(null)
+
+  useEffect(() => {
+    if (!exportMenuOpen) return undefined
+    const closeOnOutsideClick = (event) => {
+      if (exportMenu.current && !exportMenu.current.contains(event.target)) {
+        exportMenu.current.open = false
+        setExportMenuOpen(false)
+      }
+    }
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        if (exportMenu.current) exportMenu.current.open = false
+        setExportMenuOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', closeOnOutsideClick, true)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick, true)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [exportMenuOpen])
 
   const load = useCallback(async () => {
     const sequence = ++requestSequence.current
@@ -85,6 +108,7 @@ export default function ActivityLogsPage() {
 
   const exportReport = async (format) => {
     if (exportMenu.current) exportMenu.current.open = false
+    setExportMenuOpen(false)
     setExporting(format)
     try {
       const file = await api.exportActivityReport(filters, format)
@@ -124,6 +148,8 @@ export default function ActivityLogsPage() {
   }
 
   return (
+    <>
+    {exportMenuOpen && <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-20 bg-background/35 backdrop-blur-[2px] transition-opacity duration-200" />}
     <div className="mx-auto grid max-w-7xl content-start gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -139,7 +165,7 @@ export default function ActivityLogsPage() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <details ref={exportMenu} className="group relative">
+          <details ref={exportMenu} onToggle={(event) => setExportMenuOpen(event.currentTarget.open)} className={`group relative ${exportMenuOpen ? 'z-30' : ''}`}>
             <summary className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-md border bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
               {exporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
               Export report <ChevronDown className="size-4 text-muted-foreground" />
@@ -222,5 +248,6 @@ export default function ActivityLogsPage() {
         </div>
       </Card>
     </div>
+    </>
   )
 }
