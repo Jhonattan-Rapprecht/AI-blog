@@ -2,7 +2,7 @@
 
 ## Current state
 
-The `feat/system-activity-logs` branch adds a Developer navigation entry at `/dev/activity-logs` and a placeholder page. It does not yet capture or store system events.
+The `feat/system-activity-logs` branch adds a System navigation entry at `/dev/activity-logs` and a placeholder page. It does not yet capture or store system events.
 
 ## Intended direction
 

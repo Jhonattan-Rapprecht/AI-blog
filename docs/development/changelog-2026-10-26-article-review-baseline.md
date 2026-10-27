@@ -209,3 +209,8 @@
 
 - Created branch `feat/system-activity-logs` from the pushed Media Library milestone.
 - Added a Developer sidebar entry and a placeholder System Activity Logs page to mark the feature location. No event capture, persistence, or audit behavior is implemented yet; that design and implementation are next.
+
+## System Activity Logs navigation placement — 2026-10-27
+
+- Moved **System Activity Logs** from Developer to the System sidebar section per user clarification. Developer remains for development tools.
+- No activity capture or persistence behavior changed.

@@ -21,13 +21,15 @@ const articleNav = [
   { to: '/articles/analytics', label: 'Articles Analytics', icon: ChartPie },
 ]
 
-const settingsNav = [{ to: '/settings', label: 'Settings', icon: Settings }]
+const settingsNav = [
+  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/dev/activity-logs', label: 'System Activity Logs', icon: ScrollText },
+]
 
 const titleBranding = 'Blogstudio | AI'
 
 const devNav = import.meta.env.DEV ? [
   { to: '/dev/components', label: 'Components', icon: Blocks },
-  { to: '/dev/activity-logs', label: 'System Activity Logs', icon: ScrollText },
 ] : []
 
 const groups = [

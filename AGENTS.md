@@ -229,3 +229,8 @@ The user asked for suggestion cards to fade away once applied because no further
 - Created `feat/system-activity-logs` from the pushed Media Library milestone commit `9f0a8c3`.
 - Added a Developer sidebar item and a placeholder page at `/dev/activity-logs`. It explicitly states logging is not yet configured.
 - No audit events, log storage, filters, or retention policy are implemented. User plans to work on the tracking design and implementation next.
+
+### System Activity Logs navigation adjustment — 2026-10-27
+
+- User clarified that **System Activity Logs** belongs under the **System** sidebar section, not **Developer**. Moved the navigation entry; the separate Developer section remains for developer tools such as Components.
+- The logs page is a placeholder only. No event tracking or persistence has been implemented.
