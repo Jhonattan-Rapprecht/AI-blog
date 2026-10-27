@@ -7,6 +7,7 @@
 - Moved title and excerpt actions into **Title & excerpt checks**, above **Partial-article checks**. Selected-text spelling, grammar, and fact checks remain in Partial-article checks.
 - Moved the shared **Review results** panel after both check sections and merged Previous review history into it. Current results and historic runs retain their existing handling and collapse controls.
 - Review runs now persist `check_type`, allowing results and history to identify their source: full article, title, excerpt, or selected-text check. Reviews created before this change have no recoverable source and show the generic fallback label.
+- After a reported Dutch title was not flagged despite an unnatural final phrase, strengthened the title-only prompt to receive the configured language explicitly and require a semantic-readability pass. It now flags dictionary-valid words used with the wrong sense, incomplete constructions, unnatural word combinations or idioms, and literal translations that a typical native reader would not understand.
 
 ## Public favicon consistency
 
@@ -34,3 +35,12 @@ This record preserves the product requests that led to this milestone. Messages 
 7. Add Check title near Check excerpt, then separate title/excerpt checks from selected-text partial checks.
 8. Keep one Review results destination, label where suggestions originated, persist the source for saved review history, and merge review history into that panel.
 9. Improve the title check so it detects unnatural sentence structure, incorrect contextual word meaning, and semantically unclear or misleading titles without rewriting unusual but valid titles.
+
+## Conversation log additions
+
+This concise log captures the latest user request and the corresponding implementation response without recording credentials or private values.
+
+| User request | Response and outcome |
+| --- | --- |
+| The title checker missed a Dutch title whose final phrase was grammatically formed but semantically unnatural. | Diagnosed that the title-only prompt referred to a configured language without passing its value and did not require phrase-completeness or word-sense checks. Updated the prompt only; no UI or workflow changed. |
+| Commit, push, document, and ensure prompts/responses are logged. | Added this log, updated the handoff, and committed/pushed the refined title-check prompt. |

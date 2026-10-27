@@ -9,12 +9,12 @@ Read this file before continuing work when the repository history or the latest 
 - Removed hardcoded MySQL pool connection credentials. The API now loads dotenv before importing routes and requires `DB_HOST`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` before creating the pool; pool behavior is unchanged.
 - Documented the required values in `.env.example` without credentials. `DATABASE_URL` remains documented but is not consumed by application code.
 - Syntax, missing-variable guard, and diff checks passed. Database connectivity was not checked during the remediation because the local `.env` did not yet contain the new `DB_*` settings.
-- Committed as `af2b4b2` (`fix(config): load database credentials from environment`). Push to `origin/feat/public-blog-redesign` was attempted but could not run because automatic approval review hit its usage limit; the unrelated untracked `.qwen/` directory remains untouched.
+- Committed as `af2b4b2` (`fix(config): load database credentials from environment`) and subsequently included in the pushed `milestone/blogstudio-stable-v2.5` branch. The unrelated untracked `.qwen/` directory remains untouched.
 
 ### Public list-mode media sizing — 2026-10-27
 
 - The public `/blog` list view now gives regular and featured cards the same desktop thumbnail dimensions. Images stay centered at a fixed aspect ratio instead of stretching with longer card text; mobile retains full-width 16:9 thumbnails.
-- The CSS and public-blog redesign documentation passed `git diff --check` and are ready to commit on `milestone/blogstudio-stable-v2.5`.
+- Committed and pushed as `4888c15` (`fix(blog): normalize list card media sizing`) on `milestone/blogstudio-stable-v2.5`.
 - The milestone branch starts from `feat/public-blog-redesign` and includes the locally committed database-configuration remediation (`af2b4b2`), whose earlier push attempt was blocked by approval-service usage limits.
 
 ### Review result provenance — 2026-10-27
@@ -22,6 +22,7 @@ Read this file before continuing work when the repository history or the latest 
 - The shared Review results panel now sits after the two check panels and labels the originating check for each suggestion.
 - Review runs now persist `check_type` so saved title, excerpt, selection, and full-article checks retain that label after history reload. Existing historic runs have no recoverable source and continue to display the generic fallback label.
 - Detailed implementation and the current-session prompt history are recorded in `docs/development/milestone-blogstudio-stable-v2.5-2026-10-27.md`.
+- The title-only review prompt now explicitly receives the configured language and evaluates semantic word sense, phrase completeness, and natural idiomatic usage. This prompt-only refinement is documented in the same milestone record.
 
 ### Milestone handoff — 2026-10-27
 
