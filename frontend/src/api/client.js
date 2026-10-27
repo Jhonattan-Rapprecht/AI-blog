@@ -3,6 +3,7 @@ import { io } from 'socket.io-client'
 
 const ORIGIN = 'http://localhost:3000'
 const http = axios.create({ baseURL: `${ORIGIN}/api` })
+const reportedNetworkFailures = new Map()
 
 export const socket = io(ORIGIN, { transports: ['websocket', 'polling'] })
 
@@ -17,6 +18,26 @@ http.interceptors.response.use(
   (r) => r,
   (e) => {
     const isLogin = e.config?.url === '/auth/login'
+    const isActivityReport = e.config?.url?.startsWith('/activity-logs/client-errors')
+    if (!e.response && !isActivityReport && typeof window !== 'undefined') {
+      const token = localStorage.getItem('adminToken')
+      if (token) {
+        let requestPath = ''
+        try { requestPath = new URL(`${e.config?.baseURL || ORIGIN}${e.config?.url || ''}`, `${ORIGIN}/`).pathname } catch { /* omit unknown URL */ }
+        const requestMethod = String(e.config?.method || 'get').toUpperCase()
+        const key = `${requestMethod}:${requestPath}:${e.code || 'network'}`
+        const now = Date.now()
+        if (now - (reportedNetworkFailures.get(key) || 0) > 60000) {
+          reportedNetworkFailures.set(key, now)
+          if (reportedNetworkFailures.size > 100) reportedNetworkFailures.delete(reportedNetworkFailures.keys().next().value)
+          fetch(`${ORIGIN}/api/activity-logs/client-errors`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ eventType: 'browser.api_connection_error', errorName: e.code || 'NetworkError', message: 'Admin browser could not reach the API.', clientPath: window.location.pathname, requestPath, requestMethod }),
+          }).catch(() => {})
+        }
+      }
+    }
     if (e.response?.status === 401 && !isLogin) {
       localStorage.removeItem('adminToken')
       localStorage.removeItem('adminUser')
@@ -41,6 +62,9 @@ export const api = {
   deleteCategory: (id) => http.delete(`/categories/${id}`),
   articles: ({ limit = 24, offset = 0, sortBy = 'created_at', direction = 'desc' } = {}) => http.get('/articles', { params: { limit, offset, sortBy, direction } }).then((r) => r.data),
   articleAnalytics: (days = 30) => http.get('/analytics/overview', { params: { days } }).then((r) => r.data),
+  activityReports: (params) => http.get('/activity-logs/reports', { params }).then((r) => r.data),
+  exportActivityReport: (params, format = 'xlsx') => http.get('/activity-logs/reports/export', { params: { ...params, format }, responseType: 'blob' }).then((r) => r.data),
+  reportClientError: (data) => http.post('/activity-logs/client-errors', data),
   article: (id) => http.get(`/articles/${id}`).then((r) => r.data),
   createArticle: (data) => http.post('/articles', data).then((r) => r.data),
   updateArticle: (id, data) => http.put(`/articles/${id}`, data).then((r) => r.data),

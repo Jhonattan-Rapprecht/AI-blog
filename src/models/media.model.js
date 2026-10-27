@@ -87,7 +87,7 @@ class MediaModel {
             WHERE featured_media_id = ?
                 OR (? IS NOT NULL AND LOCATE(?, content) > 0)
                 OR (? IS NOT NULL AND LOCATE(?, content) > 0)`, [id, rows[0].filepath, rows[0].filepath, rows[0].source_url, rows[0].source_url]);
-        if (Number(usage[0]?.count) > 0) return { inUse: true };
+        if (Number(usage[0]?.count) > 0) return { inUse: true, ...rows[0] };
         await db.query('DELETE FROM media WHERE id = ?', [id]);
         return rows[0];
     }

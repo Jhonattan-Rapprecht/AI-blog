@@ -23,7 +23,7 @@ const articleNav = [
 
 const settingsNav = [
   { to: '/settings', label: 'Settings', icon: Settings },
-  { to: '/dev/activity-logs', label: 'System Activity Logs', icon: ScrollText },
+  { to: '/system/activity-logs', label: 'System Activity Logs', icon: ScrollText },
 ]
 
 const titleBranding = 'Blogstudio | AI'
@@ -39,7 +39,7 @@ const groups = [
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
-const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/media': 'Media Library', '/settings': 'Settings', '/dev/components': 'Components', '/dev/activity-logs': 'System Activity Logs' }
+const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/media': 'Media Library', '/settings': 'Settings', '/dev/components': 'Components', '/system/activity-logs': 'System Activity Logs' }
 
 export default function AppShell() {
   const { theme, toggle } = useTheme()

@@ -233,7 +233,7 @@ The user asked for suggestion cards to fade away once applied because no further
 ### System Activity Logs navigation adjustment — 2026-10-27
 
 - User clarified that **System Activity Logs** belongs under the **System** sidebar section, not **Developer**. Moved the navigation entry; the separate Developer section remains for developer tools such as Components.
-- The logs page is a placeholder only. No event tracking or persistence has been implemented.
+- This was the initial navigation-only state. Superseded by the implementation recorded under `System Activity Logs module implementation` below.
 
 ### Next-session handover - 2026-10-27
 
@@ -251,3 +251,14 @@ The user asked for suggestion cards to fade away once applied because no further
 
 - User asked to keep the new Media Library confirmation style for all prompts previously shown outside the app. Replaced the remaining native delete confirmation in Articles Overview. Editor prompts already used an in-app dialog.
 - Source scan found no remaining native browser confirm/alert/prompt calls. Frontend build and `git diff --check` passed. Changes remain uncommitted/unpushed.
+### System Activity Logs module implementation - 2026-10-27
+
+- Replaced the placeholder with report categories, summary tiles, date filtering, a paginated event table, and Excel-compatible CSV export. Added a lazily-created MySQL audit table and schema definition.
+- Captures authenticated admin mutations/failures, authentication, AI connection transitions, publishing/scheduler, automation, startup/socket errors, browser errors, public 5xx responses, and anonymous reader analytics. Sensitive payloads are excluded.
+- See docs/development/system-activity-logs.md for current coverage, privacy choices, and known gaps. Production/local MySQL migration and authenticated end-to-end checks remain unverified. No tests were added or run.
+
+### Report export formats - 2026-10-27
+
+- Added real XLSX workbook, CSV, and PDF exports for the selected report/date range. XLSX has activity and overview sheets; PDF includes category totals and all filtered events.
+- Export button is now Export report with a format menu and tooltip explaining supported formats and Google Sheets import.
+- Documentation updated in docs/development/system-activity-logs.md and the next-session handover. Frontend build passed; backend syntax checks passed. The user reported an Excel repair warning, so the XLSX generator was hardened against invalid XML controls and worksheet schema ordering corrected. Generated workbook XML parts were parsed successfully with PowerShell; no commit or push requested.

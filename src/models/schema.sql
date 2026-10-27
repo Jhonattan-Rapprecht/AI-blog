@@ -151,3 +151,31 @@ CREATE TABLE IF NOT EXISTS article_read_views (
     INDEX idx_article_read_views_date (created_at),
     INDEX idx_article_read_views_article_date (article_id, created_at)
 );
+
+-- Flexible audit/report event store. Request and event metadata must not include secrets or full article content.
+CREATE TABLE IF NOT EXISTS system_activity_logs (
+    id CHAR(36) PRIMARY KEY,
+    category VARCHAR(40) NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    severity ENUM('info', 'warning', 'error', 'critical') NOT NULL DEFAULT 'info',
+    outcome ENUM('success', 'rejected', 'failure', 'observed') NOT NULL DEFAULT 'success',
+    actor_type ENUM('administrator', 'system', 'anonymous') NOT NULL DEFAULT 'system',
+    actor VARCHAR(255) NULL,
+    `source` VARCHAR(100) NOT NULL,
+    `action` VARCHAR(255) NOT NULL,
+    target_type VARCHAR(60) NULL,
+    target_id VARCHAR(255) NULL,
+    target_label VARCHAR(500) NULL,
+    method VARCHAR(10) NULL,
+    path VARCHAR(500) NULL,
+    status_code SMALLINT UNSIGNED NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent VARCHAR(500) NULL,
+    details JSON NULL,
+    created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    INDEX idx_activity_created (created_at),
+    INDEX idx_activity_category_created (category, created_at),
+    INDEX idx_activity_severity_created (severity, created_at),
+    INDEX idx_activity_actor_created (actor, created_at),
+    INDEX idx_activity_event_created (event_type, created_at)
+);

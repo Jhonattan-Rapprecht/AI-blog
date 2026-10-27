@@ -229,3 +229,20 @@
 - Replaced the remaining browser-native confirmation in Articles Overview with the same styled, accessible alert dialog used by Media Library. Article deletion now names the article, explains that saved review history and media associations are deleted, and provides Cancel/Delete actions.
 - Repository-wide source search found no remaining native `window.confirm`, `window.alert`, or `window.prompt` calls. Editor confirmations were already in-app.
 - Verification: frontend production build passed; `git diff --check` passed.
+## System Activity Logs reporting module - 2026-10-27
+
+- Replaced the placeholder with a modular MySQL event log and report workspace under System. Added report-category selectors and summary cards, inclusive date filters, paginated event table, and an Excel-compatible UTF-8 semicolon CSV export capped at 50,000 rows.
+- Added lazy database-table creation plus schema.sql definition. Shared middleware records authenticated admin mutations and API failures with actor, target, status, timing, and allowlisted metadata; secrets, full article content, prompts, and request query strings are excluded.
+- Added explicit events for login success/failure and rejected tokens, Ollama connection state transitions, scheduled publishing, automation outcomes, API startup, Socket.IO connection errors, admin browser errors, and public-site HTTP 5xx responses. Reader-activity report is sourced from existing anonymous article_read_views; it does not create visitor identities.
+- Documented capture coverage, privacy decisions, historical-data limits, retention gap, single-admin identity limit, and database-down fallback in docs/development/system-activity-logs.md. There is no historical backfill or retention UI yet. At initial implementation, CSV was the only export format. Local MySQL migration/report integration and event-flow runtime checks remain to be performed.
+### Activity report export formats - 2026-10-27
+
+- Added real XLSX, CSV, and PDF exports for the selected report and inclusive date range. XLSX includes Activity report and Overview sheets; PDF presents the overview counts and filtered activity records.
+- Renamed the action to Export report, added a format menu and hover/focus help bubble, and clarified Google Sheets works by importing XLSX/CSV rather than direct publishing.
+- Export still caps each format at 50,000 rows. PDF uses standard fonts, so non-Latin characters may be replaced in that format.
+
+### XLSX repair warning follow-up - 2026-10-27
+
+- Excel reported XML errors while opening exported workbooks. Stripped XML 1.0-invalid control characters, preserved valid Unicode, and limited strings to Excel's cell text limit. Corrected worksheet schema element ordering and selected-tab metadata.
+- Generated a workbook containing control characters and Unicode, opened the ZIP, and parsed all five XML parts successfully.
+ode --check and git diff --check passed.

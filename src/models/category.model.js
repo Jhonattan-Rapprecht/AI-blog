@@ -2,6 +2,11 @@ const db = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 
 class CategoryModel {
+    async findById(id) {
+        const rows = await db.query('SELECT * FROM categories WHERE id = ? LIMIT 1', [id]);
+        return rows[0] || null;
+    }
+
     async findAll() {
         const sql = 'SELECT * FROM categories ORDER BY name ASC';
         return await db.query(sql);

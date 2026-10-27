@@ -27,8 +27,10 @@ class CategoryController {
 
     async delete(req, res) {
         try {
+            const category = await CategoryModel.findById(req.params.id);
             const deleted = await CategoryModel.delete(req.params.id);
             if (!deleted) return res.status(404).json({ error: 'Category not found' });
+            req.activityTargetLabel = category?.name || null;
             res.status(204).end();
         } catch (error) {
             res.status(500).json({ error: error.message });

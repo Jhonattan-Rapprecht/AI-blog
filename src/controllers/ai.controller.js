@@ -4,6 +4,9 @@ const ArticleReviewModel = require('../models/article.review.model');
 const AIGenerationModel = require('../models/ai.generation.model');
 const TopicHistoryModel = require('../models/topic.history.model');
 const SettingsService = require('../services/settings.service');
+const ActivityLog = require('../models/activity-log.model');
+
+let lastOllamaConnectionState = null;
 
 const normalizeReviewText = (value) => String(value || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
 
@@ -112,6 +115,7 @@ class AIController {
                     normalizeReviewText(prior.quote) === normalizeReviewText(finding.quote))));
             } catch (fieldReviewError) {
                 console.warn('[AI Controller] Title/topic review pass failed:', fieldReviewError.message);
+                void ActivityLog.record({ category: 'ai', eventType: 'ai.title_review_pass_failed', severity: 'warning', outcome: 'failure', actorType: 'administrator', actor: req.user?.username, source: 'ai_review', action: 'Article title review pass failed; body review continued', targetType: 'article', targetId: articleId || null, details: { errorName: fieldReviewError.name, errorCode: fieldReviewError.code || null } });
                 titleReviewNote = 'Title suggestion could not be generated; body review results are available.';
             }
 
@@ -212,7 +216,10 @@ class AIController {
             const { io } = req;
 
             io.emit('ai:generation:started', { topic: config.topic });
-            TopicHistoryModel.record(config.topic, 'generated').catch((e) => console.error('[Topic History]', e.message));
+            TopicHistoryModel.record(config.topic, 'generated').catch((e) => {
+                console.error('[Topic History]', e.message);
+                void ActivityLog.record({ category: 'errors', eventType: 'ai.topic_history_save_failed', severity: 'warning', outcome: 'failure', actorType: 'administrator', actor: req.user?.username, source: 'ai_generation', action: 'Generated topic could not be added to topic history', details: { errorName: e.name, errorCode: e.code || null } });
+            });
 
             const result = await AIService.generateArticle(config);
 
@@ -232,6 +239,7 @@ class AIController {
                 });
             } catch (historyError) {
                 console.error('Non-critical error logging AI history:', historyError);
+                void ActivityLog.record({ category: 'errors', eventType: 'ai.generation_history_save_failed', severity: 'warning', outcome: 'failure', actorType: 'administrator', actor: req.user?.username, source: 'ai_generation', action: 'Article was generated but its AI history record could not be saved', targetType: 'article', targetId: articleId, details: { errorName: historyError.name, errorCode: historyError.code || null } });
             }
 
             io.emit('ai:generation:completed', { articleId });
@@ -350,6 +358,22 @@ class AIController {
     async getStatus(req, res) {
         const settings = SettingsService.read();
         const { connected } = await SettingsService.ollamaStatus(settings.ollamaBaseUrl);
+        if (lastOllamaConnectionState !== connected) {
+            const previousState = lastOllamaConnectionState;
+            void ActivityLog.record({
+                category: connected ? 'ai' : 'errors',
+                eventType: connected ? previousState === false ? 'ai.connection_restored' : 'ai.connection_available' : 'ai.connection_lost',
+                severity: connected ? 'info' : 'error',
+                outcome: connected ? 'success' : 'failure',
+                actorType: 'system',
+                source: 'ollama_status',
+                action: connected ? previousState === false ? 'Ollama connection restored' : 'Ollama connection available' : 'Ollama connection is unavailable',
+                targetType: 'ai_provider',
+                targetLabel: `ollama (${settings.model})`,
+                details: { provider: 'ollama', model: settings.model }
+            });
+            lastOllamaConnectionState = connected;
+        }
         res.json({
             available: connected,
             provider: 'ollama',

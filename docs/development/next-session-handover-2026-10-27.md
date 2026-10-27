@@ -7,8 +7,8 @@
   - `261f1a4` — `fix(navigation): place activity logs under system`
   - `614f349` — `feat(audit): add activity logs entry point`
   - `9f0a8c3` — `feat(media): add video library dashboard`
-- The current branch is pushed to `origin/feat/system-activity-logs`.
-- The System Activity Logs page is a placeholder under the **System** sidebar section. It does not record events yet. The **Developer** section remains for developer tooling.
+- The branch baseline is pushed to `origin/feat/system-activity-logs`; the System Activity Logs implementation described below is currently uncommitted and unpushed.
+- System Activity Logs is implemented under **System > System Activity Logs** at `/system/activity-logs`, with selectable reports, date filtering, pagination, XLSX/CSV/PDF exports, shared audit capture, and an anonymous reader-activity report. The latest export-format refinement is uncommitted. See `docs/development/system-activity-logs.md` for coverage and limitations.
 - Media Library now has separate Images and Videos tabs. The image UI retains its existing layout and photo-credit controls. Video uploads and hosted links have matching preview cards.
 - The frontend production build passed during the prior session. The `/media` page returned HTTP 200. An unauthenticated media API request returned HTTP 401 as expected. Authenticated media upload, deletion, and database behavior have not been tested yet.
 - A reported uploaded MP4 was inspected: the file had an MP4 header but an empty `mdat` box, so it contained no media payload. The upload validator now rejects empty MP4/MOV media-data boxes, and the video card shows a helpful error when browser playback fails. The already uploaded broken file remains in the library; delete it and re-upload the complete source file. Continue the broader Media Library functional checks below.
@@ -16,11 +16,11 @@
 
 ## Next-session priorities
 
-### 1. Improve System Activity Logs
+### 1. Improve and review System Activity Logs
 
-Start by agreeing on what constitutes an important system event and what information the log should retain. The goal is a useful audit trail of administrator actions and automated jobs across Blogstudio.
+The first implementation is now in place. Review it against the desired event coverage and add missing high-value events. The goal remains a useful audit trail of administrator actions and automated jobs across Blogstudio.
 
-Before implementation, inspect authentication, article/media/settings mutations, scheduled publishing, and automation entry points. Propose an event list and fields such as timestamp, actor, action, target type and ID, outcome, and concise safe metadata. Exclude credentials, tokens, and unnecessary article or personal content. Then decide database storage, retention/deletion, search and filters, pagination, access controls, and failure behavior. Keep the route under **System > System Activity Logs**. The placeholder and initial notes are in `docs/development/system-activity-logs.md`.
+Check the captured events, migrations on a real database, report/date filters, and XLSX/CSV/PDF exports. The primary open product decision is a retention/purge policy. Preserve the privacy rules in `docs/development/system-activity-logs.md`.
 
 ### 2. Test the Media Library
 
@@ -52,7 +52,7 @@ Before implementation, inspect the public article page, article data model, Edit
 ## Suggested order
 
 1. Review this handover, `AGENTS.md`, and the linked development docs; confirm branch and worktree state.
-2. Design the event catalog and storage/access approach for System Activity Logs.
+2. Review and functionally verify System Activity Logs against the coverage/limitations in `docs/development/system-activity-logs.md`; migration and report query behavior against the local MySQL database remain to be exercised.
 3. Run the Media Library functional checks and fix any issues found.
 4. Brainstorm editor typography controls and confirm public rendering behavior.
 5. Map article layout options and Components integration before coding the layout system.

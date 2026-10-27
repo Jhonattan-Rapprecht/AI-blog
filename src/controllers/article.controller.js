@@ -13,6 +13,7 @@ class ArticleController {
                 if (!media || media.media_type !== 'image') return res.status(400).json({ error: 'Featured media must be an image.' });
             }
             const id = await ArticleModel.create(data);
+            req.activityTargetLabel = String(data.title).slice(0, 500);
             res.status(201).json({ id, message: 'Article created successfully' });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -55,7 +56,9 @@ class ArticleController {
                 const media = await MediaModel.findById(data.featured_media_id);
                 if (!media || media.media_type !== 'image') return res.status(400).json({ error: 'Featured media must be an image.' });
             }
+            const existing = await ArticleModel.findById(id);
             await ArticleModel.update(id, data);
+            req.activityTargetLabel = typeof data.title === 'string' ? data.title.slice(0, 500) : existing?.title || null;
             res.json({ message: 'Article updated successfully' });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -65,7 +68,9 @@ class ArticleController {
     async delete(req, res) {
         try {
             const { id } = req.params;
+            const article = await ArticleModel.findById(id);
             await ArticleModel.delete(id);
+            req.activityTargetLabel = article?.title || null;
             res.json({ message: 'Article deleted successfully' });
         } catch (error) {
             res.status(500).json({ error: error.message });

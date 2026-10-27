@@ -134,6 +134,7 @@ class MediaController {
         try {
             const media = await MediaModel.updateCredit(req.params.id, req.body.credit);
             if (!media) return res.status(404).json({ error: 'Media item not found.' });
+            req.activityTargetLabel = media.filename;
             return res.json(media);
         } catch (error) {
             console.error('[Media] Credit update failed:', error.message);
@@ -146,6 +147,7 @@ class MediaController {
             await ArticleModel.ensureMediaColumn();
             const result = await MediaModel.delete(req.params.id);
             if (!result) return res.status(404).json({ error: 'Media item not found.' });
+            req.activityTargetLabel = result.filename || null;
             if (result.inUse) return res.status(409).json({ error: 'This media item is used in an article. Remove it from the article before deleting.' });
             if (result.filepath) await fs.unlink(path.resolve(MEDIA_DIR, path.basename(result.filepath))).catch((error) => { if (error.code !== 'ENOENT') throw error; });
             return res.status(204).end();
