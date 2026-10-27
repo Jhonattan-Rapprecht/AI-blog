@@ -6,9 +6,9 @@ Read this file before continuing work when the repository history or the latest 
 
 ### Milestone handoff — 2026-10-27
 
-- Current branch: `feat/article-reviewer-v2.4`, created from the completed v2.3 reviewer UI milestone.
+- Current branch: `feat/media-library-v2.4`, renamed to reflect the next Media Library improvement milestone.
 - The v2.3 UI refinements are committed and pushed to `origin/feat/article-reviewer-v2.3` as `6095408` (`feat(article-review): polish review and editor interactions`). That commit includes the compact no-findings notice, independent animated history panel, heading spacing, rich-text toolbar tooltips, and fade/collapse of handled suggestions, with changelog documentation.
-- The v2.4 branch is the next article-reviewer milestone and is ready for new work. No v2.4 product changes have started yet.
+- The v2.4 branch is ready for Media Library improvements. No v2.4 product changes have started yet.
 - Unrelated untracked `docs/product/` and `temp.txt` were left untouched.
 
 ### Latest request — bulk dismiss and focused spelling check

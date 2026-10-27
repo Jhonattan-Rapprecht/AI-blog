@@ -183,4 +183,4 @@
 ## Milestone handoff — 2026-10-27
 
 - Completed and pushed the v2.3 reviewer UI refinements as `6095408` (`feat(article-review): polish review and editor interactions`) on `feat/article-reviewer-v2.3`.
-- Created `feat/article-reviewer-v2.4` from that commit as the next article-reviewer milestone branch. No v2.4 feature changes have started yet.
+- Created the next milestone branch from that commit. It was initially named `feat/article-reviewer-v2.4`, then renamed to `feat/media-library-v2.4` when the user shifted the next work to Media Library improvements. No v2.4 feature changes have started yet.
