@@ -1142,7 +1142,7 @@ export default function EditorPage() {
           <CardHeader className="px-4"><CardTitle className="flex items-center gap-2 text-sm"><Sparkles className="size-4" /> AI generation</CardTitle></CardHeader>
           <CardContent className="grid gap-3 px-4">
             <Field label="Topic" hint={<>
-              <p className="text-xs text-muted-foreground">{selectedCategory ? `Suggestions based on ${selectedCategory.name}.` : 'Choose a category to focus suggestions, or leave it empty for varied topics.'}</p>
+              <p className="text-xs text-muted-foreground">Enter a topic to generate an article from it, select a category for focused suggestions, or leave it empty for varied topics (usually less focused).</p>
               <Suggestions items={topics} onPick={(t) => setAi((a) => ({ ...a, topic: t }))} />
             </>}>
               <div className="flex gap-1.5">

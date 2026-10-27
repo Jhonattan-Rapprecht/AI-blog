@@ -376,3 +376,10 @@ The user asked for the collapsible check sections to use the same animation as P
 - Article `content` is sanitized before both `ArticleModel.create()` and `ArticleModel.update()` persistence paths, covering manual and AI creation. `PublicBlogController.getArticle()` sanitizes again at the public response boundary for pre-existing unsafe records before Astro receives HTML.
 - The allowlist preserves core article formatting, safe links/images, tables, and explicit Quill layout classes. It removes executable tags, event handlers, arbitrary styles/classes, unsafe URLs, SVG, embeds, and forms; `_blank` links receive `noopener noreferrer`.
 - Added Node built-in test coverage in `test/html-sanitizer.test.js`. `npm test` passed 7/7, backend syntax checks and frontend/Astro production builds passed. No database or production connection was made. Detailed notes: `docs/development/html-sanitization-2026-10-27.md`.
+
+### Latest request — Creative Publishing Studio planning
+
+- Completed the planning-only first pass for the Creative Publishing Studio, Article Layout Engine, Component Library, Style & Appearance, Admin Theme, and future AI Art Director. The architecture and phased roadmap are documented in `docs/FUTURE_CREATIVE_STUDIO_PLAN.md`.
+- The current Components page is a dev-only filesystem HTML/CSS snippet workspace with an empty-sandbox iframe preview. Preserve it unchanged; it must remain separate from the future trusted Astro component registry and must never make stored snippets executable public components.
+- Recommended design persistence uses validated, versioned publication defaults plus per-article overrides, resolved safely by the backend and consumed by Astro. Existing articles receive Classic Editorial / Minimal News defaults without a data rewrite.
+- No Phase 1 implementation, packages, schema changes, database access, or production changes have occurred. The user requested this planning baseline be committed/pushed, followed by a dedicated Phase 1 branch.
