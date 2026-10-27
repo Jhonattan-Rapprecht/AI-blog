@@ -19,6 +19,10 @@ Listing and article content still come from the existing public API. Search rema
 
 The public API does not return an author display name or article body in listing rows, and there is no newsletter subscription flow or public trending metric. Those elements were omitted rather than invented. Reading time is shown on an article page where content exists; listing cards show it only if the API supplies content. No editor font-family control exists in the current app; the new article styles inherit the existing content typography and do not set a competing font family on the rendered body.
 
+## List-mode media consistency
+
+Desktop list cards now keep every thumbnail at the same shared width and 16:10 aspect ratio. Media is vertically centered instead of stretching to match the height of each card's text. The featured first card uses the same list-mode dimensions and minimum height as all other cards. Mobile list cards retain their existing full-width 16:9 image treatment.
+
 ## Verification
 
 - `npm --prefix site run build` passed.

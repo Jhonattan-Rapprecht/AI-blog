@@ -9,7 +9,13 @@ Read this file before continuing work when the repository history or the latest 
 - Removed hardcoded MySQL pool connection credentials. The API now loads dotenv before importing routes and requires `DB_HOST`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` before creating the pool; pool behavior is unchanged.
 - Documented the required values in `.env.example` without credentials. `DATABASE_URL` remains documented but is not consumed by application code.
 - Syntax, missing-variable guard, and diff checks passed. Database connectivity was not checked during the remediation because the local `.env` did not yet contain the new `DB_*` settings.
-- This change is pending commit/push on `feat/public-blog-redesign`; the unrelated untracked `.qwen/` directory remains untouched.
+- Committed as `af2b4b2` (`fix(config): load database credentials from environment`). Push to `origin/feat/public-blog-redesign` was attempted but could not run because automatic approval review hit its usage limit; the unrelated untracked `.qwen/` directory remains untouched.
+
+### Public list-mode media sizing — 2026-10-27
+
+- The public `/blog` list view now gives regular and featured cards the same desktop thumbnail dimensions. Images stay centered at a fixed aspect ratio instead of stretching with longer card text; mobile retains full-width 16:9 thumbnails.
+- The CSS and public-blog redesign documentation passed `git diff --check` and are ready to commit on `milestone/blogstudio-stable-v2.5`.
+- The milestone branch starts from `feat/public-blog-redesign` and includes the locally committed database-configuration remediation (`af2b4b2`), whose earlier push attempt was blocked by approval-service usage limits.
 
 ### Milestone handoff — 2026-10-27
 
