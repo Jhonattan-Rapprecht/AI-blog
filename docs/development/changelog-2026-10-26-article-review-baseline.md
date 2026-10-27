@@ -138,3 +138,44 @@
 - Removed the explanatory paragraphs beneath the full-article check buttons and tightened the header. The controls now read **Spell check** and **Full article review**.
 - Review metadata is one compact model/date line; the no-findings state is shorter. The manual verification note appears only when the run includes fact-check findings.
 - Verification: `git diff --check` passed. Runtime visual checks were not run.
+
+## Compact AI check metadata
+
+- Changed the metadata label to **AI check done by:** followed by the model and date/time. When there are no findings, this metadata is grouped on the same line as **No suggestions found.** When findings exist, it remains a compact line above them.
+- The preceding review controls/history cleanup was committed and pushed as `144d081` (`refactor(article-review): simplify editor review controls`) to `origin/feat/article-reviewer-v2.3` before this follow-up.
+- Verification: `git diff --check` passed. Runtime visual check not run.
+
+## Auto-dismiss empty review notice
+
+- The **No suggestions found** notice now stays visible for five seconds, then smoothly fades and collapses. The review controls and saved history remain visible.
+- Verification: `git diff --check` passed. Runtime visual check not run.
+
+## Independent review history panel
+
+- Moved **Previous review history** out of the Full-article checks card into its own collapsible panel. It can now be expanded or collapsed without affecting review controls or current findings. This is a UI-only change; history behavior and data are unchanged.
+- Verification: `git diff --check` passed. Runtime visual check not run.
+
+## Smooth review history expansion
+
+- Replaced the history panel's instant native disclosure with a controlled expand/collapse transition that animates height and opacity. This is a presentation-only change; displayed records and history behavior are unchanged.
+- Verification: `git diff --check` passed. Runtime visual check not run.
+
+## Full-article checks heading spacing
+
+- Kept the **Choose a check:** helper line and increased its top spacing beneath the section heading for better visual breathing room.
+- Verification: `git diff --check` passed. Runtime visual check not run.
+
+## Rich-text toolbar tooltips
+
+- Added compact, styled hover/focus tooltips to the editor's paragraph/heading style, bold, italic, underline, link, numbered list, bulleted list, and clear-formatting controls. Labels also improve accessible names for toolbar controls.
+- Verification: `git diff --check` passed. Runtime visual check not run.
+
+## Fade handled suggestion cards
+
+- Applied suggestion cards now fade and collapse out of the active findings list, matching dismissed cards. Applied and dismissed items remain available in a collapsed **Handled suggestions** disclosure with their status and text.
+- Verification: `git diff --check` passed. Runtime visual check not run.
+
+## Selected-text check heading spacing
+
+- Matched the selected-text spelling section's heading-to-helper spacing to the Full-article checks section.
+- Verification: `git diff --check` passed. Runtime visual check not run.

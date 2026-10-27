@@ -209,6 +209,7 @@ export default function EditorPage() {
   const [reviewing, setReviewing] = useState(false)
   const [spellchecking, setSpellchecking] = useState(false)
   const [review, setReview] = useState(null)
+  const [showNoSuggestionsNotice, setShowNoSuggestionsNotice] = useState(false)
   const [appliedFindings, setAppliedFindings] = useState([])
   const [dismissedFindings, setDismissedFindings] = useState([])
   const [findingStatusSaveErrors, setFindingStatusSaveErrors] = useState({})
@@ -218,6 +219,7 @@ export default function EditorPage() {
   const selectedRangeRef = useRef(null)
   const [reviewHistory, setReviewHistory] = useState([])
   const [showOlderReviewHistory, setShowOlderReviewHistory] = useState(false)
+  const [reviewHistoryExpanded, setReviewHistoryExpanded] = useState(false)
   const [media, setMedia] = useState([])
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
@@ -281,6 +283,37 @@ export default function EditorPage() {
   useEffect(() => { loadCategories() }, [loadCategories])
 
   useEffect(() => {
+    const toolbar = editorRef.current?.getEditor()?.container?.previousElementSibling
+    if (!toolbar) return
+    const tooltips = [
+      ['.ql-header .ql-picker-label', 'Choose paragraph or heading style'],
+      ['.ql-bold', 'Bold'],
+      ['.ql-italic', 'Italic'],
+      ['.ql-underline', 'Underline'],
+      ['.ql-link', 'Insert or edit a link'],
+      ['.ql-list[value="ordered"]', 'Numbered list'],
+      ['.ql-list[value="bullet"]', 'Bulleted list'],
+      ['.ql-clean', 'Clear text formatting'],
+    ]
+    tooltips.forEach(([selector, label]) => {
+      const control = toolbar.querySelector(selector)
+      if (!control) return
+      control.setAttribute('data-tooltip', label)
+      control.setAttribute('aria-label', label)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!review || review.findings.length > 0) {
+      setShowNoSuggestionsNotice(false)
+      return undefined
+    }
+    setShowNoSuggestionsNotice(true)
+    const timer = window.setTimeout(() => setShowNoSuggestionsNotice(false), 5000)
+    return () => window.clearTimeout(timer)
+  }, [review?.id, review?.reviewedAt, review?.findings?.length])
+
+  useEffect(() => {
     api.settings().then((settings) => {
       setWritingSettings(settings)
       setAi((current) => ({ ...current, targetAudience: settings.audience, language: settings.language, tone: settings.tone, articleLength: settings.articleLength }))
@@ -293,6 +326,7 @@ export default function EditorPage() {
     setReview(null)
     setReviewHistory([])
     setShowOlderReviewHistory(false)
+    setReviewHistoryExpanded(false)
     setAppliedFindings([])
     setDismissedFindings([])
     setFindingStatusSaveErrors({})
@@ -724,7 +758,7 @@ export default function EditorPage() {
         <div className="grid gap-2 rounded-lg border bg-muted/20 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
           <div className="min-w-0">
             <p className="text-sm font-medium">Spell-check selected text</p>
-            <p className="mt-1 text-xs text-muted-foreground">Select a word or passage in the editor, then check only that selection.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Select a word or passage in the editor, then check only that selection.</p>
             {selectedTextForSpellcheck
               ? <p className="mt-1 truncate text-xs text-foreground" title={selectedTextForSpellcheck}>Selected: “{selectedTextForSpellcheck}”</p>
               : <p className="mt-1 text-xs text-muted-foreground">No text selected yet.</p>}
@@ -735,7 +769,7 @@ export default function EditorPage() {
         </div>
         <Card className="gap-4 py-4">
           <CardHeader className="grid gap-2 px-4">
-            <div><CardTitle className="text-sm">Full-article checks</CardTitle><p className="mt-1 text-xs text-muted-foreground">Choose a check:</p></div>
+            <div><CardTitle className="text-sm">Full-article checks</CardTitle><p className="mt-2 text-xs text-muted-foreground">Choose a check:</p></div>
             <div className="grid gap-2 sm:grid-cols-2">
               <Button type="button" variant="outline" className="w-full" onClick={spellcheckArticle} disabled={reviewing || spellchecking || saving || !article.title || !article.content}>
                 {spellchecking ? <Loader2 className="animate-spin" /> : <Check />} {spellchecking ? 'Checking spelling…' : 'Spell check'}
@@ -746,10 +780,10 @@ export default function EditorPage() {
             </div>
           </CardHeader>
           {review && <CardContent className="grid gap-3 px-4">
-            <p className="text-xs text-muted-foreground">{review.model || 'AI model'} · {new Date(review.reviewedAt).toLocaleString()}</p>
+            {review.findings.length > 0 && <p className="text-xs text-muted-foreground">AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</p>}
             {review.findings.some((finding) => finding.type === 'fact_check') && <p className="text-xs text-muted-foreground">Fact-check suggestions need manual verification; no live sources were checked.</p>}
             {review.titleReviewNote && <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{review.titleReviewNote}</p>}
-            {!review.findings.length && <p className="rounded-md bg-muted p-3 text-sm">No suggestions found.</p>}
+            {!review.findings.length && <p aria-hidden={!showNoSuggestionsNotice} className={`flex flex-wrap items-center justify-between overflow-hidden gap-x-3 gap-y-1 rounded-md bg-muted text-sm transition-[opacity,max-height,margin,padding] duration-500 ease-out ${showNoSuggestionsNotice ? 'max-h-16 px-3 py-2 opacity-100' : 'max-h-0 px-3 py-0 opacity-0'}`}><span>No suggestions found.</span><span className="text-xs text-muted-foreground">AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</span></p>}
             {review.findings.some((_finding, index) => !appliedFindings.includes(index) && !dismissedFindings.includes(index)) && <div className="flex flex-wrap gap-2">
               {review.findings.some((finding, index) => finding.type !== 'fact_check' && !appliedFindings.includes(index) && !dismissedFindings.includes(index)) && <Button type="button" size="sm" onClick={applyAllFindings}><Check /> Apply all suggestions</Button>}
               <Button type="button" size="sm" variant="outline" onClick={dismissAllFindings}><X /> Dismiss all suggestions</Button>
@@ -764,7 +798,7 @@ export default function EditorPage() {
                 : finding.severity === 'medium'
                   ? 'bg-orange-500 text-white hover:bg-orange-600 focus-visible:ring-orange-500'
                   : 'bg-green-600 text-white hover:bg-green-700 focus-visible:ring-green-500'
-              return <div key={`${index}-${finding.quote}`} className={`grid overflow-hidden transition-[opacity,max-height,margin,padding] duration-300 ease-out ${dismissed ? 'max-h-0 -my-2 border-0 p-0 opacity-0' : 'max-h-[1000px] gap-2 rounded-md border p-3 opacity-100'} ${factCheck && !dismissed ? 'border-yellow-500 bg-yellow-200/90 dark:border-yellow-600 dark:bg-yellow-900/50' : ''}`} aria-hidden={dismissed}>
+              return <div key={`${index}-${finding.quote}`} className={`grid overflow-hidden transition-[opacity,max-height,margin,padding] duration-300 ease-out ${handled ? 'max-h-0 -my-2 border-0 p-0 opacity-0' : 'max-h-[1000px] gap-2 rounded-md border p-3 opacity-100'} ${factCheck && !handled ? 'border-yellow-500 bg-yellow-200/90 dark:border-yellow-600 dark:bg-yellow-900/50' : ''}`} aria-hidden={handled}>
                 <div className="flex flex-wrap items-center gap-2 text-xs font-medium"><span className="rounded-full bg-muted px-2 py-1">{finding.field} · {finding.type.replace('_', ' ')}</span><span className="text-muted-foreground">{finding.severity} priority</span></div>
                 <p className="text-sm"><span className="font-medium">“{finding.quote}”</span> — {finding.explanation}</p>
                 <p className="text-sm text-muted-foreground"><span className="font-medium">Suggestion:</span> {finding.suggestion}</p>
@@ -786,31 +820,40 @@ export default function EditorPage() {
                 {findingStatusSaveErrors[finding.id] && <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => retryFindingStatusSave(finding)}>Retry saving status</Button>}
               </div>
             })}
-            {dismissedFindings.length > 0 && <details className="rounded-md border p-3">
-              <summary className="cursor-pointer text-sm text-muted-foreground">Dismissed suggestions ({dismissedFindings.length})</summary>
-              <div className="mt-3 grid gap-2">{dismissedFindings.map((index) => {
-                const finding = review.findings[index]
-                if (!finding) return null
-                return <div key={`dismissed-${index}`} className="rounded bg-muted/50 p-2 text-xs"><p className="font-medium">{finding.field} · {finding.type.replace('_', ' ')} · dismissed</p><p>“{finding.quote}” — {finding.explanation}</p></div>
+            {review.findings.some((_finding, index) => appliedFindings.includes(index) || dismissedFindings.includes(index)) && <details className="rounded-md border p-3">
+              <summary className="cursor-pointer text-sm text-muted-foreground">Handled suggestions ({appliedFindings.length + dismissedFindings.length})</summary>
+              <div className="mt-3 grid gap-2">{review.findings.map((finding, index) => {
+                const status = appliedFindings.includes(index) ? 'applied' : dismissedFindings.includes(index) ? 'dismissed' : null
+                if (!status) return null
+                return <div key={`handled-${index}`} className="rounded bg-muted/50 p-2 text-xs"><p className="font-medium">{finding.field} · {finding.type.replace('_', ' ')} · {status}</p><p>“{finding.quote}” — {finding.explanation}</p></div>
               })}</div>
             </details>}
           </CardContent>}
-          {reviewHistory.length > 0 && <CardContent className="grid gap-2 border-t px-4 pt-4">
-            <h3 className="text-sm font-medium">Previous review history <span className="text-muted-foreground">({reviewHistory.length})</span></h3>
-            {(showOlderReviewHistory ? reviewHistory : reviewHistory.slice(0, 3)).map((past) => <details key={past.id} className="rounded-md border p-3">
-              <summary className="cursor-pointer text-sm">{new Date(past.reviewedAt).toLocaleString()} · {past.findings.length} suggestion{past.findings.length === 1 ? '' : 's'}</summary>
-              <div className="mt-3 grid gap-2">
-                {past.findings.map((finding) => <div key={finding.id} className="rounded bg-muted/50 p-2 text-xs">
-                  <p className="font-medium">{finding.field} · {finding.type.replace('_', ' ')} · {finding.status}</p>
-                  <p>“{finding.quote}” — {finding.explanation}</p>
-                </div>)}
-              </div>
-            </details>)}
-            {reviewHistory.length > 3 && <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setShowOlderReviewHistory((current) => !current)}>
-              {showOlderReviewHistory ? 'Show fewer reviews' : `Show older reviews (${reviewHistory.length - 3})`}
-            </Button>}
-          </CardContent>}
         </Card>
+        {reviewHistory.length > 0 && <Card className="overflow-hidden py-0">
+          <button type="button" aria-expanded={reviewHistoryExpanded} onClick={() => setReviewHistoryExpanded((current) => !current)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted/40">
+            <span>Previous review history <span className="text-muted-foreground">({reviewHistory.length})</span></span>
+            <span className="text-xs text-muted-foreground">{reviewHistoryExpanded ? 'Hide' : 'Show'}</span>
+          </button>
+          <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${reviewHistoryExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+            <div className="min-h-0 overflow-hidden">
+              <CardContent className="grid gap-2 border-t px-4 py-3">
+              {(showOlderReviewHistory ? reviewHistory : reviewHistory.slice(0, 3)).map((past) => <details key={past.id} className="rounded-md border p-3">
+                <summary className="cursor-pointer text-sm">{new Date(past.reviewedAt).toLocaleString()} · {past.findings.length} suggestion{past.findings.length === 1 ? '' : 's'}</summary>
+                <div className="mt-3 grid gap-2">
+                  {past.findings.map((finding) => <div key={finding.id} className="rounded bg-muted/50 p-2 text-xs">
+                    <p className="font-medium">{finding.field} · {finding.type.replace('_', ' ')} · {finding.status}</p>
+                    <p>“{finding.quote}” — {finding.explanation}</p>
+                  </div>)}
+                </div>
+              </details>)}
+              {reviewHistory.length > 3 && <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setShowOlderReviewHistory((current) => !current)}>
+                {showOlderReviewHistory ? 'Show fewer reviews' : `Show older reviews (${reviewHistory.length - 3})`}
+              </Button>}
+              </CardContent>
+            </div>
+          </div>
+        </Card>}
       </div>
 
       <div className="grid min-w-0 content-start gap-4">

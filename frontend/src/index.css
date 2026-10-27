@@ -111,6 +111,39 @@
 .editor-quill .ql-toolbar,
 .editor-quill .ql-container { border-color: var(--border); font-family: inherit; }
 .editor-quill .ql-toolbar { border-radius: var(--radius) var(--radius) 0 0; background: var(--muted); }
+.editor-quill .ql-toolbar [data-tooltip] { position: relative; }
+.editor-quill .ql-toolbar [data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: 220px;
+  transform: translate(-50%, 4px);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--popover);
+  padding: 5px 8px;
+  color: var(--popover-foreground);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 150ms ease, transform 150ms ease, visibility 150ms;
+}
+.editor-quill .ql-toolbar [data-tooltip]:hover::after,
+.editor-quill .ql-toolbar [data-tooltip]:focus-visible::after,
+.editor-quill .ql-toolbar [data-tooltip]:focus::after {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  visibility: visible;
+}
+.editor-quill .ql-toolbar { overflow: visible; }
 .editor-quill .ql-container { border-radius: 0 0 var(--radius) var(--radius); height: 460px; background: var(--card); color: var(--foreground); }
 .editor-quill .ql-editor { line-height: 1.7; font-size: 15px; }
 .editor-quill .ql-editor::highlight(review-spelling-target) { background-color: rgb(250 204 21 / 75%); color: #111827; }

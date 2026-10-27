@@ -166,3 +166,35 @@ The recent app requests in this session were:
 - AI article review: `frontend/src/pages/EditorPage.jsx`, `frontend/src/api/client.js`, `src/controllers/ai.controller.js`, `src/routes/ai.routes.js`
 - Persistent AI review history: `src/models/article.review.model.js`, `src/models/schema.sql`
 - Optional legacy article topics and generation-only topic reporting: `src/models/article.model.js`, `src/models/analytics.model.js`, `src/services/automation.service.js`
+
+### Latest UI follow-up — compact AI check metadata
+
+The user asked to put the model/date inside the no-suggestions panel on one line and label it **AI check done by:**. First committed and pushed the preceding UI/history cleanup as `144d081` (`refactor(article-review): simplify editor review controls`) to `origin/feat/article-reviewer-v2.3`. Then grouped the no-findings status and model/date in one compact panel and used the requested label when suggestions exist. This follow-up is documented and remains uncommitted/unpushed; runtime visual check not run.
+
+### Follow-up — fade empty review notice
+
+The user asked for the no-suggestions panel to disappear gracefully after a delay. It now remains visible for five seconds and then fades/collapses over 500 ms; findings, review controls, and history are unaffected. Changelog updated. `git diff --check` passed; runtime visual check not run; changes remain uncommitted/unpushed.
+
+### Latest request — separate collapsible history UI
+
+The user asked to visually separate Previous review history from Full-article checks so history can collapse independently. Moved it into its own collapsible card; business logic/data behavior unchanged. Changelog updated. `git diff --check` passed; runtime visual check not run; changes remain uncommitted/unpushed.
+
+### Follow-up — smooth history panel transition
+
+The user asked for consistent smooth transitions when panels expand/collapse. Replaced the history card's native instant details toggle with a controlled grid-height and opacity transition; this changes presentation only. Changelog updated. `git diff --check` passed; runtime visual check not run; changes remain uncommitted/unpushed.
+
+### Follow-up — full-article check heading spacing
+
+The user clarified to keep the helper text and asked only for more vertical breathing room beneath the heading. Increased the helper's top margin. Changelog updated. Runtime visual check not run; this UI change remains uncommitted/unpushed.
+
+### Follow-up — selected-text check heading spacing
+
+The user asked for matching vertical spacing in the Spell-check selected text section. Increased its helper line's top margin to match Full-article checks. Changelog updated; runtime visual check not run; UI change remains uncommitted/unpushed.
+
+### Follow-up — rich-text editor toolbar tooltips
+
+The user asked whether hover explanations could be added to the rich-text toolbar. Added styled hover/focus tooltips and accessible labels for paragraph/heading style, bold, italic, underline, link, ordered/bulleted lists, and clear formatting. Changelog updated. `git diff --check` passed; runtime visual check not run; changes remain uncommitted/unpushed.
+
+### Latest request — hide applied suggestion cards
+
+The user asked for suggestion cards to fade away once applied because no further action is available. Applied and dismissed cards now collapse from the active list; both remain available in the **Handled suggestions** disclosure with their status. Review data/action behavior is unchanged. Changelog updated; runtime visual check not run; changes remain uncommitted/unpushed.
