@@ -4,6 +4,13 @@ Read this file before continuing work when the repository history or the latest 
 
 ## Active session — 2026-10-26
 
+### Milestone handoff — 2026-10-27
+
+- Current branch: `feat/article-reviewer-v2.4`, created from the completed v2.3 reviewer UI milestone.
+- The v2.3 UI refinements are committed and pushed to `origin/feat/article-reviewer-v2.3` as `6095408` (`feat(article-review): polish review and editor interactions`). That commit includes the compact no-findings notice, independent animated history panel, heading spacing, rich-text toolbar tooltips, and fade/collapse of handled suggestions, with changelog documentation.
+- The v2.4 branch is the next article-reviewer milestone and is ready for new work. No v2.4 product changes have started yet.
+- Unrelated untracked `docs/product/` and `temp.txt` were left untouched.
+
 ### Latest request — bulk dismiss and focused spelling check
 
 The user requested a **Dismiss all suggestions** control next to **Apply all suggestions**, plus a dedicated spelling check because the general review misses misspelled words; spelling findings should isolate a specific word for review and correction. Added a confirmed bulk dismissal that persists each pending finding's status, and a separate AI spell-check endpoint/button returning single-word title/body findings that use the existing individual apply flow and article review history. The user also asked to commit/push/document preceding changes first; documentation has been updated, but the Git commit attempt was blocked when Git could not create `.git/index.lock` (permission denied). No commit or push has succeeded. `git diff --check` passed; runtime tests not run.

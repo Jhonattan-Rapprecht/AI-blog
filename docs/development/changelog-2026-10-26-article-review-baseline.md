@@ -179,3 +179,8 @@
 
 - Matched the selected-text spelling section's heading-to-helper spacing to the Full-article checks section.
 - Verification: `git diff --check` passed. Runtime visual check not run.
+
+## Milestone handoff — 2026-10-27
+
+- Completed and pushed the v2.3 reviewer UI refinements as `6095408` (`feat(article-review): polish review and editor interactions`) on `feat/article-reviewer-v2.3`.
+- Created `feat/article-reviewer-v2.4` from that commit as the next article-reviewer milestone branch. No v2.4 feature changes have started yet.
