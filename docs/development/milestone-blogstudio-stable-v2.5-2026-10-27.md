@@ -8,6 +8,8 @@
 - Moved the shared **Review results** panel after both check sections and merged Previous review history into it. Current results and historic runs retain their existing handling and collapse controls.
 - Review runs now persist `check_type`, allowing results and history to identify their source: full article, title, excerpt, or selected-text check. Reviews created before this change have no recoverable source and show the generic fallback label.
 - After a reported Dutch title was not flagged despite an unnatural final phrase, strengthened the title-only prompt to receive the configured language explicitly and require a semantic-readability pass. It now flags dictionary-valid words used with the wrong sense, incomplete constructions, unnatural word combinations or idioms, and literal translations that a typical native reader would not understand.
+- Excerpt checks now send only previously handled excerpt findings back to the model. Earlier title, body, and selected-text findings no longer crowd or suppress excerpt-focused suggestions.
+- Every text-changing suggestion now uses one shared confirmation flow with a before/after preview, dimmed and blurred backdrop, and a soft white pulsing halo. It covers individual title, excerpt, article-body, selected-text, and fact-check actions, plus Apply all. Dismissal and unrelated confirmations keep their existing treatment.
 
 ## Public favicon consistency
 
@@ -44,3 +46,6 @@ This concise log captures the latest user request and the corresponding implemen
 | --- | --- |
 | The title checker missed a Dutch title whose final phrase was grammatically formed but semantically unnatural. | Diagnosed that the title-only prompt referred to a configured language without passing its value and did not require phrase-completeness or word-sense checks. Updated the prompt only; no UI or workflow changed. |
 | Commit, push, document, and ensure prompts/responses are logged. | Added this log, updated the handoff, and committed/pushed the refined title-check prompt. |
+| An excerpt suggestion failed after its replacement was already present. | Added safe handling for a uniquely present replacement: it marks the suggestion as already applied instead of reporting an unmatched original phrase. |
+| The excerpt reviewer became less useful. | Found that it was receiving unrelated handled findings from all article fields; narrowed its history context to excerpt findings only. |
+| Every text-changing suggestion should show the same focused confirmation dialog. | Refactored suggestion application behind a shared editor-change confirmation helper and added previews for body and selected-text corrections. |

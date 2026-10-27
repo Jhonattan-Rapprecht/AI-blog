@@ -23,6 +23,7 @@ Read this file before continuing work when the repository history or the latest 
 - Review runs now persist `check_type` so saved title, excerpt, selection, and full-article checks retain that label after history reload. Existing historic runs have no recoverable source and continue to display the generic fallback label.
 - Detailed implementation and the current-session prompt history are recorded in `docs/development/milestone-blogstudio-stable-v2.5-2026-10-27.md`.
 - The title-only review prompt now explicitly receives the configured language and evaluates semantic word sense, phrase completeness, and natural idiomatic usage. This prompt-only refinement is documented in the same milestone record.
+- Follow-up: excerpt history is now limited to prior excerpt findings, and every text-changing suggestion uses the shared before/after confirmation dialog with its white focus pulse. These refinements are documented in the same milestone record.
 
 ### Milestone handoff — 2026-10-27
 

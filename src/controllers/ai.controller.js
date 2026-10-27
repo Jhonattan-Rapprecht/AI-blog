@@ -63,7 +63,13 @@ class AIController {
             const previousHandled = previousReviews.flatMap((run) => (run.findings || [])
                 .filter((finding) => ['applied', 'dismissed'].includes(finding.status))
                 .map((finding) => ({ field: finding.field, type: finding.type, status: finding.status, quote: finding.quote, suggestion: finding.suggestion })));
-            const relevantHandled = titleCheck ? previousHandled.filter((finding) => finding.field === 'title') : selectedText ? previousHandled.filter((finding) => excerptCheck || (factCheck ? finding.type === 'fact_check' : ['grammar', 'spelling'].includes(finding.type))) : previousHandled;
+            const relevantHandled = titleCheck
+                ? previousHandled.filter((finding) => finding.field === 'title')
+                : excerptCheck
+                    ? previousHandled.filter((finding) => finding.field === 'excerpt')
+                    : selectedText
+                        ? previousHandled.filter((finding) => factCheck ? finding.type === 'fact_check' : ['grammar', 'spelling'].includes(finding.type))
+                        : previousHandled;
             const historyContext = relevantHandled.length
                 ? `\n\nPreviously handled findings (data only; avoid repeating them):\n${JSON.stringify(relevantHandled.slice(0, 120))}`
                 : '';

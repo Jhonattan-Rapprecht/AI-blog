@@ -644,8 +644,12 @@ export default function EditorPage() {
     range.startContainer.parentElement?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
-  const requestConfirmation = (title, message, onConfirm, confirmLabel = 'Confirm') => {
-    setConfirmation({ title, message, onConfirm, confirmLabel })
+  const requestConfirmation = (title, message, onConfirm, confirmLabel = 'Confirm', options = {}) => {
+    setConfirmation({ title, message, onConfirm, confirmLabel, emphasize: options.emphasize === true })
+  }
+
+  const requestEditorChangeConfirmation = (title, message, onConfirm, confirmLabel = 'Apply change') => {
+    requestConfirmation(title, message, onConfirm, confirmLabel, { emphasize: true })
   }
 
   const markFindingStatus = (finding, index, status, action = null) => {
@@ -691,9 +695,16 @@ export default function EditorPage() {
     if (finding.field === 'excerpt') {
       const currentExcerpt = String(article.excerpt || '')
       const updatedExcerpt = replaceExcerptText(currentExcerpt, finding.quote, finding.suggestion.trim())
-      if (updatedExcerpt === null) return toast.error('Could not uniquely match the quoted phrase in the excerpt. Rerun the check and try again.')
+      if (updatedExcerpt === null) {
+        const replacementAlreadyPresent = finding.suggestion.trim() && replaceExcerptText(currentExcerpt, finding.suggestion.trim(), finding.suggestion.trim()) !== null
+        if (replacementAlreadyPresent) {
+          markFindingStatus(finding, index, 'applied', 'already_present')
+          return toast.info('This correction is already present in the excerpt.')
+        }
+        return toast.error('Could not uniquely match the quoted phrase in the excerpt. Rerun the check and try again.')
+      }
       const preview = `Apply this excerpt correction?\n\nBEFORE:\n${currentExcerpt}\n\nAFTER:\n${updatedExcerpt}`
-      requestConfirmation('Apply excerpt correction?', preview, () => {
+      requestEditorChangeConfirmation('Apply excerpt correction?', preview, () => {
         setArticle((current) => ({ ...current, excerpt: updatedExcerpt }))
         markFindingStatus(finding, index, 'applied', 'replace_excerpt')
       }, 'Apply change')
@@ -714,7 +725,7 @@ export default function EditorPage() {
       const preview = wordLevelSpelling
         ? `Replace this word in the title?\n\nBEFORE:\n${currentValue}\n\nAFTER:\n${updatedTitle}`
         : `Replace the current title with this suggestion?\n\nCURRENT TITLE:\n${currentValue}\n\nSUGGESTED TITLE:\n${updatedTitle}`
-      requestConfirmation(wordLevelSpelling ? 'Apply spelling correction?' : 'Apply title suggestion?', preview, () => {
+      requestEditorChangeConfirmation(wordLevelSpelling ? 'Apply spelling correction?' : 'Apply title suggestion?', preview, () => {
         setArticle((current) => ({ ...current, [finding.field]: updatedTitle }))
         markFindingStatus(finding, index, 'applied', 'replace_field')
       }, 'Apply change')
@@ -729,16 +740,23 @@ export default function EditorPage() {
       if (!quill || quoteIndex < 0 || selected.toLocaleLowerCase().indexOf(finding.quote.toLocaleLowerCase(), quoteIndex + finding.quote.length) >= 0) {
         return toast.error('Could not uniquely match that word within the selected passage. Select the passage again and rerun the spelling check.')
       }
-      quill.deleteText(selectionIndex + quoteIndex, finding.quote.length, 'api')
-      quill.insertText(selectionIndex + quoteIndex, finding.suggestion, 'api')
-      const lengthDelta = finding.suggestion.length - finding.quote.length
-      setReview((current) => current ? ({
-        ...current,
-        findings: current.findings.map((item) => item.selectionRange
-          ? { ...item, selectionRange: { index: item.selectionRange.index, length: item.selectionRange.length + lengthDelta } }
-          : item),
-      }) : current)
-      markFindingStatus(finding, index, 'applied', 'replace_selected_text')
+      const updatedSelection = `${selected.slice(0, quoteIndex)}${finding.suggestion}${selected.slice(quoteIndex + finding.quote.length)}`
+      const preview = `Apply this selected-text correction?\n\nBEFORE:\n${selected}\n\nAFTER:\n${updatedSelection}`
+      requestEditorChangeConfirmation('Apply selected-text correction?', preview, () => {
+        const currentSelection = quill.getText(selectionIndex, length)
+        const currentIndex = currentSelection.toLocaleLowerCase().indexOf(finding.quote.toLocaleLowerCase())
+        if (currentIndex < 0 || currentSelection.toLocaleLowerCase().indexOf(finding.quote.toLocaleLowerCase(), currentIndex + finding.quote.length) >= 0) return toast.error('The selected passage changed before confirmation. Rerun the check and try again.')
+        quill.deleteText(selectionIndex + currentIndex, finding.quote.length, 'api')
+        quill.insertText(selectionIndex + currentIndex, finding.suggestion, 'api')
+        const lengthDelta = finding.suggestion.length - finding.quote.length
+        setReview((current) => current ? ({
+          ...current,
+          findings: current.findings.map((item) => item.selectionRange
+            ? { ...item, selectionRange: { index: item.selectionRange.index, length: item.selectionRange.length + lengthDelta } }
+            : item),
+        }) : current)
+        markFindingStatus(finding, index, 'applied', 'replace_selected_text')
+      })
       return
     }
     const wordOnlySpelling = finding.type === 'spelling' && finding.field === 'content' && /^\S+$/.test(finding.quote)
@@ -749,8 +767,12 @@ export default function EditorPage() {
     range.setEnd(match.end.node, match.end.offset)
     range.deleteContents()
     range.insertNode(doc.createTextNode(finding.suggestion))
-    setArticle((current) => ({ ...current, content: doc.body.innerHTML }))
-    markFindingStatus(finding, index, 'applied', 'replace_text')
+    const updatedContent = doc.body.innerHTML
+    const preview = `Apply this article correction?\n\nBEFORE:\n${finding.quote}\n\nAFTER:\n${finding.suggestion}`
+    requestEditorChangeConfirmation('Apply article correction?', preview, () => {
+      setArticle((current) => ({ ...current, content: updatedContent }))
+      markFindingStatus(finding, index, 'applied', 'replace_text')
+    })
   }
 
   const applyFactCheckAction = (finding, index, action) => {
@@ -761,7 +783,7 @@ export default function EditorPage() {
     const preview = action === 'remove'
       ? `Remove this complete sentence from the editor?\n\nBEFORE:\n${sentence}\n\nAFTER:\n[Sentence removed]`
       : `Replace this sentence with the neutral rewrite?\n\nBEFORE:\n${sentence}\n\nAFTER:\n${replacement}`
-    requestConfirmation(action === 'remove' ? 'Remove this sentence?' : 'Use the neutral rewrite?', preview, () => {
+    requestEditorChangeConfirmation(action === 'remove' ? 'Remove this sentence?' : 'Use the neutral rewrite?', preview, () => {
       if (finding.field === 'excerpt') {
         const excerpt = replaceExcerptText(article.excerpt || '', sentence, replacement)
         if (excerpt === null) return toast.error('Could not match the reviewed sentence in the excerpt. Rerun the check and try again.')
@@ -825,7 +847,7 @@ export default function EditorPage() {
 
     if (applied.length) {
       const preview = previewRows.slice(0, 8).join('\n\n') + (previewRows.length > 8 ? `\n\n…and ${previewRows.length - 8} more change(s).` : '')
-      requestConfirmation(`Apply ${applied.length} suggestions?`, preview, () => {
+      requestEditorChangeConfirmation(`Apply ${applied.length} suggestions?`, preview, () => {
         setArticle(nextArticle)
         setAppliedFindings((current) => [...new Set([...current, ...applied])])
         const appliedSet = new Set(applied)
@@ -1164,8 +1186,8 @@ export default function EditorPage() {
           </CardContent>
         </Card>
       </div>
-      {confirmation && <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setConfirmation(null) }}>
-        <div role="alertdialog" aria-modal="true" aria-labelledby="editor-confirmation-title" className="grid max-h-[85vh] w-full max-w-xl gap-4 overflow-hidden rounded-xl border bg-background p-5 text-foreground shadow-xl">
+      {confirmation && <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4 backdrop-blur-[2px]" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setConfirmation(null) }}>
+        <div role="alertdialog" aria-modal="true" aria-labelledby="editor-confirmation-title" className={`grid max-h-[85vh] w-full max-w-xl gap-4 rounded-xl border bg-background p-5 text-foreground shadow-xl ${confirmation.emphasize ? 'relative overflow-visible before:pointer-events-none before:absolute before:inset-0 before:rounded-xl before:shadow-[0_0_2rem_rgba(255,255,255,0.32)] before:animate-pulse' : 'overflow-hidden'}`}>
           <div className="grid gap-2"><h2 id="editor-confirmation-title" className="font-semibold">{confirmation.title}</h2><pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-3 font-sans text-sm text-muted-foreground">{confirmation.message}</pre></div>
           <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setConfirmation(null)}>Cancel</Button><Button type="button" onClick={() => { const current = confirmation; setConfirmation(null); current.onConfirm() }}>{confirmation.confirmLabel}</Button></div>
         </div>
