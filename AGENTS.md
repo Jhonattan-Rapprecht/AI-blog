@@ -4,6 +4,13 @@ Read this file before continuing work when the repository history or the latest 
 
 ## Active session — 2026-10-26
 
+### Database configuration remediation — 2026-10-27
+
+- Removed hardcoded MySQL pool connection credentials. The API now loads dotenv before importing routes and requires `DB_HOST`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` before creating the pool; pool behavior is unchanged.
+- Documented the required values in `.env.example` without credentials. `DATABASE_URL` remains documented but is not consumed by application code.
+- Syntax, missing-variable guard, and diff checks passed. Database connectivity was not checked during the remediation because the local `.env` did not yet contain the new `DB_*` settings.
+- This change is pending commit/push on `feat/public-blog-redesign`; the unrelated untracked `.qwen/` directory remains untouched.
+
 ### Milestone handoff — 2026-10-27
 
 - Current branch: `feat/media-library-v2.4`, renamed to reflect the next Media Library improvement milestone.

@@ -1,4 +1,6 @@
-﻿const express = require('express');
+﻿require('dotenv').config();
+
+const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
@@ -17,7 +19,6 @@ const authMiddleware = require('./middleware/auth.middleware');
 const activityLogMiddleware = require('./middleware/activity-log.middleware');
 const publicErrorLogMiddleware = require('./middleware/public-error-log.middleware');
 const SchedulerService = require('./services/scheduler.service');
-require('dotenv').config();
 
 const app = express();
 // Admin (Vite) and public site (Astro)

@@ -1,12 +1,18 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+
+const requiredDatabaseVariables = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const missingDatabaseVariables = requiredDatabaseVariables.filter((name) => !process.env[name]);
+
+if (missingDatabaseVariables.length > 0) {
+    throw new Error(`Missing required database configuration: ${missingDatabaseVariables.join(", ")}`);
+}
 
 // Database configuration using a connection pool for high performance
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: 'root',
-    database: 'ai_blog',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10, // Maximum number of connections in pool
     maxIdle: 10, // Max idle connections, the pool will retire them
