@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
 import { toast } from 'sonner'
-import { AlertTriangle, ArrowLeft, Check, ImagePlus, Images, Loader2, Plus, Save, Sparkles, Trash2, Upload, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Check, ChevronDown, ImagePlus, Images, Loader2, Plus, Save, Sparkles, Trash2, Upload, X } from 'lucide-react'
 import { api, errorMessage, mediaUrl, socket } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -232,6 +232,8 @@ export default function EditorPage() {
   const [reviewHistory, setReviewHistory] = useState([])
   const [showOlderReviewHistory, setShowOlderReviewHistory] = useState(false)
   const [reviewHistoryExpanded, setReviewHistoryExpanded] = useState(false)
+  const [partialChecksExpanded, setPartialChecksExpanded] = useState(true)
+  const [fullChecksExpanded, setFullChecksExpanded] = useState(true)
   const [media, setMedia] = useState([])
   const checksBusy = Boolean(activeReviewCheck || spellchecking || selectionSpellchecking)
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
@@ -861,8 +863,13 @@ export default function EditorPage() {
         <div className="editor-quill" onMouseUp={captureSelectedText} onKeyUp={captureSelectedText}>
           <ReactQuill ref={editorRef} theme="snow" value={article.content} onChange={onArticleContentChange} />
         </div>
-        <div className="grid gap-2 rounded-lg border bg-muted/20 p-3">
-          <p className="text-sm font-medium">Partial-article checks</p>
+        <div className="grid gap-2 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
+          <button type="button" aria-expanded={partialChecksExpanded} aria-controls="partial-article-checks-content" onClick={() => setPartialChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium">
+            <span>Partial-article checks</span><span className="flex items-center gap-2 text-xs text-muted-foreground">{partialChecksExpanded ? 'Hide' : 'Show'}<ChevronDown className={`size-4 transition-transform ${partialChecksExpanded ? 'rotate-180' : ''}`} /></span>
+          </button>
+          <div id="partial-article-checks-content" aria-hidden={!partialChecksExpanded} className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${partialChecksExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+            <div className="min-h-0 overflow-hidden">
+              <div className="grid gap-2">
           {[
             { kind: 'spelling', label: 'Spell check', description: 'Select a word or passage in the editor, then check only that selection.', button: 'Check selection' },
             { kind: 'grammar', label: 'Grammar check', description: 'Check spelling, grammar, punctuation, and usage in the selection.', button: 'Check selection' },
@@ -886,11 +893,22 @@ export default function EditorPage() {
               {activeReviewCheck === 'excerpt_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'excerpt_review' ? 'Checking excerpt…' : 'Check excerpt'}
             </Button>
           </div>
+              </div>
+            </div>
+          </div>
         </div>
         <Card className="gap-4 py-4">
-          <CardHeader className="grid gap-2 px-4">
-            <div><CardTitle className="text-sm">Full-article checks</CardTitle><p className="mt-2 text-xs text-muted-foreground">Choose a check:</p></div>
-            <div className="grid gap-2 sm:grid-cols-2">
+          <CardHeader className="px-4 py-0">
+            <button type="button" aria-expanded={fullChecksExpanded} aria-controls="full-article-checks-content" onClick={() => setFullChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm font-semibold">
+              <span>Full-article checks</span><span className="flex items-center gap-2 text-xs font-normal text-muted-foreground">{fullChecksExpanded ? 'Hide' : 'Show'}<ChevronDown className={`size-4 transition-transform ${fullChecksExpanded ? 'rotate-180' : ''}`} /></span>
+            </button>
+          </CardHeader>
+          <div id="full-article-checks-content" aria-hidden={!fullChecksExpanded} className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${fullChecksExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+            <div className="min-h-0 overflow-hidden">
+              <div className="grid gap-4">
+                <div className="grid gap-2 px-4">
+              <p className="text-xs text-muted-foreground">Choose a check:</p>
+              <div className="grid gap-2 sm:grid-cols-2">
               <Button type="button" variant="outline" className="w-full" onClick={() => runFocusedCheck('grammar')} disabled={checksBusy || saving || !article.title || !article.content}>
                 {activeReviewCheck === 'full_grammar' ? <Loader2 className="animate-spin" /> : <Check />} {activeReviewCheck === 'full_grammar' ? 'Checking…' : 'Grammar check'}
               </Button>
@@ -904,7 +922,7 @@ export default function EditorPage() {
                 {activeReviewCheck === 'full_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'full_review' ? 'Reviewing…' : 'Full article review'}
               </Button>
             </div>
-          </CardHeader>
+            </div>
           {review && <CardContent className="grid gap-3 px-4">
             {review.findings.length > 0 && <p className="text-xs text-muted-foreground">AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</p>}
             {review.findings.some((finding) => finding.type === 'fact_check') && <p className="text-xs text-muted-foreground">Fact-check suggestions need manual verification; no live sources were checked.</p>}
@@ -955,6 +973,9 @@ export default function EditorPage() {
               })}</div>
             </details>}
           </CardContent>}
+              </div>
+            </div>
+          </div>
         </Card>
         {reviewHistory.length > 0 && <Card className="overflow-hidden py-0">
           <button type="button" aria-expanded={reviewHistoryExpanded} onClick={() => setReviewHistoryExpanded((current) => !current)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted/40">

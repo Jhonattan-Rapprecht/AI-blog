@@ -338,3 +338,12 @@ The user asked to make all Partial-article checks buttons visually consistent an
 ### Follow-up — consistent partial-check dividers
 
 The user asked for separators between all options, matching the existing divider before the excerpt check. Added matching top borders and spacing to the spelling, grammar, and fact-check rows. Diff check passed; visual runtime check not run.
+### Follow-up — match partial-check background
+
+The user asked to give **Partial-article checks** the same background as the full-check card to distinguish it from the editor. Matched the card background/foreground/border/shadow styles. Diff check passed; visual runtime check not run.
+### Latest request — collapsible article check sections
+
+The user asked to make both **Partial-article checks** and **Full-article checks** collapsible to clean up the Editor. Added independent accessible Show/Hide controls; both open by default. Collapsing the full section hides its controls and current results. Frontend build and diff check passed; runtime visual check not run. Uncommitted on `feat/public-blog-redesign`.
+### Follow-up — match review-history animation
+
+The user asked for the collapsible check sections to use the same animation as Previous review history. Applied the matching grid-row and opacity transition to both sections. Frontend build and diff check passed; visual runtime check not run.

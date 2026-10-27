@@ -337,3 +337,15 @@ ode --check and git diff --check passed.
 
 - Added the same top divider and spacing to the spelling, grammar, and fact-check option rows already used for the excerpt row.
 - Verification: `git diff --check` passed; runtime visual check not run.
+## Match partial-check panel background — 2026-10-27
+
+- Changed the **Partial-article checks** panel to use the same card background, foreground, border, and shadow treatment as **Full-article checks**, separating both check areas from the editor surface.
+- Verification: `git diff --check` passed; runtime visual check not run.
+## Collapsible article check sections — 2026-10-27
+
+- Made **Partial-article checks** and **Full-article checks** independently collapsible with accessible Show/Hide buttons and chevron indicators. Both sections are expanded by default; collapsing Full-article checks also hides its current findings to reduce page clutter.
+- Verification: frontend production build and `git diff --check` passed. Existing CSS highlight and bundle-size warnings remain; runtime visual check not run.
+## Match review-history collapse animation — 2026-10-27
+
+- Applied the same animated grid-row and opacity transition used by Previous review history to the Partial-article checks and Full-article checks collapsible sections.
+- Verification: frontend production build and `git diff --check` passed. Existing CSS highlight and bundle-size warnings remain; runtime visual check not run.
