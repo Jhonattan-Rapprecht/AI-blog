@@ -369,3 +369,10 @@ The user asked to make both **Partial-article checks** and **Full-article checks
 ### Follow-up — match review-history animation
 
 The user asked for the collapsible check sections to use the same animation as Previous review history. Applied the matching grid-row and opacity transition to both sections. Frontend build and diff check passed; visual runtime check not run.
+
+### Latest request — Fix 2 HTML sanitization
+
+- Implemented stored-XSS protection with `sanitize-html`, using a strict reusable allowlist in `src/utils/htmlSanitizer.js`.
+- Article `content` is sanitized before both `ArticleModel.create()` and `ArticleModel.update()` persistence paths, covering manual and AI creation. `PublicBlogController.getArticle()` sanitizes again at the public response boundary for pre-existing unsafe records before Astro receives HTML.
+- The allowlist preserves core article formatting, safe links/images, tables, and explicit Quill layout classes. It removes executable tags, event handlers, arbitrary styles/classes, unsafe URLs, SVG, embeds, and forms; `_blank` links receive `noopener noreferrer`.
+- Added Node built-in test coverage in `test/html-sanitizer.test.js`. `npm test` passed 7/7, backend syntax checks and frontend/Astro production builds passed. No database or production connection was made. Detailed notes: `docs/development/html-sanitization-2026-10-27.md`.

@@ -2,6 +2,7 @@ const db = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
 const MediaModel = require('./media.model');
+const { sanitizeArticleHtml } = require('../utils/htmlSanitizer');
 
 class ArticleModel {
     constructor() { this.mediaColumnReady = null; this.topicSchemaReady = null; }
@@ -137,7 +138,7 @@ class ArticleModel {
             title ?? null,
             slug ?? null,
             excerpt ?? null,
-            content ?? null,
+            typeof content === 'string' ? sanitizeArticleHtml(content) : content ?? null,
             featured_image ?? null,
             featured_media_id ?? null,
             status ?? 'draft',
@@ -210,7 +211,7 @@ class ArticleModel {
         for (const [key, value] of Object.entries(data)) {
             if (!allowed.includes(key)) continue;
             fields.push(`${key} = ?`);
-            params.push(value ?? null);
+            params.push(key === 'content' && typeof value === 'string' ? sanitizeArticleHtml(value) : value ?? null);
         }
 
         if (fields.length === 0) return null;

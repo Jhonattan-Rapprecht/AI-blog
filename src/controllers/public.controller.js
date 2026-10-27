@@ -1,5 +1,7 @@
 ﻿const PublicBlogModel = require('../models/public.model');
 
+const { sanitizeArticleHtml } = require('../utils/htmlSanitizer');
+
 const clamp = (value, min, max, fallback) => {
     const n = parseInt(value, 10);
     return Number.isNaN(n) ? fallback : Math.min(Math.max(n, min), max);
@@ -28,7 +30,7 @@ class PublicBlogController {
                 return res.status(404).json({ error: 'Article not found or not yet published' });
             }
             const related = await PublicBlogModel.getRelated(article);
-            res.json({ ...article, related });
+            res.json({ ...article, content: sanitizeArticleHtml(article.content), related });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

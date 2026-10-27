@@ -10,7 +10,7 @@
     "dev:server": "node --watch src/index.js",
     "dev:client": "npm --prefix frontend run dev",
     "dev:site": "npm --prefix site run dev",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,7 @@
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.24.5",
     "react-quill": "^2.0.0",
+    "sanitize-html": "^2.18.1",
     "socket.io": "^4.8.4",
     "uuid": "^14.0.2"
   },
