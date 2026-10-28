@@ -969,8 +969,8 @@ export default function EditorPage() {
           <ReactQuill ref={editorRef} theme="snow" value={article.content} onChange={onArticleContentChange} />
         </div>
         <div className="mt-2 grid gap-2 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
-          <button type="button" aria-expanded={titleExcerptChecksExpanded} aria-controls="title-excerpt-checks-content" onClick={() => setTitleExcerptChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium">
-            <span>Title &amp; excerpt checks</span><span className="flex items-center gap-2 text-xs text-muted-foreground">{titleExcerptChecksExpanded ? 'Hide' : 'Show'}<ChevronDown className={`size-4 transition-transform ${titleExcerptChecksExpanded ? 'rotate-180' : ''}`} /></span>
+          <button type="button" aria-label={`${titleExcerptChecksExpanded ? 'Collapse' : 'Expand'} title and excerpt checks`} title={`${titleExcerptChecksExpanded ? 'Collapse' : 'Expand'} title and excerpt checks`} aria-expanded={titleExcerptChecksExpanded} aria-controls="title-excerpt-checks-content" onClick={() => setTitleExcerptChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium">
+            <span>Title &amp; excerpt checks</span><ChevronDown className={`size-6 text-muted-foreground transition-transform ${titleExcerptChecksExpanded ? 'rotate-180' : ''}`} />
           </button>
           <div id="title-excerpt-checks-content" aria-hidden={!titleExcerptChecksExpanded} className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${titleExcerptChecksExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
             <div className="min-h-0 overflow-hidden">
@@ -992,8 +992,8 @@ export default function EditorPage() {
           </div>
         </div>
         <div className="grid gap-2 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
-          <button type="button" aria-expanded={partialChecksExpanded} aria-controls="partial-article-checks-content" onClick={() => setPartialChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium">
-            <span>Partial-article checks</span><span className="flex items-center gap-2 text-xs text-muted-foreground">{partialChecksExpanded ? 'Hide' : 'Show'}<ChevronDown className={`size-4 transition-transform ${partialChecksExpanded ? 'rotate-180' : ''}`} /></span>
+          <button type="button" aria-label={`${partialChecksExpanded ? 'Collapse' : 'Expand'} partial-article checks`} title={`${partialChecksExpanded ? 'Collapse' : 'Expand'} partial-article checks`} aria-expanded={partialChecksExpanded} aria-controls="partial-article-checks-content" onClick={() => setPartialChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium">
+            <span>Partial-article checks</span><ChevronDown className={`size-6 text-muted-foreground transition-transform ${partialChecksExpanded ? 'rotate-180' : ''}`} />
           </button>
           <div id="partial-article-checks-content" aria-hidden={!partialChecksExpanded} className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${partialChecksExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
             <div className="min-h-0 overflow-hidden">
@@ -1021,8 +1021,8 @@ export default function EditorPage() {
         </div>
         <Card className="gap-4 py-4">
           <CardHeader className="px-4 py-0">
-            <button type="button" aria-expanded={fullChecksExpanded} aria-controls="full-article-checks-content" onClick={() => setFullChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm font-semibold">
-              <span>Full-article checks</span><span className="flex items-center gap-2 text-xs font-normal text-muted-foreground">{fullChecksExpanded ? 'Hide' : 'Show'}<ChevronDown className={`size-4 transition-transform ${fullChecksExpanded ? 'rotate-180' : ''}`} /></span>
+            <button type="button" aria-label={`${fullChecksExpanded ? 'Collapse' : 'Expand'} full-article checks`} title={`${fullChecksExpanded ? 'Collapse' : 'Expand'} full-article checks`} aria-expanded={fullChecksExpanded} aria-controls="full-article-checks-content" onClick={() => setFullChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm font-semibold">
+              <span>Full-article checks</span><ChevronDown className={`size-6 text-muted-foreground transition-transform ${fullChecksExpanded ? 'rotate-180' : ''}`} />
             </button>
           </CardHeader>
           <div id="full-article-checks-content" aria-hidden={!fullChecksExpanded} className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${fullChecksExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -1051,14 +1051,12 @@ export default function EditorPage() {
         </Card>
         {(review || reviewHistory.length > 0) && <Card className={`overflow-hidden py-0 ${appearance.reviewAttentionEnabled && hasUnresolvedReviewFindings ? 'review-results-attention' : ''}`}>
           {review && <>
-            <CardContent className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-              <div className="grid gap-0.5"><h3 className="text-sm font-semibold">Review results</h3><p className="text-xs text-muted-foreground">Last AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</p></div>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setReviewResultsExpanded((current) => !current)} aria-expanded={reviewResultsExpanded}>{reviewResultsExpanded ? 'Hide results' : 'Show results'}<ChevronDown className={`size-4 transition-transform ${reviewResultsExpanded ? 'rotate-180' : ''}`} /></Button>
+            <CardContent className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-x-2"><h3 className="shrink-0 text-sm font-semibold">Review results</h3><span aria-hidden="true" className="shrink-0 text-xs text-muted-foreground">·</span><p className="min-w-0 shrink truncate text-xs text-muted-foreground">Last AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</p><span aria-hidden="true" className="shrink-0 text-xs text-muted-foreground">·</span><span className="inline-flex min-w-28 flex-1 justify-center rounded-full bg-muted px-2 py-1 text-center text-xs text-muted-foreground">From: {reviewSourceLabel(review.checkType)}</span></div>
+              <Button type="button" variant="ghost" size="icon" className="size-8" title={`${reviewResultsExpanded ? 'Collapse' : 'Expand'} review results`} aria-label={`${reviewResultsExpanded ? 'Collapse' : 'Expand'} review results`} onClick={() => setReviewResultsExpanded((current) => !current)} aria-expanded={reviewResultsExpanded}><ChevronDown className={`size-6 text-muted-foreground transition-transform ${reviewResultsExpanded ? 'rotate-180' : ''}`} /></Button>
             </CardContent>
             <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${reviewResultsExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
               <div className="min-h-0 overflow-hidden"><CardContent className="grid gap-3 border-t px-4 py-4">
-            <div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">From: {reviewSourceLabel(review.checkType)}</span></div>
-            {review.findings.some((finding) => finding.type === 'fact_check') && <p className="text-xs text-muted-foreground">Fact-check suggestions need manual verification; no live sources were checked.</p>}
             {review.titleReviewNote && <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{review.titleReviewNote}</p>}
             {!review.findings.length && <p aria-hidden={!showNoSuggestionsNotice} className={`overflow-hidden rounded-md bg-muted text-sm transition-[opacity,max-height,margin,padding] duration-500 ease-out ${showNoSuggestionsNotice ? 'max-h-16 px-3 py-2 opacity-100' : 'max-h-0 px-3 py-0 opacity-0'}`}>No suggestions found.</p>}
             {review.findings.some((_finding, index) => !appliedFindings.includes(index) && !dismissedFindings.includes(index)) && <div className="flex flex-wrap gap-2">
@@ -1108,8 +1106,8 @@ export default function EditorPage() {
               </CardContent></div>
             </div>
           </>}
-          {reviewHistory.length > 0 && <>
-          <button type="button" aria-expanded={reviewHistoryExpanded} onClick={() => setReviewHistoryExpanded((current) => !current)} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted/40 ${review ? 'border-t' : ''}`}>
+          {review && reviewResultsExpanded && reviewHistory.length > 0 && <>
+          <button type="button" aria-expanded={reviewHistoryExpanded} onClick={() => setReviewHistoryExpanded((current) => !current)} className="flex w-full items-center justify-between gap-3 border-t px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted/40">
             <span>Previous review history <span className="text-muted-foreground">({reviewHistory.length})</span></span>
             <span className="text-xs text-muted-foreground">{reviewHistoryExpanded ? 'Hide' : 'Show'}</span>
           </button>

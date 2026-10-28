@@ -440,3 +440,14 @@ The user asked for the collapsible check sections to use the same animation as P
 - The user asked to reduce stale Review results information: the card now always shows only **Last AI check done by** plus the timestamp until expanded. Check-specific source/fact-check guidance/notes/actions stay inside the collapsed content. Newly started checks auto-expand it.
 - Added a browser-local Admin Theme appearance store and organized the page into Interface mode, Layout & navigation, Elements & feedback, and Effects & animations. The review-results glow is configurable with safe preset color, intensity, speed, and enable/disable values; it fades on hover/focus and respects reduced motion. These preferences cannot affect public Astro content/layouts.
 - Frontend production build and diff check passed; authenticated browser verification of Admin Theme passed. The representative local article had no saved review history, so the collapsed history summary is not browser-exercised. Detailed note appended to `docs/development/creative-studio-phase-3-2026-10-28.md`. Changes are uncommitted/unpushed.
+
+### Follow-up — compact check-panel controls
+
+- Committed/pushed the focused review-results and Admin Theme effects work as `45bf590` (`feat(admin): focus review results and attention effects`).
+- Replaced Show/Hide text in all three Editor article-check panel headers with larger arrow-only controls, retaining accessible current-action labels/tooltips. Previous review history now appears only while Review results is expanded, so it collapses with that panel but retains its own history disclosure afterward.
+- Frontend production build and diff check passed. These compact-control changes are uncommitted/unpushed; `.vscode/` remains untouched.
+
+### Follow-up — Review results header hierarchy
+
+- The user refined the Review results summary row: removed Show/Hide text from its disclosure control, moved the source badge after the timestamp, and used centered-dot separators. The arrow has a fixed grid column; the badge takes only remaining space and the timestamp truncates first on narrow layouts.
+- Removed generic fact-check verification copy, leaving actual result-card type/field details as the relevant per-check information. Documented in `docs/development/creative-studio-phase-3-2026-10-28.md`; the entire compact-controls follow-up is ready to commit/push.

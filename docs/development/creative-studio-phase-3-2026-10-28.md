@@ -42,3 +42,16 @@ Phase 3 changes are intentionally uncommitted and unpushed pending user approval
 - Unresolved findings can receive a subtle attention glow. It fades out when the panel is hovered or focused, and is disabled automatically for users who request reduced motion.
 - Admin Theme is now organized into **Interface mode**, **Layout & navigation**, **Elements & feedback**, and **Effects & animations**. The new safe, browser-local controls configure the review attention effect’s enabled state, preset color, intensity, and speed. They never change the public Astro site or published articles.
 - Frontend production build and diff check passed. Authenticated browser verification confirmed the Admin Theme organization and controls. The representative test article had no saved review history in this local session, so the collapsed historical-review state remains runtime-unverified; no review was run solely to create data.
+
+## Follow-up — compact article-check controls
+
+- Replaced the Show/Hide text in Title & excerpt checks, Partial-article checks, and Full-article checks with larger arrow-only controls. Each keeps an accessible label and tooltip describing its current expand/collapse action.
+- Previous review history is now visible only inside the expanded Review results context. Collapsing Review results hides its history too; the existing Previous review history disclosure remains available after expanding Review results.
+- Frontend production build and diff check passed. These follow-up changes are uncommitted/unpushed.
+
+## Follow-up — Review results header hierarchy
+
+- Refined the collapsed Review results header to show the section label, last AI check model/timestamp, and source badge in one compact row separated by centered dots.
+- Moved the source badge after the timestamp and widened it only into the available space before the fixed arrow control. On narrow widths, the timestamp truncates before the arrow can wrap or move down.
+- Removed generic fact-check verification copy from the panel; check-specific details remain represented by the actual result cards.
+- Frontend production build and diff check passed. These refinements are included in the pending compact-controls follow-up commit.
