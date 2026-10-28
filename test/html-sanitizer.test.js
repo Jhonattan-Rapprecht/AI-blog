@@ -68,23 +68,17 @@ test('adds noopener and noreferrer to new-tab links and is idempotent', () => {
 
 async function withArticlePersistenceStub(callback) {
     const originalQuery = db.query;
-    const originalEnsureMediaColumn = ArticleModel.ensureMediaColumn;
-    const originalEnsureTopicSchema = ArticleModel.ensureTopicSchema;
     const calls = [];
 
     db.query = async (sql, params = []) => {
         calls.push({ sql, params });
         return [];
     };
-    ArticleModel.ensureMediaColumn = async () => {};
-    ArticleModel.ensureTopicSchema = async () => {};
 
     try {
         await callback(calls);
     } finally {
         db.query = originalQuery;
-        ArticleModel.ensureMediaColumn = originalEnsureMediaColumn;
-        ArticleModel.ensureTopicSchema = originalEnsureTopicSchema;
     }
 }
 

@@ -43,7 +43,11 @@ This workflow and its files must remain unchanged. The future Component Library 
 - `site/src/pages/blog/[slug].astro` is the current fixed article layout: hero, metadata, optional table of contents, body, rail, and related articles. It receives article data via `site/src/lib/api.js` from `src/controllers/public.controller.js`.
 - `src/controllers/public.controller.js` sanitizes article HTML again for legacy records before Astro receives it.
 - Existing reusable Astro pieces are `ArticleCard.astro`, `NavCategoryMenu.astro`, `Pagination.astro`, and `SearchForm.astro`; the article page itself contains several reusable candidates (hero, metadata, body, table of contents, related rail).
-- `src/models/schema.sql` defines articles, categories, media, reviews, analytics, and related records. There is no layout/style persistence yet. Runtime model helpers currently create some compatibility tables/columns lazily, but the design feature should use explicit, versioned schema changes rather than adding more ad hoc mutations.
+- The authoritative schema lifecycle is `database/migrations/` through
+  `database/migrate.js`. `src/models/schema.sql` is a deprecated historical
+  reference and must not be executed. Current Creative Studio persistence is
+  represented by migration 003; future changes must use new versioned
+  migrations rather than runtime DDL.
 
 ## Proposed design configuration
 

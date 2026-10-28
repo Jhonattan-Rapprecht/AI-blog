@@ -129,7 +129,7 @@ Also mounted at `/blog` for backwards compatibility.
 
 An article is publicly visible only when `status = 'published'` and `published_at <= now`.
 
-Reader events are stored in `article_read_views` with one random ID per page load, the article ID, active visible seconds, and event timestamp. No visitor identity is stored. Views are page loads rather than unique people. Active reading time accumulates while the article tab is visible and is submitted on tab hide or page exit. These measurements begin after deployment; the public article's existing minutes estimate remains a content-length calculation. The analytics model creates the event table lazily for existing databases; `src/models/schema.sql` includes it for new installations.
+Reader events are stored in `article_read_views` with one random ID per page load, the article ID, active visible seconds, and event timestamp. No visitor identity is stored. Views are page loads rather than unique people. Active reading time accumulates while the article tab is visible and is submitted on tab hide or page exit. These measurements begin after deployment; the public article's existing minutes estimate remains a content-length calculation. The table is provisioned through the authoritative versioned migration workflow, not runtime initialization or `src/models/schema.sql`.
 
 Topic coverage is based on the topic in each article's latest completed AI-generation prompt; it no longer depends on an article topic field. Keyword counts use saved `seo_keywords`. Neither is an audience preference metric.
 

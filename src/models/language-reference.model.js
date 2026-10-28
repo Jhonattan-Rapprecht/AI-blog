@@ -2,29 +2,7 @@ const db = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 
 class LanguageReferenceModel {
-    constructor() { this.ready = null; }
-
-    ensureTable() {
-        if (!this.ready) {
-            this.ready = db.query(`CREATE TABLE IF NOT EXISTS language_references (
-                id CHAR(36) PRIMARY KEY,
-                language_id VARCHAR(10) NOT NULL,
-                reference_type ENUM('spelling', 'grammar') NOT NULL,
-                source_name VARCHAR(255) NOT NULL,
-                license VARCHAR(255) NOT NULL,
-                version VARCHAR(100) NOT NULL,
-                source_reference VARCHAR(500) NOT NULL,
-                checksum VARCHAR(128) NULL,
-                review_state ENUM('planned', 'reviewed', 'approved') NOT NULL DEFAULT 'planned',
-                validation_state ENUM('not-validated', 'verified') NOT NULL DEFAULT 'not-validated',
-                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                INDEX idx_language_references_language (language_id, reference_type),
-                INDEX idx_language_references_review (review_state, validation_state)
-            )`).catch((error) => { this.ready = null; throw error; });
-        }
-        return this.ready;
-    }
+    ensureTable() { return Promise.resolve(); } // Provisioned by migration 002.
 
     async list() {
         await this.ensureTable();

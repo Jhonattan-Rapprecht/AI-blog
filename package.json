@@ -12,7 +12,13 @@
     "dev:site": "npm --prefix site run dev",
     "test": "node --test",
     "visual": "node scripts/capture-public-article.mjs",
-    "visual:public": "node scripts/capture-public-article.mjs"
+    "visual:public": "node scripts/capture-public-article.mjs",
+    "db:migrate:status": "node database/migrate.js status",
+    "db:migrate": "node database/migrate.js migrate",
+    "db:migrate:verify": "node database/migrate.js verify",
+    "db:migrate:inspect": "node database/migrate.js inspect",
+    "db:migrate:baseline": "node database/migrate.js baseline"
+    ,"test:db": "node database/testing/run-fixtures.js --execute-fixtures"
   },
   "repository": {
     "type": "git",

@@ -8,30 +8,7 @@ const parseConfig = (value) => {
 };
 
 class ArticleDesignModel {
-    constructor() { this.schemaReady = null; }
-
-    async ensureSchema() {
-        if (!this.schemaReady) {
-            this.schemaReady = (async () => {
-                await db.query(`CREATE TABLE IF NOT EXISTS publication_design_settings (
-                    id TINYINT UNSIGNED PRIMARY KEY,
-                    schema_version TINYINT UNSIGNED NOT NULL DEFAULT 1,
-                    design_config JSON NOT NULL,
-                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                )`);
-                await db.query(`CREATE TABLE IF NOT EXISTS article_design_overrides (
-                    article_id CHAR(36) PRIMARY KEY,
-                    design_config JSON NOT NULL,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
-                )`);
-                await db.query(`INSERT IGNORE INTO publication_design_settings (id, schema_version, design_config)
-                    VALUES (1, 1, JSON_OBJECT('layout', 'classic'))`);
-            })().catch((error) => { this.schemaReady = null; throw error; });
-        }
-        return this.schemaReady;
-    }
+    async ensureSchema() { return; } // Provisioned by migration 003.
 
     async getPublicationSelection() {
         await this.ensureSchema();

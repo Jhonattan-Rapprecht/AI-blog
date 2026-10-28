@@ -2,7 +2,7 @@
 
 ## Overview
 
-Blogstudio stores uploaded raster images in `uploads/media/` and tracks metadata, including a reusable photo credit/source, in the MySQL `media` table. Articles reference library records through nullable `articles.featured_media_id`; the older `featured_image` URL field remains supported as a fallback. Existing databases create the media table and article column lazily when an article/media API or public article list is first used, and add the credit column when needed. New databases can use `src/models/schema.sql`.
+Blogstudio stores uploaded raster images in `uploads/media/` and tracks metadata, including a reusable photo credit/source, in the MySQL `media` table. Articles reference library records through nullable `articles.featured_media_id`; the older `featured_image` URL field remains supported as a fallback. Database structures are provisioned through the versioned migrations in `database/migrations/`; `src/models/schema.sql` is a deprecated historical reference and must not be run.
 
 The v2.4 backend foundation extends this same table to represent images, uploaded video files, and external video links. It adds `media_type`, `source_type`, `source_url`, and `thumbnail_url`; the local `filepath` is nullable for external links. Existing image rows migrate to `media_type='image'` and keep working. This shared table avoids duplicating common library fields and lets the library filter by media type. Featured image validation still accepts images only.
 

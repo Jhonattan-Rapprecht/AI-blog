@@ -144,7 +144,6 @@ class MediaController {
 
     async remove(req, res) {
         try {
-            await ArticleModel.ensureMediaColumn();
             const result = await MediaModel.delete(req.params.id);
             if (!result) return res.status(404).json({ error: 'Media item not found.' });
             req.activityTargetLabel = result.filename || null;

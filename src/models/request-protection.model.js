@@ -4,18 +4,7 @@ const { evaluateFixedWindow } = require('../utils/rate-window');
 class RequestProtectionModel {
     constructor() { this.ready = null; }
 
-    ensureTable() {
-        if (!this.ready) this.ready = db.query(`CREATE TABLE IF NOT EXISTS request_protection_buckets (
-            bucket_type VARCHAR(40) NOT NULL,
-            bucket_key CHAR(64) NOT NULL,
-            attempts INT UNSIGNED NOT NULL DEFAULT 0,
-            window_started_at DATETIME(3) NOT NULL,
-            updated_at DATETIME(3) NOT NULL,
-            PRIMARY KEY (bucket_type, bucket_key),
-            INDEX idx_request_protection_cleanup (updated_at)
-        )`).catch((error) => { this.ready = null; throw error; });
-        return this.ready;
-    }
+    ensureTable() { return Promise.resolve(); }
 
     async consume(buckets) {
         await this.ensureTable();

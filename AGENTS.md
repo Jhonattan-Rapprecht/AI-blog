@@ -496,3 +496,76 @@ The user asked for the collapsible check sections to use the same animation as P
 
 - Branch: `fix/production-hardening-stage-2`, created from accepted local milestones while preserving the unrelated reviewer/UI changes in `frontend/src/index.css` and `frontend/src/pages/EditorPage.jsx`, `.vscode/`, visual captures, and harness artifacts.
 - Stage 2 adds MySQL-shared, HMAC-keyed login and public-analytics request protection. No raw credentials, IP addresses, article content, prompts, or internal analytics row IDs are intended to be exposed or stored by the new controls. Node tests (31/31), builds, syntax and diff checks passed. Real MySQL integration and concurrent transaction behavior remain explicitly unverified because no disposable database was available; see `docs/development/production-hardening-stage-2.md`.
+
+### Historical Production Hardening Stage 3 checkpoint notes — superseded
+
+> Every entry in this historical checkpoint timeline records the status at that time. It is superseded by the authoritative final Stage 3 status below and must not be used to assess current verification or commit readiness.
+
+- Branch: `fix/production-hardening-stage-3`. Added explicit checksum-validated SQL migrations, a separately invoked migration runner, advisory locking, read-only schema inspection, explicit baseline confirmation, and startup schema-version verification. Normal request paths no longer contain schema-changing SQL; the legacy `articles.topic` column is preserved.
+- Node tests currently pass 34/34. No existing database, migration, baseline, or disposable integration database was used. Checkpoint C requires a deliberately configured isolated MySQL instance before migration/concurrency behavior can be claimed verified. Preserve the unrelated reviewer/UI files and local artifacts.
+
+### Production Hardening Stage 3 — Checkpoint C Docker isolation repair — 2026-10-28
+
+- The disposable Compose network originally used `internal: true`. Docker retained the requested port in `HostConfig.PortBindings` but exposed no active mapping in `NetworkSettings.Ports`, so the shared isolation guard correctly refused every connection.
+- Removed only that `internal: true` flag from `database/testing/compose.yaml`, recreated only the labelled disposable Stage 3 MySQL container and its dedicated network, and preserved its named disposable volume. Docker now verifies `127.0.0.1:33307 -> 3306/tcp` in both metadata locations; the container is healthy, labelled `ai-blog-stage3-test` / `ai_blog_stage3_test`, and its dedicated local bridge network contains no other container.
+- The shared guard accepts that exact metadata and rejects mismatches in its automated tests. No MySQL SQL connection, migration, baseline operation, or integration test was run during this repair. Node tests pass 43/43; Compose config, backend syntax, and diff checks pass. A separately authorized, guarded read-only SQL identity query is the next step; Checkpoint C remains blocked until then.
+
+### Production Hardening Stage 3 — guarded SQL identity attempt — 2026-10-28
+
+- Immediately revalidated Docker context `desktop-linux`, the healthy labelled disposable container, Compose project, exact full container ID, and the identical `127.0.0.1:33307 -> 3306/tcp` mapping in both Docker metadata sources. The shared guard accepted that target before mysql2 could connect.
+- The one authorized read-only identity connection was rejected with `ER_ACCESS_DENIED_ERROR`. No SQL result was returned, no alternative host/port/account was attempted, and no migration, baseline, schema, or application write occurred. Checkpoint C remains blocked pending reconciliation of the disposable container's initialized dedicated test credentials without inspecting or exposing secrets.
+
+### Production Hardening Stage 3 — disposable credential diagnosis — 2026-10-28
+
+- Diagnosis-only metadata and sanitized logs confirm the named volume `ai_blog_stage3_disposable_mysql_data` is exclusively labelled for the Stage 3 Compose project and attached only to the current disposable container, but it was created before that container. The current startup logs show normal server start rather than first-time initialization.
+- Compose declares `MYSQL_TEST_DATABASE`, `MYSQL_TEST_USER`, and `MYSQL_TEST_PASSWORD`, while the guarded client consumes their supplied counterparts as `DB_NAME`, `DB_USER`, and `DB_PASSWORD`; no repository mapping keeps those values synchronized. MySQL init variables do not update accounts in a non-empty volume. The likely cause of `ER_ACCESS_DENIED_ERROR` is the stale initialized test-account password. Account host restriction cannot be proven without SQL and remains unverified.
+- No database connection was retried. A separate approval is required to reinitialize only this proven disposable volume with one documented set of test-only variables, then repeat exactly one guarded read-only identity query.
+
+### Production Hardening Stage 3 — controlled disposable reinitialization — 2026-10-28
+
+- Canonical no-trunc Docker IDs corrected the prior false ownership mismatch. The labelled disposable container and named volume were exclusively owned by `ai-blog-stage3-test`, with no bind/development storage, so only those resources were removed and recreated.
+- A CSPRNG-generated 64-character test-only password was held in a temporary file outside the repository, used consistently for Compose `MYSQL_TEST_*` and the guarded client's `DB_*` mapping, verified against the recreated container without printing it, then removed. The new container is `0557f9bbb50a622ae597d845a65e0fcaf3b0c8aba9af732e821f6ebcac520267`; the new volume was created at 2026-10-28T13:36:04Z. Docker metadata before the connection confirmed the healthy `127.0.0.1:33307 -> 3306/tcp` binding and guard acceptance.
+- The one authorized guarded connection ended with `PROTOCOL_CONNECTION_LOST` before the read-only identity query returned. No retry, alternate target, migration, baseline operation, or write was attempted. Checkpoint C remains blocked; diagnose this single-connection failure separately before any further SQL action.
+
+### Production Hardening Stage 3 — protocol-loss diagnosis — 2026-10-28
+
+- Static review found the guarded connection lifecycle is correct: the guard runs before direct `mysql2/promise.createConnection`, the query is awaited, and the connection ends only in `finally` afterward. It uses the verified host/port/database/account object and has no TLS override, pool use, or explicit short timeout.
+- Sanitized MySQL logs identify the concrete race: the initial entrypoint server reported ready on port `0`, then received its normal initialization shutdown, and only afterward started the final listener on port `3306`. The Compose health check uses `mysqladmin ping -h localhost`, which can succeed through the Unix socket during that transient initialization server. `docker compose up --wait` therefore released too early and the sole guarded TCP connection encountered `PROTOCOL_CONNECTION_LOST` during the internal shutdown.
+- The container did not restart (restart count 0), was not OOM-killed, and is now healthy with active loopback mapping. Recommended correction: make the Compose health check test TCP specifically (`-h 127.0.0.1 -P 3306`) so it cannot pass against the initialization socket, then separately authorize one guarded read-only retry. No retry or code/config change was made in this diagnosis.
+
+### Production Hardening Stage 3 — TCP health check blocked by preserved-volume credentials — 2026-10-28
+
+- Changed `database/testing/compose.yaml` from socket-based `mysqladmin ping -h localhost` to a TCP-only `mysql --protocol=TCP -h 127.0.0.1 -P 3306 ... -e 'SELECT 1'` health check, with start period/retries. Added an explicit `.gitignore` rule for `database/testing/.env` and created that local file with a CSPRNG test password, Git exclusion, and current-user ACL.
+- The latest authorization also required preserving the existing disposable volume. Its old generated password was intentionally unavailable after the previous temporary source was deleted, while the new persistent credential file necessarily contains a different password. The container is running and MySQL's final TCP listener is ready, but the corrected SQL health check remains `starting` with exit code 1 because it correctly rejects the new account credentials against the preserved volume.
+- No external guarded identity connection, migration, baseline, write, or volume deletion was attempted. The container's old account credentials cannot be recovered safely. A new explicit authorization to delete/reinitialize only the proven disposable volume using the persistent `database/testing/.env` source is required before any identity retry.
+
+### Production Hardening Stage 3 — disposable SQL identity verified — 2026-10-28
+
+- After explicit authorization, reverified canonical ownership and deleted only the labelled disposable container and `ai_blog_stage3_disposable_mysql_data` volume. Recreated both from the persistent ignored credential source. The corrected TCP SQL health check passed after fresh initialization; final MySQL listener, no unexpected restart, and active `127.0.0.1:33307 -> 3306/tcp` metadata were verified.
+- The shared guard accepted the new container `676b47a57ac0bb624e71cfe28b61fa1f7baad4ff069a6da496cf35ada61770a7` before the one allowed query. The identity query confirmed container-hostname prefix `676b47a57ac0`, internal port `3306`, database `ai_blog_stage3_test`, dedicated account `stage3_test_user@%`, and MySQL `8.4.13`.
+- Docker Compose validation, 43/43 Node tests, backend syntax checks, and `git diff --check` pass. No migration, baseline, schema mutation, application write, commit, or push was run. The isolated database is now ready for separately authorized Checkpoint C migration/concurrency/security integration tests.
+
+### Production Hardening Stage 3 — Checkpoint C live integration results — 2026-10-28
+
+- Guarded fresh migration execution against the verified disposable database applied migrations 1–4 in order with checksums. Status/verify reported no pending migrations. Two concurrent guarded migration runners both completed as serialized no-ops under the MySQL advisory lock. Read-only manifest inspection and the fully-applied startup schema guard passed.
+- Live Stage 2 concurrency testing found and fixed an analytics deduplication defect: `AnalyticsModel.startView()` compared a MySQL `DATETIME` expiry to the Node clock. It now asks MySQL for `expires_at > CURRENT_TIMESTAMP(3)` inside the existing `FOR UPDATE` row lock. The guarded disposable retest passed: six simultaneous protection attempts yielded five allowed/one throttled with Retry-After; four simultaneous identical analytics events yielded one view/three duplicates. Synthetic articles/buckets were deleted afterward.
+- `src/config/db.js` now applies the same fail-closed Docker target guard whenever `DB_INTEGRATION_TEST_MODE=true`, preventing Stage 2 models from bypassing the migration guard. Full tests (43/43), frontend type-check/build, Astro build, backend syntax, Compose config, and diff checks passed. C3 missing/pending/checksum startup paths, deliberately corrupted DDL fixture/recovery, and C5 legacy-adoption fixtures remain unverified; do not claim Stage 3 final acceptance yet. No commit/push.
+
+### Production Hardening Stage 3 — remaining-fixture blocker — 2026-10-28
+
+- The guarded dedicated account correctly rejected `CREATE DATABASE` with `ER_DBACCESS_DENIED_ERROR` while attempting to create four clearly named fixture schemas. No fixture database was created and the primary disposable schema was not changed. This validates that the restricted runtime-style account lacks server-level database-creation privilege, but blocks C3 unsafe-metadata, partial-DDL, and C5 legacy-adoption cases that must not corrupt the primary schema.
+- Do not use the Windows MySQL account or Docker root credentials as a workaround. The safe next step is a separately provisioned disposable fixture container/project whose application account is granted DDL only inside its own fixture database, or an explicitly authorized fixture-administrator path limited to that isolated container. Stage 3 remains not ready for final review.
+
+### Production Hardening Stage 3 — destructive fixture environment started — 2026-10-28
+
+- Created separate `ai-blog-stage3-fixtures` MySQL 8.4 project on `127.0.0.1:33310`, with its own labelled volume/network, ignored user-restricted credentials, fixture admin, and DML-only runtime account. The shared guard now supports an optional exact database identity label required by fixture connections while primary behavior remains fail-closed.
+- Verified fixture runtime read access, DDL denial (`ER_TABLEACCESS_DENIED_ERROR`), and missing-metadata startup rejection (`ER_NO_SUCH_TABLE`) without any auto-DDL. This was an intermediate checkpoint; the authoritative final Stage 3 status is recorded below.
+
+### Production Hardening Stage 3 — final verification complete, uncommitted
+
+- Branch: `fix/production-hardening-stage-3`, compared with accepted Stage 2 commit `3515482`. Stage 3 remains uncommitted and no production deployment has been authorized.
+- All six real MySQL migration integration scenarios passed exclusively in independently verified disposable Docker environments: pending-migration rejection, checksum-mismatch rejection, unknown-version rejection, controlled partial-DDL failure with reviewed manual recovery, compatible legacy-schema baseline adoption, and incompatible legacy-schema baseline rejection.
+- The four pre-commit remediations are complete: deployment-sensitive test-only DDL is guarded; legacy SQL installation artifacts are deprecated and operational documentation directs operators to `database/migrate.js`; fixture root credentials are not passed in MySQL process arguments; and the fixture adapter reuses the production full migration-history integrity verification.
+- Latest offline regression result: 61/61 Node tests passed. Backend and fixture syntax checks, frontend type-check, Vite production build, Astro production build, and `git diff --check` passed.
+- Shell syntax validation remains unverified because local WSL Bash returned `E_ACCESS_DENIED`; this is a documented validation limitation, not a claim that shell validation passed.
+- Preserve unrelated reviewer/UI changes, local artifacts, `.vscode/`, visual-harness output, and Phase 4 visual baselines when preparing any later controlled commit.

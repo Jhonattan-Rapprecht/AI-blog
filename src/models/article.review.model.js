@@ -2,44 +2,7 @@ const db = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 
 class ArticleReviewModel {
-    constructor() { this.ready = null; }
-
-    ensureTables() {
-        if (!this.ready) {
-            this.ready = (async () => {
-                await db.query(`CREATE TABLE IF NOT EXISTS article_reviews (
-                    id CHAR(36) PRIMARY KEY,
-                    article_id CHAR(36) NOT NULL,
-                    model VARCHAR(100) NULL,
-                    category VARCHAR(500) NULL,
-                    reviewed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
-                    INDEX idx_article_reviews_article_date (article_id, reviewed_at)
-                )`);
-                await db.query(`CREATE TABLE IF NOT EXISTS article_review_findings (
-                    id CHAR(36) PRIMARY KEY,
-                    review_id CHAR(36) NOT NULL,
-                    field_name VARCHAR(20) NOT NULL DEFAULT 'content',
-                    finding_type VARCHAR(30) NOT NULL,
-                    severity ENUM('low', 'medium', 'high') NOT NULL DEFAULT 'low',
-                    quote VARCHAR(500) NOT NULL,
-                    sentence_quote TEXT NULL,
-                    neutral_rewrite TEXT NULL,
-                    explanation TEXT NOT NULL,
-                    suggestion TEXT NOT NULL,
-                    status ENUM('pending', 'dismissed', 'applied') NOT NULL DEFAULT 'pending',
-                    action VARCHAR(30) NULL,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    FOREIGN KEY (review_id) REFERENCES article_reviews(id) ON DELETE CASCADE,
-                    INDEX idx_review_findings_review (review_id, created_at)
-                )`);
-                const checkTypeColumn = await db.query(`SHOW COLUMNS FROM article_reviews LIKE 'check_type'`);
-                if (!checkTypeColumn.length) await db.query(`ALTER TABLE article_reviews ADD COLUMN check_type VARCHAR(50) NULL AFTER category`);
-            })().catch((error) => { this.ready = null; throw error; });
-        }
-        return this.ready;
-    }
+    ensureTables() { return Promise.resolve(); } // Provisioned by migration 002.
 
     async create(articleId, review) {
         if (!articleId) return null;

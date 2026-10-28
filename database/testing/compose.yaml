@@ -1,0 +1,31 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_TEST_DATABASE:?set MYSQL_TEST_DATABASE}
+      MYSQL_USER: ${MYSQL_TEST_USER:?set MYSQL_TEST_USER}
+      MYSQL_PASSWORD: ${MYSQL_TEST_PASSWORD:?set MYSQL_TEST_PASSWORD}
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+    labels:
+      com.ai-blogstudio.stage3.disposable: "true"
+      com.ai-blogstudio.stage3.database: ${MYSQL_TEST_DATABASE:?set MYSQL_TEST_DATABASE}
+      com.ai-blogstudio.stage3.user: ${MYSQL_TEST_USER:?set MYSQL_TEST_USER}
+    ports:
+      - "127.0.0.1:33307:3306/tcp"
+    volumes:
+      - stage3_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u \"$$MYSQL_USER\" -D \"$$MYSQL_DATABASE\" -e 'SELECT 1' >/dev/null 2>&1"]
+      start_period: 15s
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    networks: [stage3_isolated]
+
+volumes:
+  stage3_mysql_data:
+    name: ai_blog_stage3_disposable_mysql_data
+
+networks:
+  stage3_isolated:
+    name: ai_blog_stage3_isolated

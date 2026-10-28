@@ -1,19 +1,18 @@
 const mysql = require('mysql2/promise');
 const { errorDetails } = require('../utils/http-errors');
+const { connectionOptions } = require('./database-connection');
+const { assertIsolatedTarget } = require('../../database/integration-safety');
+const { readDockerMetadata } = require('../../database/docker-isolation');
 
-const requiredDatabaseVariables = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
-const missingDatabaseVariables = requiredDatabaseVariables.filter((name) => !process.env[name]);
-
-if (missingDatabaseVariables.length > 0) {
-    throw new Error(`Missing required database configuration: ${missingDatabaseVariables.join(", ")}`);
+const integrationMode = process.env.DB_INTEGRATION_TEST_MODE === 'true';
+if (integrationMode) {
+    assertIsolatedTarget(process.env, readDockerMetadata(process.env.DB_TEST_CONTAINER_ID));
 }
+const databaseOptions = connectionOptions(process.env, { required: integrationMode });
 
 // Database configuration using a connection pool for high performance
 const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    ...databaseOptions,
     waitForConnections: true,
     connectionLimit: 10, // Maximum number of connections in pool
     maxIdle: 10, // Max idle connections, the pool will retire them

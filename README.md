@@ -126,7 +126,24 @@ The component library and preview workspace are the first step toward making the
    The admin API uses `http://localhost:3000` automatically in local development. For a production build behind one reverse proxy, leave `VITE_API_ORIGIN` unset so browser requests use same-origin `/api`. For a separately hosted API, set `VITE_API_ORIGIN` during the frontend build to a plain HTTPS origin, for example `https://api.example.com`; do not put secrets in Vite variables. See `frontend/.env.example`.
 
 4. **Initialize Database**:
-   Run the SQL script in `src/models/schema.sql` on your MySQL instance.
+   Use the versioned migration runner. Do **not** run `src/models/schema.sql`
+   or `src/migrations/2026-10-28-article-layouts.sql`; both are deprecated
+   historical references.
+
+   - **Fresh database:** configure a migration-capable database account, then
+     run `npm run db:migrate`.
+   - **Existing database with migration history:** run
+     `npm run db:migrate:status`, then apply only reviewed pending migrations
+     with `npm run db:migrate`.
+   - **Existing compatible legacy database:** run
+     `npm run db:migrate:inspect`, review the report, then use
+     `npm run db:migrate:baseline -- --confirm-adopt-existing-schema` only
+     after explicit operator approval.
+   - **Incompatible or unknown legacy database:** do not baseline it. Use a
+     reviewed forward migration or manual remediation plan.
+
+   The application verifies migration history at startup but never runs
+   migrations automatically.
 
 5. **Pull the LLM**:
    ```bash

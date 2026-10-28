@@ -14,7 +14,7 @@ Public analytics is limited per hashed IP (`PUBLIC_ANALYTICS_*`) and deduplicate
 
 ## Deployment notes
 
-The limiter uses the existing shared MySQL database so all API instances enforce the same limits. The API database user needs permission to create the two additive protection tables on first use; provision them from `src/models/schema.sql` in deployments where runtime DDL is prohibited. Expired rows are bounded by key rather than one row per request; operational retention/cleanup may be added later if traffic warrants it.
+The limiter uses the existing shared MySQL database so all API instances enforce the same limits. Stage 3 provisions the protection tables through authoritative migration 004; the runtime database user must not require DDL privileges. Expired rows are bounded by key rather than one row per request; operational retention/cleanup may be added later if traffic warrants it.
 
 JWTs remain stored in browser local storage by the existing application. This stage documents and assesses that risk only: a future migration to short-lived, HttpOnly, Secure, SameSite cookies requires a separate authentication compatibility design and is not included here.
 

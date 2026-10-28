@@ -10,7 +10,6 @@ const LIST_COLUMNS = `
 
 class PublicBlogModel {
     async getPublicArticles({ limit = 10, offset = 0, category = null, q = null } = {}) {
-        await ArticleModel.ensureMediaColumn();
         const where = [VISIBLE];
         const params = [];
 
@@ -39,7 +38,6 @@ class PublicBlogModel {
     }
 
     async getArticleBySlug(slug) {
-        await ArticleModel.ensureMediaColumn();
         const results = await db.query(
             `SELECT ${LIST_COLUMNS}, a.content, a.seo_title, a.seo_description, a.seo_keywords
              FROM articles a LEFT JOIN categories c ON c.id = a.category_id LEFT JOIN media m ON m.id = a.featured_media_id
@@ -51,7 +49,6 @@ class PublicBlogModel {
     }
 
     async getRelated(article, limit = 3) {
-        await ArticleModel.ensureMediaColumn();
         return await db.query(
             `SELECT ${LIST_COLUMNS}
              FROM articles a LEFT JOIN categories c ON c.id = a.category_id LEFT JOIN media m ON m.id = a.featured_media_id

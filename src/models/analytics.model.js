@@ -29,32 +29,7 @@ class AnalyticsModel {
     }
 
     ensureTable() {
-        if (!this.ready) {
-            this.ready = db.query(`
-                CREATE TABLE IF NOT EXISTS article_read_views (
-                    id CHAR(36) PRIMARY KEY,
-                    client_token CHAR(36) NOT NULL UNIQUE,
-                    article_id CHAR(36) NOT NULL,
-                    read_seconds INT UNSIGNED NOT NULL DEFAULT 0,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
-                    INDEX idx_article_read_views_date (created_at),
-                    INDEX idx_article_read_views_article_date (article_id, created_at)
-                )
-            `).then(async () => {
-                const columns = await db.query("SHOW COLUMNS FROM article_read_views LIKE 'client_token'");
-                if (!columns.length) await db.query('ALTER TABLE article_read_views ADD COLUMN client_token CHAR(36) NULL UNIQUE AFTER id');
-                await db.query(`CREATE TABLE IF NOT EXISTS article_view_deduplications (
-                    article_id CHAR(36) NOT NULL,
-                    visitor_hash CHAR(64) NOT NULL,
-                    expires_at DATETIME(3) NOT NULL,
-                    PRIMARY KEY (article_id, visitor_hash),
-                    INDEX idx_article_view_deduplications_expiry (expires_at),
-                    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
-                )`);
-            }).catch((error) => { this.ready = null; throw error; });
-        }
-        return this.ready;
+        return Promise.resolve();
     }
 
     async startView(articleId, visitorHash, dedupeSeconds) {
@@ -65,8 +40,9 @@ class AnalyticsModel {
             if (!articles.length) { await connection.rollback(); return null; }
             await connection.execute(`INSERT INTO article_view_deduplications (article_id, visitor_hash, expires_at)
                 VALUES (?, ?, DATE_SUB(CURRENT_TIMESTAMP(3), INTERVAL 1 SECOND)) ON DUPLICATE KEY UPDATE visitor_hash = VALUES(visitor_hash)`, [articleId, visitorHash]);
-            const [dedupes] = await connection.execute('SELECT expires_at FROM article_view_deduplications WHERE article_id = ? AND visitor_hash = ? FOR UPDATE', [articleId, visitorHash]);
-            if (new Date(dedupes[0].expires_at).getTime() > Date.now()) { await connection.rollback(); return { duplicate: true }; }
+            const [dedupes] = await connection.execute(`SELECT expires_at > CURRENT_TIMESTAMP(3) AS active
+                FROM article_view_deduplications WHERE article_id = ? AND visitor_hash = ? FOR UPDATE`, [articleId, visitorHash]);
+            if (Number(dedupes[0].active)) { await connection.rollback(); return { duplicate: true }; }
             const id = uuidv4();
             const clientToken = uuidv4();
             await connection.execute('INSERT INTO article_read_views (id, client_token, article_id) VALUES (?, ?, ?)', [id, clientToken, articleId]);
@@ -88,7 +64,6 @@ class AnalyticsModel {
 
     async getOverview(days = 30) {
         await this.ensureTable();
-        await ArticleModel.ensureTopicSchema();
         const period = Math.min(90, Math.max(7, Number.parseInt(days, 10) || 30));
 
         const [totals] = await db.query(`

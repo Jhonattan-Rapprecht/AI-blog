@@ -5,45 +5,7 @@ class MediaModel {
     constructor() { this.ready = null; }
 
     ensureTable() {
-        if (!this.ready) {
-            this.ready = db.query(`
-                CREATE TABLE IF NOT EXISTS media (
-                    id CHAR(36) PRIMARY KEY,
-                    filename VARCHAR(255) NOT NULL,
-                    filepath VARCHAR(500) NULL,
-                    mime_type VARCHAR(100) NOT NULL,
-                    file_size BIGINT UNSIGNED NOT NULL,
-                    media_type ENUM('image', 'video') NOT NULL DEFAULT 'image',
-                    source_type ENUM('upload', 'link') NOT NULL DEFAULT 'upload',
-                    source_url VARCHAR(2048) NULL,
-                    thumbnail_url VARCHAR(2048) NULL,
-                    width INT UNSIGNED NULL,
-                    height INT UNSIGNED NULL,
-                    provider VARCHAR(50) NOT NULL DEFAULT 'upload',
-                    prompt TEXT NULL,
-                    credit VARCHAR(500) NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    INDEX idx_media_created_at (created_at)
-                )
-            `).then(async () => {
-                const columns = await db.query(`
-                    SELECT COLUMN_NAME, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'media'
-                `);
-                const names = new Set(columns.map((column) => column.COLUMN_NAME));
-                if (columns.find((column) => column.COLUMN_NAME === 'filepath')?.IS_NULLABLE === 'NO') await db.query('ALTER TABLE media MODIFY filepath VARCHAR(500) NULL');
-                if (!names.has('media_type')) await db.query("ALTER TABLE media ADD COLUMN media_type ENUM('image', 'video') NOT NULL DEFAULT 'image' AFTER file_size");
-                if (!names.has('source_type')) await db.query("ALTER TABLE media ADD COLUMN source_type ENUM('upload', 'link') NOT NULL DEFAULT 'upload' AFTER media_type");
-                if (!names.has('source_url')) await db.query('ALTER TABLE media ADD COLUMN source_url VARCHAR(2048) NULL AFTER source_type');
-                if (!names.has('thumbnail_url')) await db.query('ALTER TABLE media ADD COLUMN thumbnail_url VARCHAR(2048) NULL AFTER source_url');
-                const creditColumns = await db.query(`
-                    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'media' AND COLUMN_NAME = 'credit'
-                `);
-                if (!creditColumns.length) await db.query('ALTER TABLE media ADD COLUMN credit VARCHAR(500) NULL AFTER prompt');
-            }).catch((error) => { this.ready = null; throw error; });
-        }
-        return this.ready;
+        return Promise.resolve();
     }
 
     async create(item) {

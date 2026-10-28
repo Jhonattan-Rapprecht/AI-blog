@@ -1,5 +1,7 @@
 node_modules/
 .env
+database/testing/.env
+database/testing/fixtures/.env
 .DS_Store
 dist/
 data/settings.json

@@ -14,7 +14,7 @@ The export format menu softly dims and blurs the page while open. Clicking elsew
 
 The table stores timestamp, category/event, severity, outcome, actor, source, action, target, request method/path/status, IP address, user agent, and safe JSON metadata. It deliberately does not store passwords, tokens, article body text, AI prompts, full external video URLs, or request query strings. Audit writes fail open: a logging/database issue is written to server console and does not block the original application action.
 
-The table is created lazily for existing databases and is also defined in `src/models/schema.sql` for new databases. No historic administrative events can be backfilled. Logs currently have no retention or purge UI; they remain in MySQL until manually removed or a retention policy is added.
+The table is provisioned by authoritative migration 002. No historic administrative events can be backfilled. Logs currently have no retention or purge UI; they remain in MySQL until manually removed or a retention policy is added.
 
 ## Reports and captured activity
 

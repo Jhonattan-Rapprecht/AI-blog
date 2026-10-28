@@ -22,30 +22,7 @@ const similarity = (a, b) => {
 const SIMILARITY_THRESHOLD = 0.6;
 
 class TopicHistoryModel {
-    constructor() {
-        this.ready = null;
-    }
-
-    // Creates the table on first use so existing databases need no manual migration.
-    ensureTable() {
-        if (!this.ready) {
-            this.ready = db.query(`
-                CREATE TABLE IF NOT EXISTS topic_history (
-                    id CHAR(36) PRIMARY KEY,
-                    topic VARCHAR(500) NOT NULL,
-                    normalized VARCHAR(500) NOT NULL,
-                    source ENUM('suggested', 'generated') NOT NULL DEFAULT 'suggested',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE KEY uq_topic_normalized (normalized(191)),
-                    INDEX idx_topic_created (created_at)
-                )
-            `).catch((err) => {
-                this.ready = null;
-                throw err;
-            });
-        }
-        return this.ready;
-    }
+    ensureTable() { return Promise.resolve(); } // Provisioned by migration 002.
 
     async record(topic, source = 'suggested') {
         const text = String(topic || '').trim();

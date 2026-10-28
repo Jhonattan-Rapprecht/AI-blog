@@ -23,6 +23,7 @@ const activityLogMiddleware = require('./middleware/activity-log.middleware');
 const publicErrorLogMiddleware = require('./middleware/public-error-log.middleware');
 const SchedulerService = require('./services/scheduler.service');
 const requestProtection = require('./config/request-protection.config');
+const SchemaAvailability = require('./services/schema-availability.service');
 
 const app = express();
 app.set('trust proxy', requestProtection.trustProxy);
@@ -118,13 +119,17 @@ io.engine.on('connection_error', (error) => {
     void ActivityLog.record({ category: 'errors', eventType: 'system.socket_connection_error', severity: 'error', outcome: 'failure', actorType: 'anonymous', source: 'socket.io', action: 'Realtime connection failed', details: { code: error.code, message: String(error.message || '').slice(0, 300) } });
 });
 
-SchedulerService.start();
-
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (Listening on 0.0.0.0)`);
-    const ActivityLog = require('./models/activity-log.model');
-    void ActivityLog.record({ category: 'system', eventType: 'system.server_started', severity: 'info', outcome: 'success', actorType: 'system', source: 'server', action: 'API server started', details: { port: Number(PORT) || PORT, nodeVersion: process.version } });
-});
+async function startServer() {
+    await SchemaAvailability.assertReady();
+    SchedulerService.start();
+    server.listen(PORT, '0.0.0.0', () => {
+        console.log(`Server running on port ${PORT} (Listening on 0.0.0.0)`);
+        const ActivityLog = require('./models/activity-log.model');
+        void ActivityLog.record({ category: 'system', eventType: 'system.server_started', severity: 'info', outcome: 'success', actorType: 'system', source: 'server', action: 'API server started', details: { port: Number(PORT) || PORT, nodeVersion: process.version } });
+    });
+}
 
-module.exports = { app, io };
+if (require.main === module) startServer().catch((error) => { console.error(`[Startup] ${error.message}`); process.exitCode = 1; });
+
+module.exports = { app, io, startServer };

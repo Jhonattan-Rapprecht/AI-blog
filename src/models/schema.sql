@@ -1,3 +1,8 @@
+-- DEPRECATED — HISTORICAL REFERENCE ONLY.
+-- Do not execute this file against development, staging, or production databases.
+-- The authoritative schema source is database/migrations/ and the supported
+-- executor is database/migrate.js. Consult the current deployment documentation.
+
 -- Categories Table
 CREATE TABLE IF NOT EXISTS categories (
     id CHAR(36) PRIMARY KEY,

@@ -1,3 +1,8 @@
+-- DEPRECATED — HISTORICAL REFERENCE ONLY.
+-- Do not execute this file against development, staging, or production databases.
+-- The authoritative schema source is database/migrations/ and the supported
+-- executor is database/migrate.js. Consult the current deployment documentation.
+
 -- Phase 2: validated publication default and per-article layout selection.
 -- Apply once per database with the normal deployment migration process.
 -- Existing articles intentionally receive no override and resolve to Classic Editorial.

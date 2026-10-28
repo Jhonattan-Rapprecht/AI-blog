@@ -1,0 +1,3 @@
+const { compareApplied } = require('../../database/migration-utils');
+function assertMigrationHistory(migrations, applied) { const state=compareApplied(migrations,applied); if(state.mismatches.length) throw new Error(`Database migration checksum mismatch: ${state.mismatches.map(x=>x.version).join(', ')}.`); if(state.unknownApplied.length) throw new Error(`Database migration history contains unknown versions: ${state.unknownApplied.map(x=>x.version).join(', ')}.`); if(state.pending.length) throw new Error(`Database schema is behind migration ${state.pending[0].version}. Run \`npm run db:migrate:status\` and \`npm run db:migrate\` before starting the API.`); }
+module.exports={assertMigrationHistory};

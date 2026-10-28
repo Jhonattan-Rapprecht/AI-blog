@@ -1,0 +1,33 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${FIXTURE_RUNTIME_DATABASE:?set FIXTURE_RUNTIME_DATABASE}
+      MYSQL_USER: ${FIXTURE_RUNTIME_USER:?set FIXTURE_RUNTIME_USER}
+      MYSQL_PASSWORD: ${FIXTURE_RUNTIME_PASSWORD:?set FIXTURE_RUNTIME_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${FIXTURE_ROOT_PASSWORD:?set FIXTURE_ROOT_PASSWORD}
+      FIXTURE_ADMIN_USER: ${FIXTURE_ADMIN_USER:?set FIXTURE_ADMIN_USER}
+      FIXTURE_ADMIN_PASSWORD: ${FIXTURE_ADMIN_PASSWORD:?set FIXTURE_ADMIN_PASSWORD}
+    labels:
+      com.ai-blogstudio.fixture.disposable: "true"
+      com.ai-blogstudio.fixture.database: ${FIXTURE_RUNTIME_DATABASE:?set FIXTURE_RUNTIME_DATABASE}
+    ports:
+      - "127.0.0.1:33310:3306/tcp"
+    volumes:
+      - fixture_mysql_data:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u \"$$MYSQL_USER\" -D \"$$MYSQL_DATABASE\" -e 'SELECT 1' >/dev/null 2>&1"]
+      start_period: 15s
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    networks: [fixture_isolated]
+
+volumes:
+  fixture_mysql_data:
+    name: ai_blog_stage3_fixture_mysql_data
+
+networks:
+  fixture_isolated:
+    name: ai_blog_stage3_fixture_isolated

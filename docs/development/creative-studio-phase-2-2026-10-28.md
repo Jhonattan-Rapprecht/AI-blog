@@ -20,9 +20,13 @@ Invalid, missing, or unavailable design records fall back to Classic Editorial. 
 ## Persistence and deployment
 
 - New model: `src/models/article-design.model.js`.
-- Explicit deployment migration: `src/migrations/2026-10-28-article-layouts.sql`.
-- Fresh installations also receive the tables in `src/models/schema.sql`.
-- The model initializes the empty/default records lazily for existing local installations. The migration was **not applied manually** and no production database was contacted.
+- Historical implementation note: this work originally produced
+  `src/migrations/2026-10-28-article-layouts.sql`, which is now deprecated and
+  must not be executed.
+- Current deployment uses authoritative migration 003 through
+  `database/migrate.js` (`npm run db:migrate`). Existing compatible databases
+  require inspection and explicit baseline approval; incompatible schemas need
+  reviewed remediation. No production database was contacted for this phase.
 
 ## Visual baseline
 
