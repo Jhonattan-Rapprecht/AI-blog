@@ -401,4 +401,11 @@ The user asked for the collapsible check sections to use the same animation as P
 
 - Fixed the Admin Theme page’s stale current-mode indicator. `useTheme()` now uses a shared browser store and a local custom event, so toggling in the header updates every mounted hook immediately; no reload or Socket.IO round trip is needed for this browser-local preference.
 - Replaced the fictitious photo-credit placeholder in both Editor and Media Library with small, subdued examples: Shutterstock, Getty Images, and Unsplash. Entered credit text remains normal size/contrast.
-- Frontend build and diff check passed. These refinements remain uncommitted until the requested Phase 1 commit/push.
+- Frontend build and diff check passed. These refinements were committed and pushed with the Phase 1 follow-up as `07fe2dc`.
+
+### Phase 2 handover — blocked before implementation
+
+- The Phase 1 polish was committed/pushed as `07fe2dc`. The next branch, `feat/creative-studio-phase-2`, was created from it, pushed, and tracks origin.
+- The user supplied the Phase 2 implementation prompt plus a mandatory amendment: the existing Astro article page is Classic Editorial (`classic`) and must remain visually/materially unchanged. Phase 2 must add only `split` and `immersive` as new designs.
+- Before any Astro page change, capture the current published article at desktop and mobile and compare Classic after implementation. Browser automation could not connect: native pipe unavailable and no tabs exposed. Do not start Phase 2 code until the bridge is restored or the user provides baseline screenshots.
+- No Phase 2 app code, schema, migration, dependency, database data, or public layout has changed. Detailed resume instructions: `docs/development/handover-creative-studio-phase-2-2026-10-28.md`.

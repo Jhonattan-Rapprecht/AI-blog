@@ -1,6 +1,6 @@
 # Future Creative Studio Plan
 
-**Status:** Phase 1 foundation implemented on 2026-10-28; no design persistence or public layout rendering has started.
+**Status:** Phase 1 is complete. Phase 2 branch `feat/creative-studio-phase-2` is prepared, but implementation has not started because its mandatory desktop/mobile Classic Editorial visual baseline could not be captured while the browser automation bridge is unavailable. See `docs/development/handover-creative-studio-phase-2-2026-10-28.md`.
 
 ## Goal and current boundary
 
