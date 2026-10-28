@@ -158,6 +158,14 @@
 .editor-quill .ql-snow .ql-picker { color: var(--foreground); }
 .editor-quill .ql-picker-options { background: var(--popover); }
 
+@keyframes editor-confirmation-pulse {
+  0%, 100% { box-shadow: 0 0 1rem rgb(255 255 255 / 15%), 0 25px 50px -12px rgb(0 0 0 / 35%); }
+  50% { box-shadow: 0 0 2.4rem rgb(255 255 255 / 48%), 0 25px 50px -12px rgb(0 0 0 / 35%); }
+}
+
+.editor-confirmation-emphasis { position: relative; overflow: visible; animation: editor-confirmation-pulse 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .editor-confirmation-emphasis { animation: none; box-shadow: 0 0 1.25rem rgb(255 255 255 / 24%), 0 25px 50px -12px rgb(0 0 0 / 35%); } }
+
 @keyframes review-attention-pulse {
   0%, 100% { opacity: 0.18; transform: scale(0.995); }
   50% { opacity: var(--review-attention-opacity, .42); transform: scale(1); }

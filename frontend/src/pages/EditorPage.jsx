@@ -661,7 +661,7 @@ export default function EditorPage() {
     requestConfirmation(`Dismiss ${pending.length} suggestions?`, 'They will be hidden from this review and kept in this article’s review history.', async () => {
       for (const { finding, index } of pending) await markFindingStatus(finding, index, 'dismissed', 'dismissed')
       toast.success(`Dismissed ${pending.length} suggestion${pending.length === 1 ? '' : 's'}.`)
-    }, 'Dismiss all')
+    }, 'Dismiss all', { emphasize: true })
   }
 
   const locateSpellingFinding = (finding) => {
@@ -1068,7 +1068,7 @@ export default function EditorPage() {
         {(review || reviewHistory.length > 0) && <Card className={`overflow-hidden py-0 ${appearance.reviewAttentionEnabled && hasUnresolvedReviewFindings ? 'review-results-attention' : ''}`}>
           {review && <>
             <CardContent className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
-              <div className="flex min-w-0 items-center gap-x-2"><h3 className="shrink-0 text-sm font-semibold">Review results</h3><span aria-hidden="true" className="shrink-0 text-xs text-muted-foreground">·</span><p className="min-w-0 shrink truncate text-xs text-muted-foreground">Last AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</p><span aria-hidden="true" className="shrink-0 text-xs text-muted-foreground">·</span><span className="inline-flex min-w-28 flex-1 justify-center rounded-full bg-muted px-2 py-1 text-center text-xs text-muted-foreground">From: {reviewSourceLabel(review.checkType)}</span></div>
+              <div className="flex min-w-0 items-center gap-x-2"><h3 className="shrink-0 text-sm font-semibold">Review results</h3><span aria-hidden="true" className="shrink-0 text-xs text-muted-foreground">·</span><p className="min-w-0 shrink truncate text-xs text-muted-foreground">Last AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</p><span aria-hidden="true" className="shrink-0 text-xs text-muted-foreground">·</span><span className="inline-flex min-w-28 flex-1 justify-center rounded-full bg-muted px-2 py-1 text-center text-xs text-muted-foreground">Type of check: {reviewSourceLabel(review.checkType)}</span></div>
               <Button type="button" variant="ghost" size="icon" className="size-8" title={`${reviewResultsExpanded ? 'Collapse' : 'Expand'} review results`} aria-label={`${reviewResultsExpanded ? 'Collapse' : 'Expand'} review results`} onClick={() => setReviewResultsExpanded((current) => !current)} aria-expanded={reviewResultsExpanded}><ChevronDown className={`size-6 text-muted-foreground transition-transform ${reviewResultsExpanded ? 'rotate-180' : ''}`} /></Button>
             </CardContent>
             <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${reviewResultsExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -1274,7 +1274,7 @@ export default function EditorPage() {
         </Card>
       </div>
       {confirmation && <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4 backdrop-blur-[2px]" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setConfirmation(null) }}>
-        <div role="alertdialog" aria-modal="true" aria-labelledby="editor-confirmation-title" className={`grid max-h-[85vh] w-full max-w-xl gap-4 rounded-xl border bg-background p-5 text-foreground shadow-xl ${confirmation.emphasize ? 'relative overflow-visible before:pointer-events-none before:absolute before:inset-0 before:rounded-xl before:shadow-[0_0_2rem_rgba(255,255,255,0.32)] before:animate-pulse' : 'overflow-hidden'}`}>
+        <div role="alertdialog" aria-modal="true" aria-labelledby="editor-confirmation-title" className={`grid max-h-[85vh] w-full max-w-xl gap-4 rounded-xl border bg-background p-5 text-foreground shadow-xl ${confirmation.emphasize ? 'editor-confirmation-emphasis' : 'overflow-hidden'}`}>
           <div className="grid gap-3"><h2 id="editor-confirmation-title" className="font-semibold">{confirmation.title}</h2><pre className="max-h-[45vh] overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted p-3 font-sans text-sm text-muted-foreground">{confirmation.message}</pre>
             {confirmation.titleEditor && <div className="grid gap-2 rounded-md border p-3">
               <Label htmlFor="reviewed-title">Review suggested title</Label>
