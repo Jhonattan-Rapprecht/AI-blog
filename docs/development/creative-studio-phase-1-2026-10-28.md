@@ -25,6 +25,11 @@ The three new destinations intentionally explain the available layouts/presets a
 - All three check panels start collapsed, reducing initial editor density while keeping every action available on expansion.
 - Added a small extra gap between the rich-text editor and the Title & excerpt checks panel. The Title/Excerpt check behavior itself is unchanged.
 
+## Follow-up refinements
+
+- Reworked `useTheme()` into a shared browser theme store. The header toggle now updates every mounted consumer immediately, including the Admin Theme page; it also listens for browser storage changes from other tabs. Socket.IO is intentionally not involved because this is a local browser preference, not server-shared state.
+- Replaced the fictitious photo-credit placeholder in the Editor and Media Library with the subdued examples `Shutterstock, Getty Images, Unsplash`. Placeholder text is intentionally small and low-contrast while entered credits remain normal, readable text.
+
 ## Verification
 
 - `npm test`: passed 11/11 tests, including four new design configuration/registry safety tests.

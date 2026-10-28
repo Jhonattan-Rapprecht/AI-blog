@@ -396,3 +396,9 @@ The user asked for the collapsible check sections to use the same animation as P
 - Made **Title & excerpt checks** independently collapsible with the same Show/Hide label, chevron, and grid/opacity animation as the existing Partial-article and Full-article check sections.
 - All three check panels now start collapsed. Added a small additional gap between the editor and the Title & excerpt checks card; button behavior is unchanged.
 - Frontend production build and diff check passed. This refinement is included with the pending Phase 1 changes and documented in `docs/development/creative-studio-phase-1-2026-10-28.md`.
+
+### Follow-up — live Admin Theme state and photo-credit placeholders
+
+- Fixed the Admin Theme page’s stale current-mode indicator. `useTheme()` now uses a shared browser store and a local custom event, so toggling in the header updates every mounted hook immediately; no reload or Socket.IO round trip is needed for this browser-local preference.
+- Replaced the fictitious photo-credit placeholder in both Editor and Media Library with small, subdued examples: Shutterstock, Getty Images, and Unsplash. Entered credit text remains normal size/contrast.
+- Frontend build and diff check passed. These refinements remain uncommitted until the requested Phase 1 commit/push.

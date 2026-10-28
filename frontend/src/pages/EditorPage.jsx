@@ -1107,7 +1107,7 @@ export default function EditorPage() {
           <CardHeader className="px-4"><CardTitle className="text-sm">Featured image</CardTitle></CardHeader>
           <CardContent className="grid gap-3 px-4">
             {imageSrc ? <img src={imageSrc} alt="Featured image preview" className="aspect-[16/9] w-full rounded-md border bg-muted object-cover" /> : <div className="grid aspect-[16/9] place-items-center rounded-md border border-dashed bg-muted/30 text-muted-foreground"><ImagePlus className="size-7" /></div>}
-            {imageSrc && article.featured_media_id && <Field label="Photo credit/source"><Input value={article.featured_image_credit || ''} onChange={set('featured_image_credit')} placeholder="e.g. Michael Henniway" maxLength={500} /></Field>}
+            {imageSrc && article.featured_media_id && <Field label="Photo credit/source"><Input className="placeholder:text-[10px] placeholder:text-muted-foreground/45" value={article.featured_image_credit || ''} onChange={set('featured_image_credit')} placeholder="e.g. Shutterstock, Getty Images, Unsplash" maxLength={500} /></Field>}
             {imageSrc && !article.featured_media_id && <p className="text-xs text-muted-foreground">To save a credit for this image, upload it to the Media Library and select it here.</p>}
             <input ref={mediaInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={uploadFeatured} />
             <div className="grid grid-cols-2 gap-2">

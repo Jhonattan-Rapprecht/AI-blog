@@ -135,7 +135,7 @@ export default function MediaPage() {
             <CardContent className="grid gap-2 p-3">
               <div className="flex min-w-0 items-center justify-between gap-2"><div className="min-w-0"><p className="truncate text-sm font-medium" title={item.filename}>{item.filename}</p><p className="text-xs text-muted-foreground">{item.source_type === 'link' ? 'Video link' : `Uploaded � ${(item.file_size / 1024 / 1024).toFixed(1)} MB`}</p></div><Button variant="ghost" size="icon-sm" onClick={() => setConfirmItem(item)} title={`Delete ${section}`}><Trash2 className="text-muted-foreground" /></Button></div>
               {section === 'image' && <>
-                <label className="grid gap-1 text-xs text-muted-foreground">Photo credit/source<Input value={item.credit || ''} onChange={(event) => setCredit(item.id, event.target.value)} placeholder="e.g. Michael Henniway" maxLength={500} /></label>
+                <label className="grid gap-1 text-xs text-muted-foreground">Photo credit/source<Input className="placeholder:text-[10px] placeholder:text-muted-foreground/45" value={item.credit || ''} onChange={(event) => setCredit(item.id, event.target.value)} placeholder="e.g. Shutterstock, Getty Images, Unsplash" maxLength={500} /></label>
                 <Button variant="outline" size="sm" onClick={() => saveCredit(item)} disabled={savingCredit === item.id}>{savingCredit === item.id ? <Loader2 className="animate-spin" /> : <Save />} Save credit</Button>
               </>}
               {section === 'video' && item.source_type === 'link' && <a href={item.source_url} target="_blank" rel="noreferrer" className="truncate text-xs text-primary underline" title={item.source_url}>Open video link</a>}
