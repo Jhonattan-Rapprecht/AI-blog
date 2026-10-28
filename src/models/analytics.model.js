@@ -33,6 +33,7 @@ class AnalyticsModel {
             this.ready = db.query(`
                 CREATE TABLE IF NOT EXISTS article_read_views (
                     id CHAR(36) PRIMARY KEY,
+                    client_token CHAR(36) NOT NULL UNIQUE,
                     article_id CHAR(36) NOT NULL,
                     read_seconds INT UNSIGNED NOT NULL DEFAULT 0,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -40,31 +41,47 @@ class AnalyticsModel {
                     INDEX idx_article_read_views_date (created_at),
                     INDEX idx_article_read_views_article_date (article_id, created_at)
                 )
-            `).catch((error) => {
-                this.ready = null;
-                throw error;
-            });
+            `).then(async () => {
+                const columns = await db.query("SHOW COLUMNS FROM article_read_views LIKE 'client_token'");
+                if (!columns.length) await db.query('ALTER TABLE article_read_views ADD COLUMN client_token CHAR(36) NULL UNIQUE AFTER id');
+                await db.query(`CREATE TABLE IF NOT EXISTS article_view_deduplications (
+                    article_id CHAR(36) NOT NULL,
+                    visitor_hash CHAR(64) NOT NULL,
+                    expires_at DATETIME(3) NOT NULL,
+                    PRIMARY KEY (article_id, visitor_hash),
+                    INDEX idx_article_view_deduplications_expiry (expires_at),
+                    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+                )`);
+            }).catch((error) => { this.ready = null; throw error; });
         }
         return this.ready;
     }
 
-    async startView(articleId) {
+    async startView(articleId, visitorHash, dedupeSeconds) {
         await this.ensureTable();
-        const articles = await db.query(
-            `SELECT a.id FROM articles a WHERE a.id = ? AND ${PUBLIC_ARTICLE} LIMIT 1`,
-            [articleId]
-        );
-        if (!articles.length) return null;
-        const id = uuidv4();
-        await db.query('INSERT INTO article_read_views (id, article_id) VALUES (?, ?)', [id, articleId]);
-        return id;
+        const connection = await db.transaction();
+        try {
+            const [articles] = await connection.execute(`SELECT a.id FROM articles a WHERE a.id = ? AND ${PUBLIC_ARTICLE} LIMIT 1`, [articleId]);
+            if (!articles.length) { await connection.rollback(); return null; }
+            await connection.execute(`INSERT INTO article_view_deduplications (article_id, visitor_hash, expires_at)
+                VALUES (?, ?, DATE_SUB(CURRENT_TIMESTAMP(3), INTERVAL 1 SECOND)) ON DUPLICATE KEY UPDATE visitor_hash = VALUES(visitor_hash)`, [articleId, visitorHash]);
+            const [dedupes] = await connection.execute('SELECT expires_at FROM article_view_deduplications WHERE article_id = ? AND visitor_hash = ? FOR UPDATE', [articleId, visitorHash]);
+            if (new Date(dedupes[0].expires_at).getTime() > Date.now()) { await connection.rollback(); return { duplicate: true }; }
+            const id = uuidv4();
+            const clientToken = uuidv4();
+            await connection.execute('INSERT INTO article_read_views (id, client_token, article_id) VALUES (?, ?, ?)', [id, clientToken, articleId]);
+            await connection.execute('UPDATE article_view_deduplications SET expires_at = DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL ? SECOND) WHERE article_id = ? AND visitor_hash = ?', [dedupeSeconds, articleId, visitorHash]);
+            await connection.execute('DELETE FROM article_view_deduplications WHERE expires_at < CURRENT_TIMESTAMP(3) LIMIT 100');
+            await connection.commit();
+            return { trackingToken: clientToken };
+        } catch (error) { await connection.rollback(); throw error; } finally { connection.release(); }
     }
 
-    async finishView(viewId, readSeconds) {
+    async finishView(trackingToken, readSeconds) {
         await this.ensureTable();
         const result = await db.query(
-            'UPDATE article_read_views SET read_seconds = GREATEST(read_seconds, ?) WHERE id = ?',
-            [readSeconds, viewId]
+            'UPDATE article_read_views SET read_seconds = GREATEST(read_seconds, ?) WHERE client_token = ?',
+            [readSeconds, trackingToken]
         );
         return result.affectedRows > 0;
     }

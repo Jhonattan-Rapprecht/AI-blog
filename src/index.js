@@ -22,8 +22,10 @@ const authMiddleware = require('./middleware/auth.middleware');
 const activityLogMiddleware = require('./middleware/activity-log.middleware');
 const publicErrorLogMiddleware = require('./middleware/public-error-log.middleware');
 const SchedulerService = require('./services/scheduler.service');
+const requestProtection = require('./config/request-protection.config');
 
 const app = express();
+app.set('trust proxy', requestProtection.trustProxy);
 // Admin (Vite) and public site (Astro)
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4321').split(',');
 const server = http.createServer(app);

@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { errorDetails } = require('../utils/http-errors');
 const ActivityLog = require('../models/activity-log.model');
 
 function logRejectedAuth(req, action) {
@@ -42,7 +43,7 @@ module.exports = (req, res, next) => {
 
         next();
     } catch (error) {
-        console.error('JWT Verification Error:', error.message);
+        console.error('[Authentication] JWT verification failed:', errorDetails(error));
         logRejectedAuth(req, 'Rejected request with an invalid or expired administrator token');
         return res.status(401).json({
             message: 'Invalid or expired token. Please log in again.'
