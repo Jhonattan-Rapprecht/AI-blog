@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { NativeSelect } from '@/components/ui/native-select'
+import { useAdminAppearance } from '@/hooks/use-admin-appearance'
 
 const EMPTY = {
   title: '', slug: '', excerpt: '', content: '', featured_image: '', featured_media_id: null, featured_media_path: '', featured_image_credit: '', status: 'draft', category_id: '',
@@ -245,6 +246,7 @@ export default function EditorPage() {
   const selectedTextRef = useRef('')
   const selectedRangeRef = useRef(null)
   const [reviewHistory, setReviewHistory] = useState([])
+  const [reviewResultsExpanded, setReviewResultsExpanded] = useState(false)
   const [showOlderReviewHistory, setShowOlderReviewHistory] = useState(false)
   const [reviewHistoryExpanded, setReviewHistoryExpanded] = useState(false)
   const [titleExcerptChecksExpanded, setTitleExcerptChecksExpanded] = useState(false)
@@ -263,6 +265,8 @@ export default function EditorPage() {
   const generatingRef = useRef(false)
   const selectedCategory = categories.find((category) => String(category.id) === String(article.category_id))
   const imageSrc = mediaUrl(article.featured_media_path || article.featured_image)
+  const { appearance } = useAdminAppearance()
+  const hasUnresolvedReviewFindings = Boolean(review?.findings?.some((_finding, index) => !appliedFindings.includes(index) && !dismissedFindings.includes(index)))
 
   const clearCurrentReview = () => {
     if (review?.id) setReviewHistory((current) => current.some((item) => item.id === review.id) ? current : [review, ...current])
@@ -357,6 +361,7 @@ export default function EditorPage() {
     setArticleId(id || null)
     setReview(null)
     setReviewHistory([])
+    setReviewResultsExpanded(false)
     setShowOlderReviewHistory(false)
     setReviewHistoryExpanded(false)
     setAppliedFindings([])
@@ -462,6 +467,7 @@ export default function EditorPage() {
   const reviewCurrentArticle = async () => {
     if (!article.title.trim() || !article.content.trim()) return toast.error('Add an article title and content before reviewing.')
     setActiveReviewCheck('full_review')
+    setReviewResultsExpanded(true)
     try {
       const result = await api.reviewArticle({ articleId, category: selectedCategory?.name || '', title: article.title, excerpt: article.excerpt, content: article.content })
       if (articleId && result.id) {
@@ -482,6 +488,7 @@ export default function EditorPage() {
   const spellcheckArticle = async () => {
     if (!article.title.trim() || !article.content.trim()) return toast.error('Add an article title and content before checking spelling.')
     setSpellchecking(true)
+    setReviewResultsExpanded(true)
     try {
       const result = await api.spellcheckArticle({ articleId, title: article.title, content: article.content, language: ai.language })
       if (articleId && result.id) {
@@ -503,6 +510,7 @@ export default function EditorPage() {
   const runFocusedCheck = async (kind) => {
     if (!article.title.trim() || !article.content.trim()) return toast.error('Add an article title and content before checking.')
     setActiveReviewCheck(`full_${kind}`)
+    setReviewResultsExpanded(true)
     const label = kind === 'fact' ? 'fact-check' : 'grammar check'
     try {
       const request = kind === 'fact' ? api.factCheckArticle : api.grammarCheckArticle
@@ -554,6 +562,7 @@ export default function EditorPage() {
     if (selectedText.length > 12000) return toast.error('Select a passage shorter than 12,000 characters.')
     if (kind === 'spelling') setSelectionSpellchecking(true)
     else setActiveReviewCheck(`selection_${kind}`)
+    setReviewResultsExpanded(true)
     try {
       const quill = editorRef.current?.getEditor()
       const fullText = quill?.getText() || ''
@@ -586,6 +595,7 @@ export default function EditorPage() {
     const excerpt = String(article.excerpt || '').trim()
     if (!excerpt) return toast.info('Add an excerpt in SEO & metadata before checking it.')
     setActiveReviewCheck('excerpt_review')
+    setReviewResultsExpanded(true)
     try {
       const result = await api.checkExcerpt({ articleId, title: article.title, excerpt, category: selectedCategory?.name || '', context: (editorRef.current?.getEditor()?.getText() || '').slice(0, 3000) })
       if (articleId && result.id) {
@@ -608,6 +618,7 @@ export default function EditorPage() {
     const title = String(article.title || '').trim()
     if (!title) return toast.info('Add an article title before checking it.')
     setActiveReviewCheck('title_review')
+    setReviewResultsExpanded(true)
     try {
       const result = await api.checkTitle({ articleId, title, excerpt: article.excerpt, category: selectedCategory?.name || '', content: article.content })
       if (articleId && result.id) {
@@ -1038,16 +1049,18 @@ export default function EditorPage() {
             </div>
           </div>
         </Card>
-        {(review || reviewHistory.length > 0) && <Card className="overflow-hidden py-0">
-          {review && <CardContent className="grid gap-3 px-4 py-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-              <h3 className="text-sm font-semibold">Review results</h3>
-              <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">From: {reviewSourceLabel(review.checkType)}</span>
-            </div>
-            {review.findings.length > 0 && <p className="text-xs text-muted-foreground">AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</p>}
+        {(review || reviewHistory.length > 0) && <Card className={`overflow-hidden py-0 ${appearance.reviewAttentionEnabled && hasUnresolvedReviewFindings ? 'review-results-attention' : ''}`}>
+          {review && <>
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+              <div className="grid gap-0.5"><h3 className="text-sm font-semibold">Review results</h3><p className="text-xs text-muted-foreground">Last AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</p></div>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setReviewResultsExpanded((current) => !current)} aria-expanded={reviewResultsExpanded}>{reviewResultsExpanded ? 'Hide results' : 'Show results'}<ChevronDown className={`size-4 transition-transform ${reviewResultsExpanded ? 'rotate-180' : ''}`} /></Button>
+            </CardContent>
+            <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${reviewResultsExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+              <div className="min-h-0 overflow-hidden"><CardContent className="grid gap-3 border-t px-4 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">From: {reviewSourceLabel(review.checkType)}</span></div>
             {review.findings.some((finding) => finding.type === 'fact_check') && <p className="text-xs text-muted-foreground">Fact-check suggestions need manual verification; no live sources were checked.</p>}
             {review.titleReviewNote && <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{review.titleReviewNote}</p>}
-            {!review.findings.length && <p aria-hidden={!showNoSuggestionsNotice} className={`flex flex-wrap items-center justify-between overflow-hidden gap-x-3 gap-y-1 rounded-md bg-muted text-sm transition-[opacity,max-height,margin,padding] duration-500 ease-out ${showNoSuggestionsNotice ? 'max-h-16 px-3 py-2 opacity-100' : 'max-h-0 px-3 py-0 opacity-0'}`}><span>No suggestions found.</span><span className="text-xs text-muted-foreground">AI check done by: {review.model || 'selected model'} · {new Date(review.reviewedAt).toLocaleString()}</span></p>}
+            {!review.findings.length && <p aria-hidden={!showNoSuggestionsNotice} className={`overflow-hidden rounded-md bg-muted text-sm transition-[opacity,max-height,margin,padding] duration-500 ease-out ${showNoSuggestionsNotice ? 'max-h-16 px-3 py-2 opacity-100' : 'max-h-0 px-3 py-0 opacity-0'}`}>No suggestions found.</p>}
             {review.findings.some((_finding, index) => !appliedFindings.includes(index) && !dismissedFindings.includes(index)) && <div className="flex flex-wrap gap-2">
               {review.findings.some((finding, index) => finding.type !== 'fact_check' && !appliedFindings.includes(index) && !dismissedFindings.includes(index)) && <Button type="button" size="sm" onClick={applyAllFindings}><Check /> Apply all suggestions</Button>}
               <Button type="button" size="sm" variant="outline" onClick={dismissAllFindings}><X /> Dismiss all suggestions</Button>
@@ -1092,7 +1105,9 @@ export default function EditorPage() {
                 return <div key={`handled-${index}`} className="rounded bg-muted/50 p-2 text-xs"><p className="font-medium">{finding.field} · {finding.type.replace('_', ' ')} · {status}</p><p>“{finding.quote}” — {finding.explanation}</p></div>
               })}</div>
             </details>}
-          </CardContent>}
+              </CardContent></div>
+            </div>
+          </>}
           {reviewHistory.length > 0 && <>
           <button type="button" aria-expanded={reviewHistoryExpanded} onClick={() => setReviewHistoryExpanded((current) => !current)} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted/40 ${review ? 'border-t' : ''}`}>
             <span>Previous review history <span className="text-muted-foreground">({reviewHistory.length})</span></span>

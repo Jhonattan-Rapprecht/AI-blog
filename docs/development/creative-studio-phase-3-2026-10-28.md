@@ -35,3 +35,10 @@ The existing sanitizer public-response test emits an expected unavailable test-d
 ## Commit state
 
 Phase 3 changes are intentionally uncommitted and unpushed pending user approval.
+
+## Follow-up — Review result focus and Admin appearance effects
+
+- The Editor’s Review results card now keeps a compact **Last AI check done by** model/timestamp summary visible, while source details, fact-check guidance, notes, actions, and findings remain collapsed until the user chooses **Show results**. A newly started check opens the panel automatically.
+- Unresolved findings can receive a subtle attention glow. It fades out when the panel is hovered or focused, and is disabled automatically for users who request reduced motion.
+- Admin Theme is now organized into **Interface mode**, **Layout & navigation**, **Elements & feedback**, and **Effects & animations**. The new safe, browser-local controls configure the review attention effect’s enabled state, preset color, intensity, and speed. They never change the public Astro site or published articles.
+- Frontend production build and diff check passed. Authenticated browser verification confirmed the Admin Theme organization and controls. The representative test article had no saved review history in this local session, so the collapsed historical-review state remains runtime-unverified; no review was run solely to create data.

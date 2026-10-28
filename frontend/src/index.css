@@ -158,3 +158,27 @@
 .editor-quill .ql-snow .ql-picker { color: var(--foreground); }
 .editor-quill .ql-picker-options { background: var(--popover); }
 
+@keyframes review-attention-pulse {
+  0%, 100% { opacity: 0.18; transform: scale(0.995); }
+  50% { opacity: var(--review-attention-opacity, .42); transform: scale(1); }
+}
+
+.review-results-attention { position: relative; isolation: isolate; }
+.review-results-attention::before {
+  position: absolute;
+  z-index: -1;
+  inset: -2px;
+  border-radius: inherit;
+  background: rgb(var(--review-attention-color, 139 92 246) / var(--review-attention-opacity, .42));
+  filter: blur(var(--review-attention-blur, 12px));
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 420ms ease-out;
+}
+html[data-review-attention='enabled'] .review-results-attention:not(:hover):not(:focus-within)::before { animation: review-attention-pulse var(--review-attention-duration, 3.8s) ease-in-out infinite; }
+.review-results-attention:hover::before, .review-results-attention:focus-within::before { animation: none; opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-review-attention='enabled'] .review-results-attention::before { animation: none; opacity: 0; }
+}
+
