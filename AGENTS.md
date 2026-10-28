@@ -451,3 +451,8 @@ The user asked for the collapsible check sections to use the same animation as P
 
 - The user refined the Review results summary row: removed Show/Hide text from its disclosure control, moved the source badge after the timestamp, and used centered-dot separators. The arrow has a fixed grid column; the badge takes only remaining space and the timestamp truncates first on narrow layouts.
 - Removed generic fact-check verification copy, leaving actual result-card type/field details as the relevant per-check information. Documented in `docs/development/creative-studio-phase-3-2026-10-28.md`; the entire compact-controls follow-up is ready to commit/push.
+
+### Future feature request — Research fact
+
+- The user proposed a future extra fact-check-card action and selected the label **Research fact** over “Log fact check.” It is intentionally not implemented: the current reviewer does not browse or verify live sources, so a button without a real research workflow would mislead users.
+- Created `docs/development/future-feature-requests.md` with the proposed research-brief workflow, source/verdict expectations, and safety constraints for any future search/source integration.
