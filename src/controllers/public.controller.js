@@ -1,6 +1,8 @@
 ﻿const PublicBlogModel = require('../models/public.model');
 
 const { sanitizeArticleHtml } = require('../utils/htmlSanitizer');
+const ArticleDesignModel = require('../models/article-design.model');
+const { resolveArticleDesign } = require('../config/article-design.config');
 
 const clamp = (value, min, max, fallback) => {
     const n = parseInt(value, 10);
@@ -30,7 +32,12 @@ class PublicBlogController {
                 return res.status(404).json({ error: 'Article not found or not yet published' });
             }
             const related = await PublicBlogModel.getRelated(article);
-            res.json({ ...article, content: sanitizeArticleHtml(article.content), related });
+            // An unavailable optional layout record must never make a published
+            // article unavailable; Classic Editorial remains the safe fallback.
+            let design;
+            try { design = await ArticleDesignModel.resolveForArticle(article.id); }
+            catch { design = { ...resolveArticleDesign(null, null), source: 'fallback' }; }
+            res.json({ ...article, content: sanitizeArticleHtml(article.content), related, design });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

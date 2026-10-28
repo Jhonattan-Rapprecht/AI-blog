@@ -60,6 +60,23 @@ CREATE TABLE IF NOT EXISTS articles (
     FOREIGN KEY (featured_media_id) REFERENCES media(id) ON DELETE SET NULL
 );
 
+-- Validated publishing design state. JSON contains layout identifiers only in Phase 2.
+CREATE TABLE IF NOT EXISTS publication_design_settings (
+    id TINYINT UNSIGNED PRIMARY KEY,
+    schema_version TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    design_config JSON NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT chk_publication_design_settings_singleton CHECK (id = 1)
+);
+
+CREATE TABLE IF NOT EXISTS article_design_overrides (
+    article_id CHAR(36) PRIMARY KEY,
+    design_config JSON NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+);
+
 -- Tags Table
 CREATE TABLE IF NOT EXISTS tags (
     id CHAR(36) PRIMARY KEY,

@@ -222,6 +222,9 @@ export default function EditorPage() {
   const [article, setArticle] = useState(EMPTY)
   const [ai, setAi] = useState({ topic: '', targetAudience: 'General', language: 'English', tone: 'Professional', articleLength: 'Medium', category: '', keywords: '', additionalInstructions: '' })
   const [categories, setCategories] = useState([])
+  const [designCatalog, setDesignCatalog] = useState(null)
+  const [layoutOverride, setLayoutOverride] = useState(null)
+  const [savingLayoutOverride, setSavingLayoutOverride] = useState(false)
   const [writingSettings, setWritingSettings] = useState(null)
   const [topics, setTopics] = useState([])
   const [slugs, setSlugs] = useState([])
@@ -309,6 +312,7 @@ export default function EditorPage() {
   )
 
   useEffect(() => { loadCategories() }, [loadCategories])
+  useEffect(() => { api.articleDesignCatalog().then(setDesignCatalog).catch(() => {}) }, [])
 
   useEffect(() => {
     const toolbar = editorRef.current?.getEditor()?.container?.previousElementSibling
@@ -358,8 +362,10 @@ export default function EditorPage() {
     setAppliedFindings([])
     setDismissedFindings([])
     setFindingStatusSaveErrors({})
+    setLayoutOverride(null)
     if (!id) { setArticle(EMPTY); return () => { active = false } }
     api.article(id).then((a) => { if (active) setArticle(pick(a)) }).catch((e) => { if (active) toast.error(errorMessage(e)) })
+    api.articleDesignOverride(id).then((override) => { if (active) setLayoutOverride(override.selection?.layout || null) }).catch(() => {})
     api.articleReviewHistory(id).then((history) => {
       if (!active) return
       const [latest, ...older] = history || []
@@ -405,6 +411,18 @@ export default function EditorPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const saveLayoutOverride = async (layout) => {
+    if (!articleId) return toast.error('Save the article before choosing a layout override')
+    setSavingLayoutOverride(true)
+    try {
+      if (!layout) await api.clearArticleDesignOverride(articleId)
+      else await api.updateArticleDesignOverride(articleId, { layout })
+      setLayoutOverride(layout || null)
+      toast.success(layout ? 'Article layout override saved' : 'Article now uses the publication default')
+    } catch (error) { toast.error(errorMessage(error)) }
+    finally { setSavingLayoutOverride(false) }
   }
 
   const generate = async () => {
@@ -1143,6 +1161,12 @@ export default function EditorPage() {
                   <Button variant="ghost" size="icon" onClick={() => setNewCategory(null)}><X /></Button>
                 </div>
               )}
+            </Field>
+            <Field label="Article layout" hint={<p className="text-xs text-muted-foreground">Use the publication default, or select an approved layout only for this article.</p>}>
+              <NativeSelect value={layoutOverride || ''} disabled={!articleId || savingLayoutOverride} onChange={(event) => saveLayoutOverride(event.target.value || null)}>
+                <option value="">Publication default</option>
+                {designCatalog?.layouts?.map((layout) => <option key={layout.id} value={layout.id}>{layout.name}</option>)}
+              </NativeSelect>
             </Field>
           </CardContent>
         </Card>

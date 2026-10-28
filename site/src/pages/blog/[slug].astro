@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleCard from '../../components/ArticleCard.astro';
+import MagazineSplit from '../../components/article/MagazineSplit.astro';
+import ImmersiveFeature from '../../components/article/ImmersiveFeature.astro';
 import { getArticle, listCategories, formatDate, readingTime, normalizeHtml, imageUrl } from '../../lib/api.js';
 
 const [articleResult, categoriesResult] = await Promise.allSettled([
@@ -41,6 +43,7 @@ const readMinutes = readingTime(article.content);
 const articleUrl = new URL(`/blog/${encodeURIComponent(article.slug)}`, Astro.site).href;
 const encodedUrl = encodeURIComponent(articleUrl);
 const encodedTitle = encodeURIComponent(article.title);
+const layout = ['split', 'immersive'].includes(article.design?.layout) ? article.design.layout : 'classic';
 ---
 
 <BaseLayout
@@ -50,6 +53,7 @@ const encodedTitle = encodeURIComponent(article.title);
   type="article"
   categories={categories}
 >
+  {layout === 'split' ? <MagazineSplit article={article} toc={toc} articleHtml={articleHtml} readMinutes={readMinutes} /> : layout === 'immersive' ? <ImmersiveFeature article={article} toc={toc} articleHtml={articleHtml} readMinutes={readMinutes} /> : <>
   <div class="article-progress" role="progressbar" aria-label="Article reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
     <span class="article-progress__bar" id="article-progress-bar"></span>
   </div>
@@ -140,6 +144,7 @@ const encodedTitle = encodeURIComponent(article.title);
       </div>
     </section>
   )}
+  </>}
 </BaseLayout>
 
 <script>

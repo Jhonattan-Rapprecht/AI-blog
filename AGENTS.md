@@ -409,3 +409,21 @@ The user asked for the collapsible check sections to use the same animation as P
 - The user supplied the Phase 2 implementation prompt plus a mandatory amendment: the existing Astro article page is Classic Editorial (`classic`) and must remain visually/materially unchanged. Phase 2 must add only `split` and `immersive` as new designs.
 - Before any Astro page change, capture the current published article at desktop and mobile and compare Classic after implementation. Browser automation could not connect: native pipe unavailable and no tabs exposed. Do not start Phase 2 code until the bridge is restored or the user provides baseline screenshots.
 - No Phase 2 app code, schema, migration, dependency, database data, or public layout has changed. Detailed resume instructions: `docs/development/handover-creative-studio-phase-2-2026-10-28.md`.
+
+### Creative Studio Phase 2 — implementation in progress
+
+- The user explicitly authorized continuing after the browser connection returned. Captured a Classic Editorial baseline for `http://localhost:4321/blog/werk-lukt-niet-kort`: desktop full page at 1440×1000 and mobile viewport at 390×844 under `docs/development/visual-baselines/phase-2/`.
+- Added safe layout resolution/persistence, authenticated publication and article-override APIs, an Article Layouts default selector, Editor override selector, and static Astro `split` / `immersive` layouts. The old `site/src/pages/blog/[slug].astro` markup remains the `classic` branch.
+- Tests passed (13/13) and frontend/Astro builds passed. Full-page comparison attempts after implementation caused the browser automation session to time out; new-layout runtime screenshots still need a stable bridge and authenticated local-admin selection. No migration was manually run, no production DB was contacted, and Phase 2 changes are uncommitted.
+- Detailed implementation/verification: `docs/development/creative-studio-phase-2-2026-10-28.md`.
+
+### Phase 2 final browser verification — 2026-10-28
+
+- Edge debugging recovered without a plugin reinstall. Classic Editorial was visually rechecked at 1440×1000 and 390×844 against the saved representative-article baselines; it retained the original hero, metadata, TOC/rail, content and mobile behavior.
+- The fresh Edge profile correctly redirects the local admin to login, so publication-default/override writes and the two new layout screenshots could not be exercised without an authenticated session. Do not call those checks passed. The detailed passed/unverified matrix is in `docs/development/creative-studio-phase-2-2026-10-28.md`.
+
+### Phase 2 authenticated browser completion — 2026-10-28
+
+- The user authenticated the existing Edge session. Without inspecting credentials or session data, verified Magazine Split and Immersive Feature at desktop (1440×1000) and mobile (390×844), publication-default saving, a Classic article override and clearing it, unchanged title/Quill HTML, Developer → Components iframe preview, and public denial of a known unpublished/review article route.
+- Recorded original state (publication `classic`, no article override), temporarily tested `split` and `immersive`, and restored the original default/no-override state. A final public reload was Classic only.
+- No existing published no-hero article was available, so the Immersive no-hero fallback was not browser-exercised; no temporary content or real media was changed. All requested authenticated checks otherwise passed. Phase 2 is ready to commit; detailed matrix: `docs/development/creative-studio-phase-2-2026-10-28.md`.

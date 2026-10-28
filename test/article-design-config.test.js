@@ -4,6 +4,8 @@ const assert = require('node:assert/strict');
 const {
     DEFAULT_ARTICLE_DESIGN,
     getArticleDesignCatalog,
+    normalizeLayoutSelection,
+    resolveArticleDesign,
     validateArticleDesign
 } = require('../src/config/article-design.config');
 
@@ -61,4 +63,16 @@ test('catalog exposes metadata only and has no executable component source', () 
     assert.equal(catalog.layouts.length, 3);
     assert.equal(catalog.stylePresets.length, 4);
     assert.ok(catalog.components.every((component) => typeof component.id === 'string' && !Object.hasOwn(component, 'source') && !Object.hasOwn(component, 'path')));
+});
+
+test('layout resolution prefers a valid article override, then publication, then classic', () => {
+    assert.equal(resolveArticleDesign({ layout: 'split' }, { layout: 'immersive' }).layout, 'immersive');
+    assert.equal(resolveArticleDesign({ layout: 'split' }, null).layout, 'split');
+    assert.equal(resolveArticleDesign({ layout: 'not-a-layout' }, { layout: 'also-invalid' }).layout, 'classic');
+});
+
+test('layout persistence accepts only an approved identifier', () => {
+    assert.deepEqual(normalizeLayoutSelection({ layout: 'split' }), { layout: 'split' });
+    assert.equal(normalizeLayoutSelection({ layout: '<script>' }), null);
+    assert.equal(normalizeLayoutSelection({}), null);
 });

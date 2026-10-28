@@ -89,4 +89,28 @@ function getArticleDesignCatalog() {
     return { layouts: LAYOUTS, stylePresets: STYLE_PRESETS, components: COMPONENT_REGISTRY, defaultDesign: cloneDefault() };
 }
 
-module.exports = { LAYOUTS, STYLE_PRESETS, COMPONENT_REGISTRY, DEFAULT_ARTICLE_DESIGN, validateArticleDesign, getArticleDesignCatalog };
+function normalizeLayoutSelection(input) {
+    const layout = typeof input === 'string' ? input : input?.layout;
+    return layoutIds.has(layout) ? { layout } : null;
+}
+
+// Phase 2 persists only layout selection. Styling tokens remain a later phase, so
+// stored data can never enable arbitrary CSS or component imports.
+function resolveArticleDesign(publicationSelection, articleSelection) {
+    const publication = normalizeLayoutSelection(publicationSelection);
+    const article = normalizeLayoutSelection(articleSelection);
+    const design = cloneDefault();
+    design.layout = article?.layout || publication?.layout || design.layout;
+    return design;
+}
+
+module.exports = {
+    LAYOUTS,
+    STYLE_PRESETS,
+    COMPONENT_REGISTRY,
+    DEFAULT_ARTICLE_DESIGN,
+    validateArticleDesign,
+    getArticleDesignCatalog,
+    normalizeLayoutSelection,
+    resolveArticleDesign
+};

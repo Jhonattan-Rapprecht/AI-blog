@@ -1,0 +1,31 @@
+---
+import ArticleCard from '../ArticleCard.astro';
+import { formatDate, imageUrl, normalizeHtml } from '../../lib/api.js';
+
+const { article, toc, articleHtml, readMinutes } = Astro.props;
+---
+
+<div class="article-progress" role="progressbar" aria-label="Article reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="article-progress__bar" id="article-progress-bar"></span></div>
+<article class="layout-split" data-article-read-id={article.id}>
+  <header class="layout-split__hero">
+    <div class="layout-split__copy">
+      <a href="/blog" class="article-back">← All stories</a>
+      <div class="article-hero__meta">
+        {article.category_name && <a href={article.category_slug ? `/category/${encodeURIComponent(article.category_slug)}` : '/blog'} class="article-hero__category">{article.category_name}</a>}
+        {article.published_at && <time datetime={article.published_at}>{formatDate(article.published_at)}</time>}
+        <span aria-hidden="true">·</span><span>{readMinutes} min read</span>
+      </div>
+      <h1>{article.title}</h1>
+      {article.excerpt && <p>{article.excerpt}</p>}
+      {article.featured_image && article.featured_image_credit && <small>Photo credit/source: {article.featured_image_credit}</small>}
+    </div>
+    <div class="layout-split__media">
+      {article.featured_image ? <img src={imageUrl(article.featured_image)} alt={article.title} fetchpriority="high" /> : <div class="article-hero__fallback" aria-hidden="true" />}
+    </div>
+  </header>
+  <div class:list={['layout-split__reading', !toc.length && 'layout-split__reading--no-toc']}>
+    {toc.length > 0 && <aside class="article-toc" aria-label="Article contents"><nav class="article-toc__desktop" aria-label="On this page"><p class="article-rail__title">On this page</p><div class="article-toc__links">{toc.map((heading) => <a href={`#${heading.id}`} data-toc-id={heading.id} data-level={heading.level}>{heading.text}</a>)}</div></nav><details class="article-toc__mobile"><summary>On this page <span aria-hidden="true">⌄</span></summary><nav class="article-toc__links" aria-label="Article contents">{toc.map((heading) => <a href={`#${heading.id}`} data-toc-id={heading.id} data-level={heading.level}>{heading.text}</a>)}</nav></details></aside>}
+    <div class="article-body" id="article-body"><div class="prose prose-article max-w-none" set:html={normalizeHtml(articleHtml)} /></div>
+  </div>
+</article>
+{article.related?.length > 0 && <section class="article-related-bottom" aria-labelledby="related-title"><div class="article-related-bottom__inner"><p class="eyebrow">Continue exploring</p><h2 id="related-title">More ideas for you</h2><div class="article-related-grid">{article.related.map((related, index) => <ArticleCard article={related} featured={index === 0} />)}</div></div></section>}
