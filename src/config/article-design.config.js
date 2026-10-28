@@ -11,15 +11,34 @@ const STYLE_PRESETS = Object.freeze([
     { id: 'cyberpunk-technology', name: 'Cyberpunk Technology', description: 'Dark technology-forward palette with vivid accents.' }
 ]);
 
-// Metadata only. These IDs may map to trusted Astro components in a later phase;
-// they never accept a database path, source string, or dynamic import.
+// Metadata only. Registered entries map to version-controlled, statically imported
+// Astro implementations. This catalog never accepts a database path, source string,
+// dynamic import, or executable configuration.
 const COMPONENT_REGISTRY = Object.freeze([
-    { id: 'article-hero', name: 'Article Hero', category: 'article', regions: ['hero'], status: 'planned' },
-    { id: 'article-meta', name: 'Article Metadata', category: 'article', regions: ['metadata'], status: 'planned' },
-    { id: 'article-body', name: 'Article Body', category: 'article', regions: ['body'], status: 'planned' },
-    { id: 'article-toc', name: 'Table of Contents', category: 'article', regions: ['sidebar'], status: 'planned' },
-    { id: 'related-articles', name: 'Related Articles', category: 'article', regions: ['related'], status: 'planned' },
-    { id: 'article-card', name: 'Article Card', category: 'layout', regions: ['related', 'featured-grid'], status: 'available' }
+    { id: 'article-hero', name: 'Article Hero', category: 'article', description: 'Featured article image and its accessible fallback.', variants: ['standard', 'split', 'overlay'], regions: ['hero'], properties: ['article', 'image treatment'], status: 'planned', preview: 'static' },
+    { id: 'article-title', name: 'Article Title', category: 'article', description: 'Primary editorial heading for the article.', variants: ['standard', 'display'], regions: ['hero', 'metadata'], properties: ['article title'], status: 'planned', preview: 'static' },
+    { id: 'article-meta', name: 'Article Metadata', category: 'article', description: 'Category, publication date, and reading time.', variants: ['standard', 'overlay'], regions: ['metadata'], properties: ['category', 'published date', 'reading time'], status: 'planned', preview: 'static' },
+    { id: 'article-body', name: 'Article Body', category: 'article', description: 'Sanitized rich article HTML in an approved reading region.', variants: ['standard', 'feature'], regions: ['body', 'wide-content'], properties: ['sanitized article HTML'], status: 'planned', preview: 'static' },
+    { id: 'author-card', name: 'Author Card', category: 'article', description: 'Reserved authored-byline card for future author profiles.', variants: ['compact', 'full'], regions: ['metadata', 'related'], properties: ['author profile'], status: 'planned', preview: 'static' },
+    { id: 'article-toc', name: 'Table of Contents', category: 'article', description: 'Heading navigation generated from approved article content.', variants: ['rail', 'mobile'], regions: ['sidebar'], properties: ['heading list'], status: 'planned', preview: 'static' },
+    { id: 'related-articles', name: 'Related Articles', category: 'article', description: 'Continuation links for related published articles.', variants: ['grid', 'rail'], regions: ['related'], properties: ['related articles'], status: 'planned', preview: 'static' },
+    { id: 'pull-quote', name: 'Pull Quote', category: 'editorial', description: 'Editorial emphasis for a short quoted passage.', variants: ['standard', 'accent'], regions: ['body', 'wide-content'], properties: ['quote', 'attribution'], status: 'planned', preview: 'static' },
+    { id: 'image-gallery', name: 'Image Gallery', category: 'editorial', description: 'Curated gallery of approved media-library images.', variants: ['grid', 'carousel'], regions: ['body', 'wide-content'], properties: ['media items', 'captions'], status: 'planned', preview: 'static' },
+    { id: 'image-caption', name: 'Image With Caption', category: 'editorial', description: 'Editorial image treatment with credit and caption.', variants: ['standard', 'wide'], regions: ['body', 'wide-content'], properties: ['image', 'caption', 'credit'], status: 'planned', preview: 'static' },
+    { id: 'editorial-callout', name: 'Editorial Callout', category: 'editorial', description: 'Contextual note with a restrained visual treatment.', variants: ['note', 'warning', 'tip'], regions: ['body'], properties: ['title', 'content'], status: 'planned', preview: 'static' },
+    { id: 'highlight-box', name: 'Highlight Box', category: 'editorial', description: 'Short emphasis block for a key editorial point.', variants: ['accent', 'muted'], regions: ['body'], properties: ['content'], status: 'planned', preview: 'static' },
+    { id: 'section-divider', name: 'Section Divider', category: 'editorial', description: 'Visual separation between long-form article sections.', variants: ['line', 'ornament'], regions: ['body', 'wide-content'], properties: [], status: 'planned', preview: 'static' },
+    { id: 'comparison-table', name: 'Comparison Table', category: 'editorial', description: 'Structured comparison using the safe article table markup.', variants: ['standard', 'striped'], regions: ['body', 'wide-content'], properties: ['columns', 'rows'], status: 'planned', preview: 'static' },
+    { id: 'classic-editorial-layout', name: 'Classic Editorial', category: 'layout', description: 'The preserved production article layout.', variants: ['classic'], regions: ['hero', 'metadata', 'body', 'related'], properties: ['article', 'table of contents', 'related articles'], status: 'registered', preview: 'static' },
+    { id: 'magazine-split-layout', name: 'Magazine Split', category: 'layout', description: 'Trusted Astro layout with a split editorial hero.', variants: ['split'], regions: ['hero', 'metadata', 'body', 'sidebar', 'related'], properties: ['article', 'table of contents', 'related articles'], status: 'registered', preview: 'static' },
+    { id: 'immersive-feature-layout', name: 'Immersive Feature', category: 'layout', description: 'Trusted Astro layout with a cinematic feature hero.', variants: ['immersive'], regions: ['hero', 'metadata', 'body', 'wide-content', 'related'], properties: ['article', 'table of contents', 'related articles'], status: 'registered', preview: 'static' },
+    { id: 'full-width-hero', name: 'Full-width Hero', category: 'layout', description: 'Reusable hero-region pattern for future layouts.', variants: ['image', 'overlay'], regions: ['hero'], properties: ['article', 'image'], status: 'planned', preview: 'static' },
+    { id: 'split-hero', name: 'Split Hero', category: 'layout', description: 'Reusable side-by-side hero-region pattern.', variants: ['image-right', 'image-left'], regions: ['hero'], properties: ['article', 'image'], status: 'planned', preview: 'static' },
+    { id: 'reading-column', name: 'Reading Column', category: 'layout', description: 'Long-form content column with controlled measure.', variants: ['standard', 'wide'], regions: ['body', 'wide-content'], properties: ['content'], status: 'planned', preview: 'static' },
+    { id: 'sidebar-region', name: 'Sidebar Region', category: 'layout', description: 'Supporting region for contents and contextual modules.', variants: ['toc', 'related'], regions: ['sidebar'], properties: ['modules'], status: 'planned', preview: 'static' },
+    { id: 'two-column-section', name: 'Two-column Section', category: 'layout', description: 'Future editorial body section with two content columns.', variants: ['equal', 'content-aside'], regions: ['body', 'wide-content'], properties: ['left content', 'right content'], status: 'planned', preview: 'static' },
+    { id: 'article-card', name: 'Article Card', category: 'layout', description: 'Trusted Astro card for related and listing articles.', variants: ['standard', 'featured', 'list'], regions: ['related', 'featured-grid'], properties: ['article', 'featured'], status: 'registered', preview: 'static' },
+    { id: 'editorial-header', name: 'Editorial Header', category: 'layout', description: 'Future publication-level heading composition.', variants: ['standard', 'compact'], regions: ['hero', 'metadata'], properties: ['title', 'metadata'], status: 'planned', preview: 'static' }
 ]);
 
 const DEFAULT_ARTICLE_DESIGN = Object.freeze({

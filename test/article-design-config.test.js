@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const {
     DEFAULT_ARTICLE_DESIGN,
@@ -63,6 +65,12 @@ test('catalog exposes metadata only and has no executable component source', () 
     assert.equal(catalog.layouts.length, 3);
     assert.equal(catalog.stylePresets.length, 4);
     assert.ok(catalog.components.every((component) => typeof component.id === 'string' && !Object.hasOwn(component, 'source') && !Object.hasOwn(component, 'path')));
+    assert.ok(catalog.components.every((component) => ['article', 'editorial', 'layout'].includes(component.category)));
+    assert.ok(catalog.components.every((component) => Array.isArray(component.variants) && Array.isArray(component.regions) && Array.isArray(component.properties)));
+    assert.ok(catalog.components.every((component) => ['registered', 'planned'].includes(component.status) && component.preview === 'static'));
+    assert.deepEqual(catalog.components.filter((component) => component.status === 'registered').map((component) => component.id).sort(), [
+        'article-card', 'classic-editorial-layout', 'immersive-feature-layout', 'magazine-split-layout'
+    ]);
 });
 
 test('layout resolution prefers a valid article override, then publication, then classic', () => {
@@ -75,4 +83,11 @@ test('layout persistence accepts only an approved identifier', () => {
     assert.deepEqual(normalizeLayoutSelection({ layout: 'split' }), { layout: 'split' });
     assert.equal(normalizeLayoutSelection({ layout: '<script>' }), null);
     assert.equal(normalizeLayoutSelection({}), null);
+});
+
+test('public rendering selects only fixed layout implementations, never catalog component IDs', () => {
+    const articlePage = fs.readFileSync(path.join(__dirname, '../site/src/pages/blog/[slug].astro'), 'utf8');
+    assert.match(articlePage, /layout === 'split'/);
+    assert.match(articlePage, /layout === 'immersive'/);
+    assert.doesNotMatch(articlePage, /design\.components|components\?\./);
 });
