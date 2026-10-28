@@ -1,5 +1,6 @@
 const ArticleModel = require('../models/article.model');
 const MediaModel = require('../models/media.model');
+const { sendUnexpectedError } = require('../utils/http-errors');
 
 class ArticleController {
     async create(req, res) {
@@ -15,9 +16,7 @@ class ArticleController {
             const id = await ArticleModel.create(data);
             req.activityTargetLabel = String(data.title).slice(0, 500);
             res.status(201).json({ id, message: 'Article created successfully' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Articles create', error, 'Could not create article.'); }
     }
 
     async getAll(req, res) {
@@ -31,9 +30,7 @@ class ArticleController {
             };
             const articles = await ArticleModel.findAll(filters, pagination);
             res.json(articles);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Articles list', error, 'Could not load articles.'); }
     }
 
     async getById(req, res) {
@@ -43,9 +40,7 @@ class ArticleController {
                 return res.status(404).json({ error: 'Article not found' });
             }
             res.json(article);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Articles get', error, 'Could not load article.'); }
     }
 
     async update(req, res) {
@@ -60,9 +55,7 @@ class ArticleController {
             await ArticleModel.update(id, data);
             req.activityTargetLabel = typeof data.title === 'string' ? data.title.slice(0, 500) : existing?.title || null;
             res.json({ message: 'Article updated successfully' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Articles update', error, 'Could not update article.'); }
     }
 
     async delete(req, res) {
@@ -72,9 +65,7 @@ class ArticleController {
             await ArticleModel.delete(id);
             req.activityTargetLabel = article?.title || null;
             res.json({ message: 'Article deleted successfully' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Articles delete', error, 'Could not delete article.'); }
     }
 }
 

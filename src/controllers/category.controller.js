@@ -1,13 +1,12 @@
 const CategoryModel = require('../models/category.model');
+const { sendUnexpectedError } = require('../utils/http-errors');
 
 class CategoryController {
     async getAll(req, res) {
         try {
             const categories = await CategoryModel.findAll();
             res.json(categories);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Categories list', error, 'Could not load categories.'); }
     }
 
     async create(req, res) {
@@ -20,9 +19,7 @@ class CategoryController {
 
             const id = await CategoryModel.create({ name, slug, description });
             res.status(201).json({ id, name, slug });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Categories create', error, 'Could not create category.'); }
     }
 
     async delete(req, res) {
@@ -32,9 +29,7 @@ class CategoryController {
             if (!deleted) return res.status(404).json({ error: 'Category not found' });
             req.activityTargetLabel = category?.name || null;
             res.status(204).end();
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Categories delete', error, 'Could not delete category.'); }
     }
 }
 

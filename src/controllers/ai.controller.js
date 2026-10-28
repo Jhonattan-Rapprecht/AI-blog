@@ -5,6 +5,7 @@ const AIGenerationModel = require('../models/ai.generation.model');
 const TopicHistoryModel = require('../models/topic.history.model');
 const SettingsService = require('../services/settings.service');
 const ActivityLog = require('../models/activity-log.model');
+const { errorDetails, sendUnexpectedError } = require('../utils/http-errors');
 
 let lastOllamaConnectionState = null;
 
@@ -112,10 +113,10 @@ class AIController {
             const savedReview = await ArticleReviewModel.create(articleId, result);
             res.json(savedReview || result);
         } catch (error) {
-            console.error(`[AI Controller] ${mode} failed:`, error.message);
+            console.error(`[AI Controller] ${mode} failed:`, errorDetails(error));
             if (!persist) throw error;
             const checkName = titleCheck ? 'Title review' : excerptCheck ? 'Excerpt review' : factCheck ? 'Fact-check' : 'Grammar check';
-            res.status(502).json({ error: `${checkName} failed with ${SettingsService.read().model}: ${error.message}` });
+            return sendUnexpectedError(res, `AI ${mode}`, error, `${checkName} could not be completed.`, 502);
         }
     }
 
@@ -232,8 +233,8 @@ class AIController {
             const savedReview = await ArticleReviewModel.create(articleId, result);
             res.json(savedReview || result);
         } catch (error) {
-            console.error('[AI Controller] reviewArticle failed:', error.message);
-            res.status(502).json({ error: `Article review failed with ${SettingsService.read().model}: ${error.message}` });
+            console.error('[AI Controller] reviewArticle failed:', errorDetails(error));
+            return sendUnexpectedError(res, 'AI article review', error, 'Article review could not be completed.', 502);
         }
     }
 
@@ -275,9 +276,9 @@ class AIController {
             const savedReview = articleId ? await ArticleReviewModel.create(articleId, result) : null;
             res.json(savedReview || result);
         } catch (error) {
-            console.error('[AI Controller] spellcheckArticle failed:', error.message);
+            console.error('[AI Controller] spellcheckArticle failed:', errorDetails(error));
             if (!persist) throw error;
-            res.status(502).json({ error: `Spelling check failed with ${SettingsService.read().model}: ${error.message}` });
+            return sendUnexpectedError(res, 'AI spellcheck', error, 'Spelling check could not be completed.', 502);
         }
     }
 
@@ -286,7 +287,7 @@ class AIController {
             const history = await ArticleReviewModel.findHistory(req.params.articleId);
             res.json(history);
         } catch (error) {
-            console.error('[AI Controller] getArticleReviewHistory failed:', error.message);
+            console.error('[AI Controller] getArticleReviewHistory failed:', errorDetails(error));
             res.status(500).json({ error: 'Could not load article review history.' });
         }
     }
@@ -301,7 +302,7 @@ class AIController {
             if (!savedReview) return res.status(404).json({ error: 'Article not found.' });
             res.json(savedReview);
         } catch (error) {
-            console.error('[AI Controller] saveArticleReviewHistory failed:', error.message);
+            console.error('[AI Controller] saveArticleReviewHistory failed:', errorDetails(error));
             res.status(500).json({ error: 'Could not save article review history.' });
         }
     }
@@ -316,7 +317,7 @@ class AIController {
             if (!updated) return res.status(404).json({ error: 'Review finding not found for this article.' });
             res.json({ success: true });
         } catch (error) {
-            console.error('[AI Controller] updateArticleReviewFinding failed:', error.message);
+            console.error('[AI Controller] updateArticleReviewFinding failed:', errorDetails(error));
             res.status(500).json({ error: 'Could not update review finding.' });
         }
     }
@@ -328,7 +329,7 @@ class AIController {
 
             io.emit('ai:generation:started', { topic: config.topic });
             TopicHistoryModel.record(config.topic, 'generated').catch((e) => {
-                console.error('[Topic History]', e.message);
+                console.error('[Topic History]', errorDetails(e));
                 void ActivityLog.record({ category: 'errors', eventType: 'ai.topic_history_save_failed', severity: 'warning', outcome: 'failure', actorType: 'administrator', actor: req.user?.username, source: 'ai_generation', action: 'Generated topic could not be added to topic history', details: { errorName: e.name, errorCode: e.code || null } });
             });
 
@@ -349,7 +350,7 @@ class AIController {
                     status: 'completed'
                 });
             } catch (historyError) {
-                console.error('Non-critical error logging AI history:', historyError);
+                console.error('Non-critical error logging AI history:', errorDetails(historyError));
                 void ActivityLog.record({ category: 'errors', eventType: 'ai.generation_history_save_failed', severity: 'warning', outcome: 'failure', actorType: 'administrator', actor: req.user?.username, source: 'ai_generation', action: 'Article was generated but its AI history record could not be saved', targetType: 'article', targetId: articleId, details: { errorName: historyError.name, errorCode: historyError.code || null } });
             }
 
@@ -365,15 +366,15 @@ class AIController {
                     provider: process.env.AI_PROVIDER,
                     model: SettingsService.read().model,
                     prompt: JSON.stringify(req.body),
-                    response: { error: error.message },
+                    response: { error: 'AI generation failed.' },
                     status: 'failed',
-                    error_message: error.message
+                    error_message: 'AI generation failed.'
                 });
             } catch (logError) {
-                console.error('Failed to log AI error:', logError);
+                console.error('Failed to log AI error:', errorDetails(logError));
             }
 
-            return res.status(500).json({ error: error.message });
+            return sendUnexpectedError(res, 'AI article generation', error, 'Article generation could not be completed.');
         }
     }
 
@@ -432,8 +433,8 @@ class AIController {
             const titles = Array.isArray(parsed) ? parsed : (parsed.titles || parsed.suggestions || []);
             res.json({ suggestions: toTextList(titles, 3) });
         } catch (error) {
-            console.error('[AI Controller] suggestTitle failed:', error.message);
-            res.status(502).json({ error: `Title suggestions failed with ${SettingsService.read().model}: ${error.message}` });
+            console.error('[AI Controller] suggestTitle failed:', errorDetails(error));
+            return sendUnexpectedError(res, 'AI title suggestions', error, 'Title suggestions could not be completed.', 502);
         }
     }
 
@@ -487,8 +488,8 @@ class AIController {
             await TopicHistoryModel.recordMany(suggestions, 'suggested');
             res.json({ suggestions });
         } catch (error) {
-            console.error('[AI Controller] suggestTopic failed:', error.message);
-            res.status(502).json({ error: `Topic generation failed with ${SettingsService.read().model}: ${error.message}` });
+            console.error('[AI Controller] suggestTopic failed:', errorDetails(error));
+            return sendUnexpectedError(res, 'AI topic suggestions', error, 'Topic suggestions could not be completed.', 502);
         }
     }
 
@@ -524,9 +525,7 @@ class AIController {
             const { articleId } = req.params;
             const history = await AIGenerationModel.findByArticleId(articleId);
             res.json(history);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'AI generation history', error, 'Could not load AI generation history.'); }
     }
 }
 

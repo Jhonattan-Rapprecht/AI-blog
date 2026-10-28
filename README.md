@@ -123,6 +123,8 @@ The component library and preview workspace are the first step toward making the
    # Edit .env with your MySQL credentials and Ollama model
    ```
 
+   The admin API uses `http://localhost:3000` automatically in local development. For a production build behind one reverse proxy, leave `VITE_API_ORIGIN` unset so browser requests use same-origin `/api`. For a separately hosted API, set `VITE_API_ORIGIN` during the frontend build to a plain HTTPS origin, for example `https://api.example.com`; do not put secrets in Vite variables. See `frontend/.env.example`.
+
 4. **Initialize Database**:
    Run the SQL script in `src/models/schema.sql` on your MySQL instance.
 

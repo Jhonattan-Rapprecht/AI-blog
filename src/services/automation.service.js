@@ -4,6 +4,7 @@ const ArticleModel = require('../models/article.model');
 const PublishingService = require('./publishing.service');
 const AIGenerationModel = require('../models/ai.generation.model');
 const ActivityLog = require('../models/activity-log.model');
+const { errorDetails } = require('../utils/http-errors');
 
 class AutomationService {
     async runAutoGeneration(config) {
@@ -41,9 +42,9 @@ class AutomationService {
 
             return { articleId, success: true };
         } catch (error) {
-            console.error('Automation Error:', error);
+            console.error('Automation Error:', errorDetails(error));
             void ActivityLog.record({ category: 'errors', eventType: 'automation.generation_failed', severity: 'error', outcome: 'failure', actorType: 'system', source: 'automation', action: 'Automated article generation failed', details: { errorName: error.name, errorCode: error.code || null } });
-            return { success: false, error: error.message };
+            return { success: false, error: 'Automated generation could not be completed.' };
         }
     }
 }

@@ -1,4 +1,5 @@
 const SettingsService = require('../services/settings.service');
+const { sendUnexpectedError } = require('../utils/http-errors');
 
 const allowedFields = ['model', 'language', 'tone', 'audience', 'articleLength'];
 
@@ -11,9 +12,7 @@ class SettingsController {
                 : models.includes(`${settings.model}:latest`) ? `${settings.model}:latest`
                 : settings.model;
             res.json({ ...settings, model, models, connected, provider: 'ollama' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Settings get', error, 'Could not load settings.'); }
     }
 
     async update(req, res) {
@@ -37,9 +36,7 @@ class SettingsController {
             }
             SettingsService.save(settings);
             res.json({ ...settings, models, connected, provider: 'ollama' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Settings update', error, 'Could not save settings.'); }
     }
 
     async checkModel(req, res) {
@@ -69,10 +66,7 @@ class SettingsController {
                 body: JSON.stringify(requestBody)
             });
 
-            if (!response.ok) {
-                const details = await response.text();
-                return res.status(502).json({ error: `Ollama could not run ${model} (HTTP ${response.status}): ${details}` });
-            }
+            if (!response.ok) return res.status(502).json({ error: 'The selected model could not be started.' });
 
             const result = await response.json();
             const output = String(result.response || '').trim();
@@ -89,8 +83,7 @@ class SettingsController {
 
             res.json({ model: result.model || model, connected: true, json: true, durationMs: Date.now() - startedAt, output: output.slice(0, 240) });
         } catch (error) {
-            const reason = error.name === 'TimeoutError' ? 'timed out after 120 seconds' : error.message;
-            res.status(502).json({ error: `Could not test ${model}: ${reason}` });
+            return sendUnexpectedError(res, 'Settings model check', error, 'Could not test the selected model.', 502);
         }
     }
 }

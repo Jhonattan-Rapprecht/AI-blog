@@ -1,3 +1,5 @@
+const { errorDetails } = require('../utils/http-errors');
+
 class AIProvider {
     async generate(request) {
         throw new Error('Method generate() must be implemented');
@@ -50,7 +52,7 @@ class OllamaProvider extends AIProvider {
                 usage: data.eval_count
             };
         } catch (error) {
-            console.error('[OllamaProvider Error]:', error);
+            console.error('[OllamaProvider Error]:', errorDetails(error));
             throw error;
         }
     }

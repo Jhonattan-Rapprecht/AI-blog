@@ -3,6 +3,7 @@
 const { sanitizeArticleHtml } = require('../utils/htmlSanitizer');
 const ArticleDesignModel = require('../models/article-design.model');
 const { resolveArticleDesign } = require('../config/article-design.config');
+const { sendUnexpectedError } = require('../utils/http-errors');
 
 const clamp = (value, min, max, fallback) => {
     const n = parseInt(value, 10);
@@ -20,9 +21,7 @@ class PublicBlogController {
 
             const { articles, total } = await PublicBlogModel.getPublicArticles({ limit, offset, category, q });
             res.json({ articles, total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Public articles list', error, 'Could not load articles.'); }
     }
 
     async getArticle(req, res) {
@@ -38,18 +37,14 @@ class PublicBlogController {
             try { design = await ArticleDesignModel.resolveForArticle(article.id); }
             catch { design = { ...resolveArticleDesign(null, null), source: 'fallback' }; }
             res.json({ ...article, content: sanitizeArticleHtml(article.content), related, design });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Public article get', error, 'Could not load article.'); }
     }
 
     async getCategories(req, res) {
         try {
             const categories = await PublicBlogModel.getCategories();
             res.json(categories.map(c => ({ ...c, article_count: Number(c.article_count) })));
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        } catch (error) { return sendUnexpectedError(res, 'Public categories', error, 'Could not load categories.'); }
     }
 }
 

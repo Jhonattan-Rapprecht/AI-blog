@@ -58,7 +58,7 @@ Details: ${config.additionalInstructions}`;
                 meta: { provider: result.provider, model: result.model }
             };
         } catch (e) {
-            console.error('[AI Service] JSON Parsing Error. Raw content:', result.content);
+            console.error('[AI Service] JSON parsing failed:', { errorName: e.name || 'Error', reason: 'invalid_model_json', provider: result.provider || null, model: result.model || null, responseLength: String(result.content || '').length });
             throw new Error(`AI Response Validation Failed: ${e.message}`);
         }
     }

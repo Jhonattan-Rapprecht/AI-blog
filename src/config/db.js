@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const { errorDetails } = require('../utils/http-errors');
 
 const requiredDatabaseVariables = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
 const missingDatabaseVariables = requiredDatabaseVariables.filter((name) => !process.env[name]);
@@ -36,7 +37,7 @@ const db = {
             const [results] = await pool.execute(sql, params);
             return results;
         } catch (error) {
-            console.error('[DB Error]:', error);
+            console.error('[DB Error]:', errorDetails(error));
             throw error;
         }
     },

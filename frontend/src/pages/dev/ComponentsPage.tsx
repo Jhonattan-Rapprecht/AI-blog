@@ -271,7 +271,7 @@ function ComponentLibrary() {
     <div className="grid gap-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div><h2 className="text-lg font-semibold">Approved Astro components</h2><p className="mt-1 text-sm text-muted-foreground">Version-controlled metadata only. Registered components are trusted application code; planned entries are not executable.</p></div>
-        <div className="relative w-full lg:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" placeholder="Search components" aria-label="Search components" /></div>
+        <div className="relative w-full lg:w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input type="search" value={query} onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)} className="pl-9" placeholder="Search components" aria-label="Search components" /></div>
       </div>
       <div className="flex flex-wrap gap-2" aria-label="Component category filters">
         {(Object.keys(CATEGORY_LABELS) as ComponentCategory[]).map((id) => <Button key={id} size="sm" variant={category === id ? 'secondary' : 'outline'} onClick={() => setCategory(id)}>{CATEGORY_LABELS[id]}</Button>)}

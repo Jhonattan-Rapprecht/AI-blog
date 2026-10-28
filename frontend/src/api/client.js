@@ -1,11 +1,13 @@
 import axios from 'axios'
 import { io } from 'socket.io-client'
+import { resolveApiOrigin } from './origin'
 
-const ORIGIN = 'http://localhost:3000'
-const http = axios.create({ baseURL: `${ORIGIN}/api` })
+const ORIGIN = resolveApiOrigin(import.meta.env.VITE_API_ORIGIN, import.meta.env.DEV)
+const apiPath = (path) => `${ORIGIN}/api${path}`
+const http = axios.create({ baseURL: apiPath('') })
 const reportedNetworkFailures = new Map()
 
-export const socket = io(ORIGIN, { transports: ['websocket', 'polling'] })
+export const socket = io(ORIGIN || undefined, { transports: ['websocket', 'polling'] })
 
 http.interceptors.request.use((config) => {
   const token = localStorage.getItem('adminToken')
@@ -23,14 +25,14 @@ http.interceptors.response.use(
       const token = localStorage.getItem('adminToken')
       if (token) {
         let requestPath = ''
-        try { requestPath = new URL(`${e.config?.baseURL || ORIGIN}${e.config?.url || ''}`, `${ORIGIN}/`).pathname } catch { /* omit unknown URL */ }
+        try { requestPath = new URL(`${e.config?.baseURL || apiPath('')}${e.config?.url || ''}`, window.location.origin).pathname } catch { /* omit unknown URL */ }
         const requestMethod = String(e.config?.method || 'get').toUpperCase()
         const key = `${requestMethod}:${requestPath}:${e.code || 'network'}`
         const now = Date.now()
         if (now - (reportedNetworkFailures.get(key) || 0) > 60000) {
           reportedNetworkFailures.set(key, now)
           if (reportedNetworkFailures.size > 100) reportedNetworkFailures.delete(reportedNetworkFailures.keys().next().value)
-          fetch(`${ORIGIN}/api/activity-logs/client-errors`, {
+          fetch(apiPath('/activity-logs/client-errors'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ eventType: 'browser.api_connection_error', errorName: e.code || 'NetworkError', message: 'Admin browser could not reach the API.', clientPath: window.location.pathname, requestPath, requestMethod }),
