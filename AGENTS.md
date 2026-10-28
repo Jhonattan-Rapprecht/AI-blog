@@ -456,3 +456,17 @@ The user asked for the collapsible check sections to use the same animation as P
 
 - The user proposed a future extra fact-check-card action and selected the label **Research fact** over “Log fact check.” It is intentionally not implemented: the current reviewer does not browse or verify live sources, so a button without a real research workflow would mislead users.
 - Created `docs/development/future-feature-requests.md` with the proposed research-brief workflow, source/verdict expectations, and safety constraints for any future search/source integration.
+
+### Language Library — Phase 1
+
+- The user approved the first enterprise Language Library phase. Added protected **System → Language Library** backed by an authenticated, metadata-only catalog of the existing Editor languages: Dutch, English, German, French, and Spanish.
+- The Editor-selected language is explicitly authoritative; automatic detection is a safeguard only, and uncertain/mixed language must be held for manual review. No dictionary, grammar engine, remote source, package, migration, or review prompt changed in this phase.
+- The UI clearly reports that local spelling dictionaries and grammar references are not active yet. A later controlled phase must record a source, license, version, update date, and validation status before a local reference can influence suggestions.
+- Added `docs/development/language-library-phase-1-2026-10-28.md` and Node configuration tests. Backend syntax checks, Node tests (16/16), frontend production build, diff check, and authenticated browser rendering verification passed; the known mocked sanitizer test logs a test-DB access denial. Changes remain uncommitted; `.vscode/` remains untouched.
+- Follow-up: reordered and shortened Article navigation labels to Overview, Layout, Analytics, Style & Appearance. Renamed only the compact sidebar entry to **Language**; the destination header and page remain **Language Library**.
+
+### Language Library — Phase 2
+
+- Added a persistent, authenticated governed-reference register for local spelling and grammar source metadata. Records require language, type, source, license, version, source/acquisition reference, review state, and validation state, with optional checksum.
+- This is audit/provenance metadata only. It does not import files, activate a source, run code, browse the internet, or modify the current AI spell/grammar behavior. Local asset import and verification are intentionally deferred to the next controlled phase.
+- Phase 2 checks passed: backend syntax, Node tests (18/18), frontend build, diff check, and authenticated browser rendering. No language-reference record was created during browser verification. Existing test DB log and build warnings remain non-failing.

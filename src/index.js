@@ -16,6 +16,8 @@ const AnalyticsRoutes = require('./routes/analytics.routes');
 const MediaRoutes = require('./routes/media.routes');
 const ActivityLogRoutes = require('./routes/activity-log.routes');
 const ArticleDesignRoutes = require('./routes/article-design.routes');
+const LanguageLibraryRoutes = require('./routes/language-library.routes');
+const LanguageReferenceRoutes = require('./routes/language-reference.routes');
 const authMiddleware = require('./middleware/auth.middleware');
 const activityLogMiddleware = require('./middleware/activity-log.middleware');
 const publicErrorLogMiddleware = require('./middleware/public-error-log.middleware');
@@ -73,6 +75,8 @@ app.use('/api/analytics', authMiddleware, activityLogMiddleware, AnalyticsRoutes
 app.use('/api/media', authMiddleware, activityLogMiddleware, MediaRoutes);
 app.use('/api/activity-logs', authMiddleware, ActivityLogRoutes);
 app.use('/api/article-design', authMiddleware, activityLogMiddleware, ArticleDesignRoutes);
+app.use('/api/language-library', authMiddleware, activityLogMiddleware, LanguageLibraryRoutes);
+app.use('/api/language-references', authMiddleware, activityLogMiddleware, LanguageReferenceRoutes);
 // Record authenticated calls to unknown admin API paths as rejected activity too.
 app.use('/api', authMiddleware, activityLogMiddleware);
 

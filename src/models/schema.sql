@@ -77,6 +77,25 @@ CREATE TABLE IF NOT EXISTS article_design_overrides (
     FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
 );
 
+-- Auditable metadata for local spelling and grammar references. This table
+-- never activates or executes a source; activation requires a later validated import phase.
+CREATE TABLE IF NOT EXISTS language_references (
+    id CHAR(36) PRIMARY KEY,
+    language_id VARCHAR(10) NOT NULL,
+    reference_type ENUM('spelling', 'grammar') NOT NULL,
+    source_name VARCHAR(255) NOT NULL,
+    license VARCHAR(255) NOT NULL,
+    version VARCHAR(100) NOT NULL,
+    source_reference VARCHAR(500) NOT NULL,
+    checksum VARCHAR(128) NULL,
+    review_state ENUM('planned', 'reviewed', 'approved') NOT NULL DEFAULT 'planned',
+    validation_state ENUM('not-validated', 'verified') NOT NULL DEFAULT 'not-validated',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_language_references_language (language_id, reference_type),
+    INDEX idx_language_references_review (review_state, validation_state)
+);
+
 -- Tags Table
 CREATE TABLE IF NOT EXISTS tags (
     id CHAR(36) PRIMARY KEY,

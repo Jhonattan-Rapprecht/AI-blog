@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Blocks, ChartPie, FileText, Images, LayoutTemplate, MonitorCog, Moon, Palette, PenLine, ScrollText, Settings, Sparkles, Sun } from 'lucide-react'
+import { Blocks, ChartPie, FileText, Images, Languages, LayoutTemplate, MonitorCog, Moon, Palette, PenLine, ScrollText, Settings, Sparkles, Sun } from 'lucide-react'
 import { Toaster } from 'sonner'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -17,14 +17,15 @@ const nav = [
 ]
 
 const articleNav = [
-  { to: '/articles', label: 'Articles Overview', icon: FileText, end: true },
-  { to: '/articles/analytics', label: 'Articles Analytics', icon: ChartPie },
-  { to: '/articles/layouts', label: 'Article Layouts', icon: LayoutTemplate },
+  { to: '/articles', label: 'Overview', icon: FileText, end: true },
+  { to: '/articles/layouts', label: 'Layout', icon: LayoutTemplate },
+  { to: '/articles/analytics', label: 'Analytics', icon: ChartPie },
   { to: '/articles/style', label: 'Style & Appearance', icon: Palette },
 ]
 
 const settingsNav = [
   { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/system/language-library', label: 'Language', icon: Languages },
   { to: '/settings/admin-theme', label: 'Admin Theme', icon: MonitorCog },
   { to: '/system/activity-logs', label: 'System Activity Logs', icon: ScrollText },
 ]
@@ -42,7 +43,7 @@ const groups = [
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
-const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/articles/layouts': 'Article Layouts', '/articles/style': 'Style & Appearance', '/media': 'Media Library', '/settings': 'Settings', '/settings/admin-theme': 'Admin Theme', '/dev/components': 'Components', '/system/activity-logs': 'System Activity Logs' }
+const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/articles/layouts': 'Article Layouts', '/articles/style': 'Style & Appearance', '/media': 'Media Library', '/settings': 'Settings', '/settings/admin-theme': 'Admin Theme', '/system/language-library': 'Language Library', '/dev/components': 'Components', '/system/activity-logs': 'System Activity Logs' }
 
 export default function AppShell() {
   const { theme, toggle } = useTheme()

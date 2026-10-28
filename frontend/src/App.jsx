@@ -10,6 +10,7 @@ import MediaPage from '@/pages/MediaPage'
 import ArticleLayoutsPage from '@/pages/ArticleLayoutsPage'
 import StyleAppearancePage from '@/pages/StyleAppearancePage'
 import AdminThemePage from '@/pages/AdminThemePage'
+import LanguageLibraryPage from '@/pages/LanguageLibraryPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { api } from '@/api/client'
 
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="media" element={<MediaPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/admin-theme" element={<AdminThemePage />} />
+          <Route path="system/language-library" element={<LanguageLibraryPage />} />
           <Route path="dev/components" element={<Suspense fallback={null}><ComponentsPage /></Suspense>} />
           <Route path="system/activity-logs" element={<Suspense fallback={null}><ActivityLogsPage /></Suspense>} />
         </Route>
