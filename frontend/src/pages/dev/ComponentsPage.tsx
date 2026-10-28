@@ -18,6 +18,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'css', label: 'CSS' },
   { id: 'jsx', label: 'JSX' },
 ]
+const canSaveSnippet = import.meta.env.DEV
 // Theme tokens forwarded into the sandboxed frame so pasted CSS can use var(--primary) etc.
 const TOKENS = ['--radius', '--background', '--foreground', '--card', '--card-foreground', '--primary',
   '--primary-foreground', '--secondary', '--secondary-foreground', '--muted', '--muted-foreground',
@@ -122,7 +123,7 @@ export default function ComponentsPage() {
           <h2 className="text-lg font-semibold">Components</h2>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground">{previews.length} {previews.length === 1 ? 'file' : 'files'}</span>
-            <Button size="sm" onClick={() => setAdding((v) => !v)}><Plus /> New component</Button>
+            {canSaveSnippet && <Button size="sm" onClick={() => setAdding((v) => !v)}><Plus /> New component</Button>}
           </div>
         </div>
         {adding && (
@@ -131,6 +132,7 @@ export default function ComponentsPage() {
             onSaved={(s) => { setSlug(s); setTab('preview'); setAdding(false) }}
           />
         )}
+        {!canSaveSnippet && <p className="text-xs text-muted-foreground">Snippet authoring is available in the local development workspace. Published component registration remains a separate, reviewed workflow.</p>}
         <Card className="gap-0 overflow-hidden py-0">
           {previews.length === 0 ? (
             <p className="p-8 text-center text-sm text-muted-foreground">

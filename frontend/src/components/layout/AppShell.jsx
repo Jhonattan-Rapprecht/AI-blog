@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Blocks, ChartPie, FileText, Images, Moon, PenLine, ScrollText, Settings, Sparkles, Sun } from 'lucide-react'
+import { Blocks, ChartPie, FileText, Images, LayoutTemplate, MonitorCog, Moon, Palette, PenLine, ScrollText, Settings, Sparkles, Sun } from 'lucide-react'
 import { Toaster } from 'sonner'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -19,18 +19,21 @@ const nav = [
 const articleNav = [
   { to: '/articles', label: 'Articles Overview', icon: FileText, end: true },
   { to: '/articles/analytics', label: 'Articles Analytics', icon: ChartPie },
+  { to: '/articles/layouts', label: 'Article Layouts', icon: LayoutTemplate },
+  { to: '/articles/style', label: 'Style & Appearance', icon: Palette },
 ]
 
 const settingsNav = [
   { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/settings/admin-theme', label: 'Admin Theme', icon: MonitorCog },
   { to: '/system/activity-logs', label: 'System Activity Logs', icon: ScrollText },
 ]
 
 const titleBranding = 'Blogstudio | AI'
 
-const devNav = import.meta.env.DEV ? [
+const devNav = [
   { to: '/dev/components', label: 'Components', icon: Blocks },
-] : []
+]
 
 const groups = [
   { label: 'Content', items: nav },
@@ -39,7 +42,7 @@ const groups = [
   { label: 'Developer', items: devNav },
 ].filter((g) => g.items.length)
 
-const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/media': 'Media Library', '/settings': 'Settings', '/dev/components': 'Components', '/system/activity-logs': 'System Activity Logs' }
+const titles = { '/': 'Editor', '/articles': 'Articles Overview', '/articles/analytics': 'Articles Analytics', '/articles/layouts': 'Article Layouts', '/articles/style': 'Style & Appearance', '/media': 'Media Library', '/settings': 'Settings', '/settings/admin-theme': 'Admin Theme', '/dev/components': 'Components', '/system/activity-logs': 'System Activity Logs' }
 
 export default function AppShell() {
   const { theme, toggle } = useTheme()

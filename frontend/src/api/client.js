@@ -55,6 +55,7 @@ export const api = {
   login: (username, password) => http.post('/auth/login', { username, password }).then((r) => r.data),
   status: () => http.get('/ai/status').then((r) => r.data),
   settings: () => http.get('/settings').then((r) => r.data),
+  articleDesignCatalog: () => http.get('/article-design/catalog').then((r) => r.data),
   saveSettings: (settings) => http.put('/settings', settings).then((r) => r.data),
   checkModel: (model) => http.post('/settings/check-model', { model }).then((r) => r.data),
   categories: () => http.get('/categories').then((r) => r.data),

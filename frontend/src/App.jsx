@@ -7,11 +7,13 @@ import ArticlesAnalyticsPage from '@/pages/ArticlesAnalyticsPage'
 import LoginPage from '@/pages/LoginPage'
 import SettingsPage from '@/pages/SettingsPage'
 import MediaPage from '@/pages/MediaPage'
+import ArticleLayoutsPage from '@/pages/ArticleLayoutsPage'
+import StyleAppearancePage from '@/pages/StyleAppearancePage'
+import AdminThemePage from '@/pages/AdminThemePage'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { api } from '@/api/client'
 
-// Dev-only tooling; excluded from production builds.
-const ComponentsPage = import.meta.env.DEV ? lazy(() => import('@/pages/dev/ComponentsPage')) : null
+const ComponentsPage = lazy(() => import('@/pages/dev/ComponentsPage'))
 const ActivityLogsPage = lazy(() => import('@/pages/ActivityLogsPage'))
 
 function ClientErrorReporter() {
@@ -61,13 +63,14 @@ export default function App() {
         <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
           <Route index element={<EditorPage />} />
           <Route path="articles/analytics" element={<ArticlesAnalyticsPage />} />
+          <Route path="articles/layouts" element={<ArticleLayoutsPage />} />
+          <Route path="articles/style" element={<StyleAppearancePage />} />
           <Route path="articles/:id" element={<EditorPage />} />
           <Route path="articles" element={<ArticlesPage />} />
           <Route path="media" element={<MediaPage />} />
           <Route path="settings" element={<SettingsPage />} />
-          {ComponentsPage && (
-            <Route path="dev/components" element={<Suspense fallback={null}><ComponentsPage /></Suspense>} />
-          )}
+          <Route path="settings/admin-theme" element={<AdminThemePage />} />
+          <Route path="dev/components" element={<Suspense fallback={null}><ComponentsPage /></Suspense>} />
           <Route path="system/activity-logs" element={<Suspense fallback={null}><ActivityLogsPage /></Suspense>} />
         </Route>
       </Routes>

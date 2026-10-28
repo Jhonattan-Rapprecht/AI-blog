@@ -244,8 +244,9 @@ export default function EditorPage() {
   const [reviewHistory, setReviewHistory] = useState([])
   const [showOlderReviewHistory, setShowOlderReviewHistory] = useState(false)
   const [reviewHistoryExpanded, setReviewHistoryExpanded] = useState(false)
-  const [partialChecksExpanded, setPartialChecksExpanded] = useState(true)
-  const [fullChecksExpanded, setFullChecksExpanded] = useState(true)
+  const [titleExcerptChecksExpanded, setTitleExcerptChecksExpanded] = useState(false)
+  const [partialChecksExpanded, setPartialChecksExpanded] = useState(false)
+  const [fullChecksExpanded, setFullChecksExpanded] = useState(false)
   const [media, setMedia] = useState([])
   const checksBusy = Boolean(activeReviewCheck || spellchecking || selectionSpellchecking)
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false)
@@ -938,19 +939,27 @@ export default function EditorPage() {
         <div className="editor-quill" onMouseUp={captureSelectedText} onKeyUp={captureSelectedText}>
           <ReactQuill ref={editorRef} theme="snow" value={article.content} onChange={onArticleContentChange} />
         </div>
-        <div className="grid gap-2 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
-          <p className="text-sm font-medium">Title &amp; excerpt checks</p>
-          <div className="grid gap-2 border-t pt-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-            <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Check title:</span> review spelling, grammar, and clarity in the article title.</p>
-            <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onClick={runTitleCheck} disabled={checksBusy || saving || !String(article.title || '').trim()}>
-              {activeReviewCheck === 'title_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'title_review' ? 'Checking title…' : 'Check title'}
-            </Button>
-          </div>
-          <div className="grid gap-2 border-t pt-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-            <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Check excerpt:</span> review spelling, grammar, and factual claims in the Excerpt field under SEO &amp; metadata.</p>
-            <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onClick={runExcerptCheck} disabled={checksBusy || saving || !String(article.excerpt || '').trim()}>
-              {activeReviewCheck === 'excerpt_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'excerpt_review' ? 'Checking excerpt…' : 'Check excerpt'}
-            </Button>
+        <div className="mt-2 grid gap-2 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">
+          <button type="button" aria-expanded={titleExcerptChecksExpanded} aria-controls="title-excerpt-checks-content" onClick={() => setTitleExcerptChecksExpanded((value) => !value)} className="flex w-full items-center justify-between gap-3 text-left text-sm font-medium">
+            <span>Title &amp; excerpt checks</span><span className="flex items-center gap-2 text-xs text-muted-foreground">{titleExcerptChecksExpanded ? 'Hide' : 'Show'}<ChevronDown className={`size-4 transition-transform ${titleExcerptChecksExpanded ? 'rotate-180' : ''}`} /></span>
+          </button>
+          <div id="title-excerpt-checks-content" aria-hidden={!titleExcerptChecksExpanded} className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${titleExcerptChecksExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+            <div className="min-h-0 overflow-hidden">
+              <div className="grid gap-2">
+                <div className="grid gap-2 border-t pt-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Check title:</span> review spelling, grammar, and clarity in the article title.</p>
+                  <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onClick={runTitleCheck} disabled={checksBusy || saving || !String(article.title || '').trim()}>
+                    {activeReviewCheck === 'title_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'title_review' ? 'Checking title…' : 'Check title'}
+                  </Button>
+                </div>
+                <div className="grid gap-2 border-t pt-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Check excerpt:</span> review spelling, grammar, and factual claims in the Excerpt field under SEO &amp; metadata.</p>
+                  <Button type="button" variant="outline" className="w-full sm:w-48 justify-center" onClick={runExcerptCheck} disabled={checksBusy || saving || !String(article.excerpt || '').trim()}>
+                    {activeReviewCheck === 'excerpt_review' ? <Loader2 className="animate-spin" /> : <Sparkles />} {activeReviewCheck === 'excerpt_review' ? 'Checking excerpt…' : 'Check excerpt'}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div className="grid gap-2 rounded-lg border bg-card p-3 text-card-foreground shadow-sm">

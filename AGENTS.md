@@ -383,3 +383,16 @@ The user asked for the collapsible check sections to use the same animation as P
 - The current Components page is a dev-only filesystem HTML/CSS snippet workspace with an empty-sandbox iframe preview. Preserve it unchanged; it must remain separate from the future trusted Astro component registry and must never make stored snippets executable public components.
 - Recommended design persistence uses validated, versioned publication defaults plus per-article overrides, resolved safely by the backend and consumed by Astro. Existing articles receive Classic Editorial / Minimal News defaults without a data rewrite.
 - No Phase 1 implementation, packages, schema changes, database access, or production changes have occurred. The user requested this planning baseline be committed/pushed, followed by a dedicated Phase 1 branch.
+
+### Latest request — Creative Studio Phase 1
+
+- On `feat/creative-studio-phase-1`, added the three requested protected admin destinations and sidebar entries: **Article Layouts**, **Style & Appearance**, and **Admin Theme**. They are intentionally read-only foundation screens; no database persistence or public rendering changes are included.
+- Added `src/config/article-design.config.js` with safe defaults, allowlisted layouts/presets/tokens, trusted component metadata, and fallback validation. Added the authenticated read-only `GET /api/article-design/catalog` route used by the new screens.
+- Preserved Developer → Components as a separate destination. Production now shows its bundled snippet catalog read-only; local development retains the existing sandboxed HTML/CSS snippet authoring workflow. Stored snippets are not registered as trusted Astro components.
+- Added four configuration/registry tests. `npm test` passed 11/11; backend syntax checks, frontend production build, Astro production build, and diff check passed. No dependencies, migration, database connection, production access, commit, or push was performed. See `docs/development/creative-studio-phase-1-2026-10-28.md`.
+
+### Follow-up — collapsible title and excerpt checks
+
+- Made **Title & excerpt checks** independently collapsible with the same Show/Hide label, chevron, and grid/opacity animation as the existing Partial-article and Full-article check sections.
+- All three check panels now start collapsed. Added a small additional gap between the editor and the Title & excerpt checks card; button behavior is unchanged.
+- Frontend production build and diff check passed. This refinement is included with the pending Phase 1 changes and documented in `docs/development/creative-studio-phase-1-2026-10-28.md`.
