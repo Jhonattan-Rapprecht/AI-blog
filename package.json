@@ -10,7 +10,9 @@
     "dev:server": "node --watch src/index.js",
     "dev:client": "npm --prefix frontend run dev",
     "dev:site": "npm --prefix site run dev",
-    "test": "node --test"
+    "test": "node --test",
+    "visual": "node scripts/capture-public-article.mjs",
+    "visual:public": "node scripts/capture-public-article.mjs"
   },
   "repository": {
     "type": "git",

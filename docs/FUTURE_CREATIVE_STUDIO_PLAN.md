@@ -1,6 +1,6 @@
 # Future Creative Studio Plan
 
-**Status:** Phase 1 is complete. Phase 2 branch `feat/creative-studio-phase-2` is prepared, but implementation has not started because its mandatory desktop/mobile Classic Editorial visual baseline could not be captured while the browser automation bridge is unavailable. See `docs/development/handover-creative-studio-phase-2-2026-10-28.md`.
+**Status:** Phases 1–4 are complete through local verification. Phase 4 adds validated publication and article Style & Appearance settings, trusted Astro style rendering, and an isolated visual harness. It is ready for local commit; see `docs/development/creative-studio-phase-4-2026-10-28.md`. Classic Editorial’s extraction retains a documented pixel-parity qualification because the historic and current captures were made in different environments.
 
 ## Goal and current boundary
 
@@ -165,7 +165,9 @@ Keep HTML Snippets intact as one tab. Add article/editorial/layout/Astro catalog
 
 Add validated typography/image/color tokens, four initial presets (Minimal News, Luxury Editorial, Brutalist Magazine, Cyberpunk Technology), publication default and per-article override. Use CSS variables or classes generated only from validated tokens.
 
-**Complexity:** High. **Risk:** font loading, contrast, print/readability, and ensuring styles remain independent of layout.
+**Completed:** The four approved presets, typography and image-treatment tokens, publication defaults, explicit article overrides, reset/inheritance handling, simulated admin previews, and trusted Astro rendering are implemented. The visual harness is built separately and excluded from normal production output. All three layouts, the unstyled Classic fallback, and Immersive’s no-hero fixture passed the recorded desktop/mobile matrix. A hero contrast regression found during acceptance was corrected by scoping preset heading colors to article-body headings only.
+
+**Complexity:** High. **Residual risk:** font loading, contrast, print/readability, and ensuring styles remain independent of layout. Maintain the documented Classic pixel-parity qualification when changing the extracted renderer.
 
 ### Phase 5 — Admin Theme
 

@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../../../../src/layouts/BaseLayout.astro';
+import ClassicEditorial from '../../../../../src/components/article/ClassicEditorial.astro';
+import MagazineSplit from '../../../../../src/components/article/MagazineSplit.astro';
+import ImmersiveFeature from '../../../../../src/components/article/ImmersiveFeature.astro';
+import designConfig from '../../../../../../src/config/article-design.config.js';
+
+const { LAYOUTS, STYLE_PRESETS, resolveArticleDesign } = designConfig;
+const layouts = LAYOUTS.map(({ id }) => id);
+const presets = STYLE_PRESETS.map(({ id }) => id);
+export function getStaticPaths() {
+  return ['classic', 'split', 'immersive'].flatMap((layout) => ['minimal-news', 'luxury-editorial', 'brutalist-magazine', 'cyberpunk-technology'].map((preset) => ({ params: { layout, preset } })));
+}
+const { layout, preset } = Astro.params;
+if (!layouts.includes(layout) || !presets.includes(preset)) return Astro.redirect('/404');
+const design = resolveArticleDesign({ layout, stylePreset: preset }, null);
+const hero = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0d1835"/><stop offset=".55" stop-color="#5b4bc4"/><stop offset="1" stop-color="#e8b66c"/></linearGradient></defs><rect width="1600" height="900" fill="url(#g)"/><circle cx="1210" cy="240" r="135" fill="#f7e9bf" opacity=".9"/><path d="M0 680 Q400 430 800 650 T1600 520 V900 H0Z" fill="#080c18" opacity=".65"/></svg>')}`;
+const article = { id: 'visual-fixture', slug: 'visual-fixture', title: 'How trusted layouts make publishing systems clearer', excerpt: 'A deterministic editorial fixture for validating typography, visual tokens, and responsive reading experiences.', category_name: 'Technology', category_slug: 'technology', published_at: '2026-10-28T12:00:00.000Z', featured_image: hero, featured_image_credit: 'Synthetic visual test fixture', content: '', related: [
+  { slug: 'fixture-related-one', title: 'Design tokens that remain readable', category_name: 'Technology', featured_image: hero },
+  { slug: 'fixture-related-two', title: 'Editorial systems for every screen', category_name: 'Technology', featured_image: hero },
+  { slug: 'fixture-related-three', title: 'Safe previews without production data', category_name: 'Technology', featured_image: hero },
+] };
+const toc = [{ id: 'trustworthy-layouts', text: 'Trustworthy layouts', level: 2 }, { id: 'responsive-reading', text: 'Responsive reading', level: 2 }, { id: 'safe-publishing', text: 'Safe publishing', level: 2 }];
+const articleHtml = '<h2 id="trustworthy-layouts">Trustworthy layouts</h2><p>Layouts should create a calm reading experience while preserving a reliable hierarchy for editorial teams.</p><h2 id="responsive-reading">Responsive reading</h2><p>Typography, contrast, and image treatment should remain clear from desktop screens to small mobile viewports.</p><h2 id="safe-publishing">Safe publishing</h2><p>Fixed tokens and trusted renderers prevent arbitrary markup from changing public presentation.</p>';
+const readMinutes = 3;
+---
+<BaseLayout title={`Visual fixture — ${layout} — ${preset}`} description={article.excerpt} image={hero} type="article" categories={[]}>
+  <div class:list={['article-style', `article-style--${design.stylePreset}`]} data-visual-harness="true" data-layout={layout} data-preset={preset}>
+    {layout === 'classic' ? <ClassicEditorial article={article} toc={toc} articleHtml={articleHtml} readMinutes={readMinutes} encodedUrl="http%3A%2F%2Flocalhost%2Ffixture" encodedTitle="Visual%20fixture" /> : layout === 'split' ? <MagazineSplit article={article} toc={toc} articleHtml={articleHtml} readMinutes={readMinutes} /> : <ImmersiveFeature article={article} toc={toc} articleHtml={articleHtml} readMinutes={readMinutes} />}
+  </div>
+</BaseLayout>

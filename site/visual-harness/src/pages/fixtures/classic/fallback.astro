@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../../../../src/layouts/BaseLayout.astro';
+import ClassicEditorial from '../../../../../src/components/article/ClassicEditorial.astro';
+const hero = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"><rect width="1600" height="900" fill="#17203d"/></svg>')}`;
+const article = { id: 'visual-fallback', slug: 'visual-fallback', title: 'Classic fallback remains intentionally unchanged', excerpt: 'A fixed unstyled Classic fixture.', category_name: 'Technology', category_slug: 'technology', published_at: '2026-10-28T12:00:00.000Z', featured_image: hero, content: '', related: [] };
+const toc = [{ id: 'fallback-proof', text: 'Fallback proof', level: 2 }];
+---
+<BaseLayout title="Classic fallback visual fixture" description={article.excerpt} image={hero} type="article" categories={[]}><div class="article-style" data-visual-harness="true" data-layout="classic" data-preset="fallback"><ClassicEditorial article={article} toc={toc} articleHtml={'<h2 id="fallback-proof">Fallback proof</h2><p>Classic styling remains on its existing path.</p>'} readMinutes={1} encodedUrl="http%3A%2F%2Flocalhost%2Ffixture" encodedTitle="Fallback" /></div></BaseLayout>

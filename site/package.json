@@ -9,7 +9,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "visual:build": "astro build --config astro.visual.config.mjs",
+    "visual:preview": "astro preview --config astro.visual.config.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.6",

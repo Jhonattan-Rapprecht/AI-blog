@@ -8,6 +8,7 @@ const {
     getArticleDesignCatalog,
     normalizeLayoutSelection,
     resolveArticleDesign,
+    normalizeStyleSelection,
     validateArticleDesign
 } = require('../src/config/article-design.config');
 
@@ -83,6 +84,31 @@ test('layout persistence accepts only an approved identifier', () => {
     assert.deepEqual(normalizeLayoutSelection({ layout: 'split' }), { layout: 'split' });
     assert.equal(normalizeLayoutSelection({ layout: '<script>' }), null);
     assert.equal(normalizeLayoutSelection({}), null);
+});
+
+test('style selections accept only allowlisted presets and typography tokens', () => {
+    const result = normalizeStyleSelection({ stylePreset: 'luxury-editorial', typography: { headlineFont: 'newsreader', bodySize: 'spacious', lineHeight: 'airy' }, imageTreatment: 'framed' });
+    assert.deepEqual(result.errors, []);
+    assert.equal(result.value.stylePreset, 'luxury-editorial');
+    assert.equal(result.value.typography.bodySize, 'spacious');
+    assert.equal(result.value.imageTreatment, 'framed');
+    const unsafe = normalizeStyleSelection({ stylePreset: 'url(javascript:alert(1))', typography: { bodyFont: 'https://evil.example/font.woff2' }, imageTreatment: 'expression(alert(1))' });
+    assert.equal(unsafe.value, null);
+    assert.equal(unsafe.errors.length, 3);
+});
+
+test('style inheritance preserves fallback compatibility until a style is explicitly selected', () => {
+    assert.equal(resolveArticleDesign({ layout: 'classic' }, null).styleSource, 'fallback');
+    const publication = resolveArticleDesign({ layout: 'classic', stylePreset: 'cyberpunk-technology', typography: {}, imageTreatment: 'cinematic' }, null);
+    assert.equal(publication.styleSource, 'publication');
+    assert.equal(publication.stylePreset, 'cyberpunk-technology');
+    assert.equal(resolveArticleDesign({ stylePreset: 'minimal-news', typography: {} }, { stylePreset: 'brutalist-magazine', typography: {} }).styleSource, 'article');
+});
+
+test('style presets keep hero headline colors in trusted layout CSS rather than applying a global heading override', () => {
+    const css = fs.readFileSync(path.join(__dirname, '../site/src/styles/global.css'), 'utf8');
+    assert.match(css, /\.article-style\[class\*='article-style--'\] \.article-body h2, \.article-style\[class\*='article-style--'\] \.article-body h3/);
+    assert.doesNotMatch(css, /\.article-style\[class\*='article-style--'\] h1,/);
 });
 
 test('public rendering selects only fixed layout implementations, never catalog component IDs', () => {

@@ -11,6 +11,15 @@ const STYLE_PRESETS = Object.freeze([
     { id: 'cyberpunk-technology', name: 'Cyberpunk Technology', description: 'Dark technology-forward palette with vivid accents.' }
 ]);
 
+// Each identifier maps to fixed CSS variables in the Astro stylesheet. Values
+// are metadata only; no user supplied CSS, URL, or raw font-family is emitted.
+const STYLE_PRESET_TOKENS = Object.freeze({
+    'minimal-news': { palette: 'minimal-news', typography: { headlineFont: 'newsreader', headingFont: 'newsreader', bodyFont: 'inter', metaFont: 'inter', headlineScale: 'standard', bodySize: 'comfortable', lineHeight: 'relaxed', letterSpacing: 'normal', fontWeight: 'regular' }, imageTreatment: 'standard' },
+    'luxury-editorial': { palette: 'luxury-editorial', typography: { headlineFont: 'newsreader', headingFont: 'newsreader', bodyFont: 'newsreader', metaFont: 'inter', headlineScale: 'large', bodySize: 'comfortable', lineHeight: 'airy', letterSpacing: 'normal', fontWeight: 'regular' }, imageTreatment: 'framed' },
+    'brutalist-magazine': { palette: 'brutalist-magazine', typography: { headlineFont: 'inter', headingFont: 'inter', bodyFont: 'inter', metaFont: 'inter', headlineScale: 'display', bodySize: 'comfortable', lineHeight: 'normal', letterSpacing: 'tight', fontWeight: 'bold' }, imageTreatment: 'edge-to-edge' },
+    'cyberpunk-technology': { palette: 'cyberpunk-technology', typography: { headlineFont: 'inter', headingFont: 'inter', bodyFont: 'inter', metaFont: 'monospace', headlineScale: 'large', bodySize: 'comfortable', lineHeight: 'relaxed', letterSpacing: 'normal', fontWeight: 'medium' }, imageTreatment: 'cinematic' }
+});
+
 // Metadata only. Registered entries map to version-controlled, statically imported
 // Astro implementations. This catalog never accepts a database path, source string,
 // dynamic import, or executable configuration.
@@ -56,6 +65,10 @@ const allowedValues = {
     bodySize: ['compact', 'comfortable', 'spacious'], lineHeight: ['normal', 'relaxed', 'airy'],
     background: ['default', 'paper', 'ink'], text: ['default', 'inverse'], accent: ['violet', 'blue', 'red', 'gold'],
     hero: ['standard', 'split', 'cinematic'], radius: ['none', 'small', 'medium', 'large'], aspectRatio: ['original', 'landscape', 'portrait', 'square']
+};
+const styleAllowedValues = {
+    headlineFont: ['newsreader', 'inter', 'monospace'], headingFont: ['newsreader', 'inter', 'monospace'], bodyFont: ['newsreader', 'inter', 'monospace'], metaFont: ['inter', 'newsreader', 'monospace'],
+    headlineScale: ['standard', 'large', 'display'], bodySize: ['compact', 'comfortable', 'spacious'], lineHeight: ['normal', 'relaxed', 'airy'], letterSpacing: ['tight', 'normal', 'wide'], fontWeight: ['regular', 'medium', 'bold'], imageTreatment: ['standard', 'rounded', 'edge-to-edge', 'framed', 'cinematic']
 };
 
 const ids = (items) => new Set(items.map((item) => item.id));
@@ -113,6 +126,24 @@ function normalizeLayoutSelection(input) {
     return layoutIds.has(layout) ? { layout } : null;
 }
 
+function normalizeStyleSelection(input = {}) {
+    const source = object(input);
+    const errors = [];
+    const preset = presetIds.has(source.stylePreset) ? source.stylePreset : null;
+    if (!preset) errors.push('Choose an approved style preset.');
+    const typography = object(source.typography);
+    const normalizedTypography = {};
+    for (const key of Object.keys(styleAllowedValues).filter((key) => key !== 'imageTreatment')) {
+        if (typography[key] === undefined) continue;
+        if (styleAllowedValues[key].includes(typography[key])) normalizedTypography[key] = typography[key];
+        else errors.push(`typography.${key} must be an approved value.`);
+    }
+    const imageTreatment = source.imageTreatment;
+    if (imageTreatment !== undefined && !styleAllowedValues.imageTreatment.includes(imageTreatment)) errors.push('imageTreatment must be an approved value.');
+    if (errors.length) return { value: null, errors };
+    return { value: { stylePreset: preset, typography: normalizedTypography, imageTreatment: imageTreatment || null }, errors };
+}
+
 // Phase 2 persists only layout selection. Styling tokens remain a later phase, so
 // stored data can never enable arbitrary CSS or component imports.
 function resolveArticleDesign(publicationSelection, articleSelection) {
@@ -120,16 +151,28 @@ function resolveArticleDesign(publicationSelection, articleSelection) {
     const article = normalizeLayoutSelection(articleSelection);
     const design = cloneDefault();
     design.layout = article?.layout || publication?.layout || design.layout;
+    const publicationStyle = normalizeStyleSelection(publicationSelection).value;
+    const articleStyle = normalizeStyleSelection(articleSelection).value;
+    const effectiveStyle = articleStyle || publicationStyle;
+    if (effectiveStyle) {
+        const preset = STYLE_PRESET_TOKENS[effectiveStyle.stylePreset];
+        design.stylePreset = effectiveStyle.stylePreset;
+        design.typography = { ...preset.typography, ...effectiveStyle.typography };
+        design.imageTreatment = { ...design.imageTreatment, hero: effectiveStyle.imageTreatment || preset.imageTreatment };
+    }
+    design.styleSource = articleStyle ? 'article' : publicationStyle ? 'publication' : 'fallback';
     return design;
 }
 
 module.exports = {
     LAYOUTS,
     STYLE_PRESETS,
+    STYLE_PRESET_TOKENS,
     COMPONENT_REGISTRY,
     DEFAULT_ARTICLE_DESIGN,
     validateArticleDesign,
     getArticleDesignCatalog,
     normalizeLayoutSelection,
+    normalizeStyleSelection,
     resolveArticleDesign
 };

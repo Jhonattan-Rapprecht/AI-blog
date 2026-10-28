@@ -1,0 +1,7 @@
+---
+import BaseLayout from '../../../../../src/layouts/BaseLayout.astro';
+import ImmersiveFeature from '../../../../../src/components/article/ImmersiveFeature.astro';
+const article = { id: 'visual-no-hero', slug: 'visual-no-hero', title: 'Immersive Feature without a hero image', excerpt: 'A deterministic fallback-media fixture.', category_name: 'Technology', category_slug: 'technology', published_at: '2026-10-28T12:00:00.000Z', featured_image: '', content: '', related: [] };
+const toc = [{ id: 'fallback-media', text: 'Fallback media', level: 2 }];
+---
+<BaseLayout title="Immersive no-hero visual fixture" description={article.excerpt} type="article" categories={[]}><div class="article-style article-style--minimal-news" data-visual-harness="true" data-layout="immersive" data-preset="minimal-news"><ImmersiveFeature article={article} toc={toc} articleHtml={'<h2 id="fallback-media">Fallback media</h2><p>The trusted component supplies its existing fallback treatment.</p>'} readMinutes={1} /></div></BaseLayout>

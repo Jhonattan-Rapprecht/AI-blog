@@ -226,6 +226,8 @@ export default function EditorPage() {
   const [designCatalog, setDesignCatalog] = useState(null)
   const [layoutOverride, setLayoutOverride] = useState(null)
   const [savingLayoutOverride, setSavingLayoutOverride] = useState(false)
+  const [styleOverride, setStyleOverride] = useState(null)
+  const [savingStyleOverride, setSavingStyleOverride] = useState(false)
   const [writingSettings, setWritingSettings] = useState(null)
   const [topics, setTopics] = useState([])
   const [slugs, setSlugs] = useState([])
@@ -368,9 +370,11 @@ export default function EditorPage() {
     setDismissedFindings([])
     setFindingStatusSaveErrors({})
     setLayoutOverride(null)
+    setStyleOverride(null)
     if (!id) { setArticle(EMPTY); return () => { active = false } }
     api.article(id).then((a) => { if (active) setArticle(pick(a)) }).catch((e) => { if (active) toast.error(errorMessage(e)) })
     api.articleDesignOverride(id).then((override) => { if (active) setLayoutOverride(override.selection?.layout || null) }).catch(() => {})
+    api.articleStyle(id).then((override) => { if (active) setStyleOverride(override.selection || null) }).catch(() => {})
     api.articleReviewHistory(id).then((history) => {
       if (!active) return
       const [latest, ...older] = history || []
@@ -428,6 +432,18 @@ export default function EditorPage() {
       toast.success(layout ? 'Article layout override saved' : 'Article now uses the publication default')
     } catch (error) { toast.error(errorMessage(error)) }
     finally { setSavingLayoutOverride(false) }
+  }
+
+  const saveStyleOverride = async (preset) => {
+    if (!articleId) return toast.error('Save the article before choosing a style override')
+    setSavingStyleOverride(true)
+    try {
+      if (!preset) await api.clearArticleStyle(articleId)
+      else await api.updateArticleStyle(articleId, { stylePreset: preset, typography: {} })
+      setStyleOverride(preset ? { stylePreset: preset } : null)
+      toast.success(preset ? 'Article style override saved' : 'Article now inherits the publication style')
+    } catch (error) { toast.error(errorMessage(error)) }
+    finally { setSavingStyleOverride(false) }
   }
 
   const generate = async () => {
@@ -1179,6 +1195,12 @@ export default function EditorPage() {
               <NativeSelect value={layoutOverride || ''} disabled={!articleId || savingLayoutOverride} onChange={(event) => saveLayoutOverride(event.target.value || null)}>
                 <option value="">Publication default</option>
                 {designCatalog?.layouts?.map((layout) => <option key={layout.id} value={layout.id}>{layout.name}</option>)}
+              </NativeSelect>
+            </Field>
+            <Field label="Style & appearance" hint={<p className="text-xs text-muted-foreground">Inherit the publication default or apply one approved visual preset to this article. This never changes its layout or content.</p>}>
+              <NativeSelect value={styleOverride?.stylePreset || ''} disabled={!articleId || savingStyleOverride} onChange={(event) => saveStyleOverride(event.target.value || null)}>
+                <option value="">Inherit Publication Default</option>
+                {designCatalog?.stylePresets?.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
               </NativeSelect>
             </Field>
           </CardContent>
